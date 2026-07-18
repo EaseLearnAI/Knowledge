@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=440, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>处理中 · 极简内容收藏 AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/phone-frame.css">
+<style>
+  .behind {
+    flex: 1;
+    background: var(--paper-50);
+    padding: 60px 20px 100px;
+    filter: blur(2px);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .behind .fake-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--ink-900);
+    margin-bottom: 16px;
+  }
+  .behind .fake-card { height: 96px; background: var(--paper-100); border-radius: var(--r-md); margin-bottom: 10px; }
+
+  .sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--paper-50);
+    border-radius: 24px 24px 0 0;
+    padding: 8px 20px calc(var(--home-bar) + 16px);
+    z-index: 95;
+    box-shadow: 0 -8px 40px rgba(15,15,14,0.12);
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--ink-200);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+
+  /* 顶部：标题 + 元信息 */
+  .head {
+    margin-bottom: 14px;
+  }
+  .head .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600;
+    color: var(--accent-500);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .head .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-500);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .head h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink-900);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .head .meta {
+    font-size: 12.5px;
+    color: var(--ink-500);
+  }
+  .head .meta b {
+    color: var(--accent-500);
+    font-weight: 600;
+  }
+
+  /* iOS 风格的水平进度条 - determinate */
+  .progress-wrap {
+    margin: 14px 0 6px;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--ink-100);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 50%; /* 2 of 4 完成 -> 50% */
+    background: var(--accent-500);
+    border-radius: 3px;
+    transition: width 0.5s var(--ease-out);
+    overflow: hidden;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .progress-stats {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-500);
+  }
+  .progress-stats .pct {
+    font-weight: 600;
+    color: var(--ink-900);
+  }
+  .progress-stats .eta {
+    color: var(--ink-400);
+  }
+
+  /* 步骤列表 */
+  .steps {
+    margin-top: 18px;
+    border-top: 1px solid var(--ink-100);
+    padding-top: 14px;
+  }
+  .step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0;
+  }
+  .step .dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 9px;
+  }
+  /* done: 实心黑点 */
+  .step.done .dot { background: var(--ink-900); color: transparent; }
+  /* active: 实心黑点带脉冲外环 */
+  .step.active .dot {
+    background: var(--ink-900);
+    color: transparent;
+    position: relative;
+  }
+  .step.active .dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 1.5px solid var(--ink-900);
+    border-radius: 50%;
+    opacity: 0.35;
+    animation: ring-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes ring-pulse {
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  /* pending: 白色底，深色细边（白点感） */
+  .step.pending .dot {
+    background: var(--paper-50);
+    border: 1.5px solid var(--ink-200);
+    color: transparent;
+  }
+  .step .name {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--ink-900);
+  }
+  .step.pending .name { color: var(--ink-300); }
+  .step .time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-500);
+  }
+  .step.done .time { color: var(--success-500); }
+
+  /* 后台运行按钮 */
+  .bg-btn {
+    width: 100%;
+    height: 48px;
+    background: var(--paper-100);
+    color: var(--ink-900);
+    border-radius: var(--r-md);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="right">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><path d="M1 8h2v2H1zM4 6h2v4H4zM7 4h2v6H7zM10 2h2v8h-2zM13 0h2v10h-2z"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M8 2.5C5.5 2.5 3.2 3.4 1.5 4.9L0 3.4C2.1 1.5 4.9 0.4 8 0.4s5.9 1.1 8 3l-1.5 1.5C12.8 3.4 10.5 2.5 8 2.5z" fill="currentColor"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor" opacity="0.5"/></svg>
+        </div>
+      </div>
+
+      <div class="behind">
+        <div class="fake-title">收藏库</div>
+        <div class="fake-card"></div>
+      </div>
+
+      <div class="modal-backdrop"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+
+        <div class="head">
+          <div class="eyebrow"><span class="dot"></span>正在解析</div>
+          <h2>生成关键观点</h2>
+          <div class="meta">YouTube · 1h 12m · <b>第 3 / 4 步</b></div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="progress-stats">
+            <span><span class="pct">50%</span> · 2 / 4 完成</span>
+            <span class="eta">剩 ~6s</span>
+          </div>
+        </div>
+
+        <div class="steps">
+          <div class="step done">
+            <div class="dot"><i class="fa-solid fa-check"></i></div>
+            <div class="name">下载原始内容</div>
+            <div class="time">2.3s</div>
+          </div>
+          <div class="step done">
+            <div class="dot"><i class="fa-solid fa-check"></i></div>
+            <div class="name">提取转录文本</div>
+            <div class="time">8.1s</div>
+          </div>
+          <div class="step active">
+            <div class="dot"><i class="fa-solid fa-circle" style="font-size:6px;"></i></div>
+            <div class="name">生成摘要和关键观点</div>
+            <div class="time">4.2s</div>
+          </div>
+          <div class="step pending">
+            <div class="dot"></div>
+            <div class="name">AI 自动打 Tag</div>
+            <div class="time">—</div>
+          </div>
+        </div>
+
+        <button class="bg-btn">
+          <i class="fa-solid fa-arrow-down-to-line"></i>
+          后台运行，关闭此弹窗
+        </button>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+<style id="__fit_viewport_style__">
+  html.fitv, html.fitv body { margin: 0; background: #0F0F0E; }
+  html.fitv body { overflow: hidden; min-height: 100svh; min-height: 100vh; }
+  html.fitv .phone-frame {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(var(--fit, 1));
+    transform-origin: center center;
+    margin: 0;
+  }
+</style>
+<script id="__fit_viewport__">
+  (function () {
+    // 总览 iframe 内不缩放，保留预览逻辑
+    if (window.self !== window.top) return;
+    var el = document.documentElement;
+    el.classList.add('fitv');
+    var W = 430, H = 932, PAD = 40;
+    function fit() {
+      var s = Math.min((window.innerWidth - PAD) / W, (window.innerHeight - PAD) / H);
+      el.style.setProperty('--fit', s.toFixed(4));
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>

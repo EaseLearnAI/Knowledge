@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>Web · 收藏库 · Memo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../../styles/tokens.css">
+<style>
+  body { background: var(--paper-50); }
+
+  /* ===== Web 桌面布局 ===== */
+  .web-app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* === Sidebar === */
+  .sidebar {
+    background: var(--ink-900);
+    color: var(--paper-50);
+    padding: 24px 16px;
+    display: flex; flex-direction: column;
+    position: sticky; top: 0;
+    height: 100vh;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 8px;
+    margin-bottom: 32px;
+  }
+  .brand .logo {
+    width: 32px; height: 32px;
+    background: var(--paper-50);
+    color: var(--ink-900);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .brand .name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+  }
+  .brand .badge {
+    margin-left: auto;
+    font-size: 9px;
+    color: var(--accent-500);
+    background: rgba(232,74,31,0.15);
+    border: 1px solid rgba(232,74,31,0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+  .nav-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(250,250,247,0.4);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--r-sm);
+    color: rgba(250,250,247,0.7);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--t-base);
+  }
+  .nav-item:hover {
+    background: rgba(250,250,247,0.06);
+    color: var(--paper-50);
+  }
+  .nav-item.active {
+    background: rgba(250,250,247,0.1);
+    color: var(--paper-50);
+  }
+  .nav-item i { font-size: 14px; width: 18px; }
+  .nav-item .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(250,250,247,0.4);
+  }
+
+  /* Tag list */
+  .tag-list {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .tag-list .nav-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .tag-list .nav-item .dot.color-1 { background: var(--accent-500); }
+  .tag-list .nav-item .dot.color-2 { background: var(--green-500); }
+  .tag-list .nav-item .dot.color-3 { background: var(--blue-500); }
+  .tag-list .nav-item .dot.color-4 { background: var(--gold-500); }
+  .tag-list .nav-item .dot.color-5 { background: #B57EDC; }
+
+  /* 添加按钮 */
+  .add-fab {
+    margin-top: auto;
+    padding: 12px;
+    background: var(--paper-50);
+    color: var(--ink-900);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--t-base);
+  }
+  .add-fab:hover { background: var(--accent-500); color: var(--paper-50); }
+  .add-fab i { font-size: 13px; }
+
+  /* 用户 */
+  .user-pill {
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: background var(--t-base);
+  }
+  .user-pill:hover { background: rgba(250,250,247,0.06); }
+  .user-pill .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background-image: url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop&q=80');
+    background-size: cover;
+  }
+  .user-pill .info { flex: 1; min-width: 0; }
+  .user-pill .info .name {
+    font-size: 13px;
+    color: var(--paper-50);
+    font-weight: 500;
+  }
+  .user-pill .info .email {
+    font-size: 11px;
+    color: rgba(250,250,247,0.5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-pill .settings { color: rgba(250,250,247,0.4); font-size: 13px; }
+
+  /* === Main === */
+  .main {
+    background: var(--paper-50);
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* 顶部工具栏 */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 36px;
+    border-bottom: 1px solid var(--ink-100);
+    background: rgba(250,250,247,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0;
+    z-index: 50;
+  }
+  .topbar-search {
+    flex: 1;
+    max-width: 480px;
+    height: 40px;
+    padding: 0 14px;
+    background: var(--paper-200);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 10px;
+    margin-right: 24px;
+    transition: all var(--t-base);
+  }
+  .topbar-search:focus-within {
+    background: var(--paper-50);
+    box-shadow: 0 0 0 1.5px var(--ink-900);
+  }
+  .topbar-search input { flex: 1; font-size: 13.5px; }
+  .topbar-search i { color: var(--ink-400); font-size: 13px; }
+  .topbar-search .shortcut {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-400);
+    padding: 2px 6px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-200);
+    border-radius: 4px;
+  }
+
+  .topbar-actions {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    color: var(--ink-700);
+    cursor: pointer;
+    transition: all var(--t-base);
+  }
+  .topbar-btn:hover { border-color: var(--ink-900); color: var(--ink-900); }
+  .topbar-btn.primary {
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-color: transparent;
+  }
+  .topbar-btn.primary:hover { background: var(--accent-500); }
+  .topbar-btn i { font-size: 12px; }
+
+  /* 主区 */
+  .content {
+    padding: 32px 36px 64px;
+  }
+
+  /* 大标题 */
+  .page-title {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .page-title .left .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-500);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .page-title .left .eyebrow .line {
+    width: 24px; height: 1.5px; background: var(--accent-500);
+  }
+  .page-title h1 {
+    font-family: var(--font-display);
+    font-size: 44px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -1.2px;
+    color: var(--ink-900);
+  }
+  .page-title h1 .italic {
+    font-style: italic;
+    color: var(--accent-500);
+  }
+  .page-title h1 .muted {
+    color: var(--ink-400);
+    font-size: 32px;
+    margin-left: 6px;
+  }
+  .page-title .right .stats {
+    display: flex; gap: 24px;
+  }
+  .page-title .right .stat {
+    text-align: right;
+  }
+  .page-title .right .stat .num {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--ink-900);
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+  .page-title .right .stat .lbl {
+    font-size: 11px;
+    color: var(--ink-500);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 筛选条 */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-full);
+    font-size: 13px;
+    color: var(--ink-700);
+    cursor: pointer;
+    transition: all var(--t-base);
+  }
+  .filter-chip:hover { border-color: var(--ink-900); }
+  .filter-chip.active {
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-color: transparent;
+  }
+  .filter-chip .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--paper-200);
+    color: var(--ink-500);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .filter-chip.active .badge {
+    background: rgba(250,250,247,0.15);
+    color: var(--paper-50);
+  }
+  .filter-divider {
+    width: 1px; height: 20px;
+    background: var(--ink-200);
+    margin: 0 4px;
+  }
+
+  /* 精选区 */
+  .featured-section {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+  .featured-card {
+    background: linear-gradient(165deg, #0F0F0E 0%, #1A1A18 100%);
+    color: var(--paper-50);
+    border-radius: var(--r-xl);
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform var(--t-base);
+  }
+  .featured-card:hover { transform: translateY(-2px); }
+  .featured-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, var(--accent-500) 0%, transparent 55%);
+    opacity: 0.3;
+    border-radius: 50%;
+  }
+  .featured-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.06;
+  }
+  .featured-card .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-500);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 16px;
+    position: relative;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .featured-card .label::before {
+    content: ''; width: 16px; height: 1.5px; background: var(--accent-500);
+  }
+  .featured-card .quote {
+    font-family: var(--font-display);
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.8px;
+    margin-bottom: 24px;
+    position: relative;
+    max-width: 90%;
+  }
+  .featured-card .quote .italic { font-style: italic; color: var(--accent-500); }
+  .featured-card .source {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: rgba(250,250,247,0.65);
+    position: relative;
+  }
+  .featured-card .source .play {
+    width: 28px; height: 28px;
+    background: var(--accent-500);
+    color: var(--paper-50);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  /* 唱片样式(右侧的 today featured) */
+  .vinyl-card {
+    background: var(--paper-100);
+    border-radius: var(--r-xl);
+    padding: 28px;
+    display: flex; align-items: center; gap: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .vinyl-card .label {
+    position: absolute;
+    top: 20px; left: 28px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-500);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .vinyl {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #2A2A28 12%, #0F0F0E 12%, #0F0F0E 14%, #2A2A28 14%, #2A2A28 18%, #0F0F0E 18%);
+    flex-shrink: 0;
+    position: relative;
+    margin-top: 30px;
+    animation: rotate 12s linear infinite;
+  }
+  .vinyl::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, transparent 0 2px, rgba(250,250,247,0.04) 2px 3px);
+  }
+  .vinyl .label-img {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background-image: url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=200&fit=crop&q=80');
+    background-size: cover;
+  }
+  .vinyl-card .info { margin-top: 30px; }
+  .vinyl-card .info .title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ink-900);
+    margin-bottom: 6px;
+  }
+  .vinyl-card .info .meta {
+    font-size: 12px;
+    color: var(--ink-500);
+    margin-bottom: 12px;
+  }
+  .vinyl-card .info .play-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-radius: var(--r-full);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* 卡片网格 */
+  .grid-section {
+    margin-bottom: 40px;
+  }
+  .grid-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ink-100);
+  }
+  .grid-header h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+  }
+  .grid-header h3 .count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-400);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .grid-header .sort {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px;
+    color: var(--ink-500);
+  }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .card-web {
+    background: var(--paper-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    transition: all var(--t-base);
+    cursor: pointer;
+  }
+  .card-web:hover {
+    transform: translateY(-3px);
+    border-color: var(--ink-200);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .card-web .cover {
+    width: 100%;
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .card-web .cover .source-badge {
+    position: absolute; top: 12px; left: 12px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 9px 5px 7px;
+    background: rgba(15,15,14,0.88);
+    backdrop-filter: blur(10px);
+    color: var(--paper-50);
+    border-radius: var(--r-full);
+    font-size: 11px; font-weight: 500;
+  }
+  .card-web .cover .source-badge.article { background: rgba(199,62,44,0.92); }
+  .card-web .cover .duration {
+    position: absolute; bottom: 12px; right: 12px;
+    padding: 4px 8px;
+    background: rgba(15,15,14,0.88);
+    backdrop-filter: blur(10px);
+    color: var(--paper-50);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+  .card-web .body { padding: 16px 18px 18px; }
+  .card-web .body .title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.3px;
+    color: var(--ink-900);
+    margin-bottom: 6px;
+  }
+  .card-web .body .summary {
+    color: var(--ink-500);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-web .body .meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px;
+    color: var(--ink-500);
+  }
+  .card-web .body .meta .tag {
+    padding: 2px 8px;
+    background: var(--paper-100);
+    color: var(--ink-700);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .card-web .body .meta .time {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-400);
+  }
+</style>
+</head>
+<body>
+  <div class="web-app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">M</div>
+        <span class="name">Memo</span>
+        <span class="badge">BETA</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">导航</div>
+        <div class="nav-item active">
+          <i class="fa-solid fa-bookmark"></i>
+          <span>收藏</span>
+          <span class="count">128</span>
+        </div>
+        <div class="nav-item">
+          <i class="fa-solid fa-message"></i>
+          <span>AI 对话</span>
+          <span class="count">3</span>
+        </div>
+        <div class="nav-item">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>历史对话</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">分类</div>
+        <div class="tag-list">
+          <div class="nav-item">
+            <span class="dot color-1"></span>
+            <span>AI 知识</span>
+            <span class="count">47</span>
+          </div>
+          <div class="nav-item">
+            <span class="dot color-2"></span>
+            <span>产品</span>
+            <span class="count">32</span>
+          </div>
+          <div class="nav-item">
+            <span class="dot color-3"></span>
+            <span>商业</span>
+            <span class="count">28</span>
+          </div>
+          <div class="nav-item">
+            <span class="dot color-4"></span>
+            <span>设计</span>
+            <span class="count">14</span>
+          </div>
+          <div class="nav-item">
+            <span class="dot color-5"></span>
+            <span>思维模型</span>
+            <span class="count">7</span>
+          </div>
+          <div class="nav-item">
+            <i class="fa-solid fa-circle-exclamation" style="color: var(--gold-500); font-size: 11px;"></i>
+            <span>待分类</span>
+            <span class="count">7</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="add-fab">
+        <i class="fa-solid fa-plus"></i>
+        添加内容
+      </div>
+
+      <div class="user-pill">
+        <div class="avatar"></div>
+        <div class="info">
+          <div class="name">沐阳</div>
+          <div class="email">muyang@memo.ai</div>
+        </div>
+        <i class="fa-solid fa-gear settings"></i>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="topbar-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="搜索 128 条收藏 · 标题 / 正文 / Tag">
+          <span class="shortcut">⌘K</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="topbar-btn">
+            <i class="fa-solid fa-filter"></i>
+            高级筛选
+          </div>
+          <div class="topbar-btn">
+            <i class="fa-solid fa-arrow-down-wide-short"></i>
+            排序
+          </div>
+          <div class="topbar-btn primary">
+            <i class="fa-solid fa-plus"></i>
+            快速添加
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- 页面标题 -->
+        <div class="page-title">
+          <div class="left">
+            <div class="eyebrow">
+              <span class="line"></span>
+              下午好 · 沐阳
+            </div>
+            <h1>收藏 <span class="muted">· 128</span></h1>
+          </div>
+          <div class="right">
+            <div class="stats">
+              <div class="stat">
+                <div class="num">3</div>
+                <div class="lbl">正在解析</div>
+              </div>
+              <div class="stat">
+                <div class="num">12</div>
+                <div class="lbl">本周新增</div>
+              </div>
+              <div class="stat">
+                <div class="num">5.2h</div>
+                <div class="lbl">可被检索</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="filter-bar">
+          <div class="filter-chip active">全部 <span class="badge">128</span></div>
+          <div class="filter-chip">🤖 AI 知识 <span class="badge">47</span></div>
+          <div class="filter-chip">💼 产品 <span class="badge">32</span></div>
+          <div class="filter-chip">📈 商业 <span class="badge">28</span></div>
+          <div class="filter-chip">🎨 设计 <span class="badge">14</span></div>
+          <div class="filter-chip">💡 思维模型 <span class="badge">7</span></div>
+          <div class="filter-divider"></div>
+          <div class="filter-chip"><i class="fa-solid fa-circle-exclamation" style="color: var(--gold-500);"></i>待分类 <span class="badge">7</span></div>
+          <div class="filter-chip" style="margin-left: auto;"><i class="fa-solid fa-arrow-down-wide-short"></i>最近收藏</div>
+        </div>
+
+        <!-- 精选区 -->
+        <div class="featured-section">
+          <div class="featured-card">
+            <div class="label">TODAY FEATURED</div>
+            <div class="quote">"Agent 不再是工具，<br>而是 <span class="italic">协作的同事。</span>"</div>
+            <div class="source">
+              <span class="play"><i class="fa-solid fa-play" style="margin-left:1px;"></i></span>
+              Lex Fridman · Sam Altman 访谈 · 2h ago · 1h 24m
+            </div>
+          </div>
+
+          <div class="vinyl-card">
+            <div class="label">NOW PLAYING</div>
+            <div class="vinyl">
+              <div class="label-img"></div>
+            </div>
+            <div class="info">
+              <div class="title">与 Linear 创始人<br>谈产品哲学</div>
+              <div class="meta">Lenny's Podcast · 1h 24m · 28%</div>
+              <div class="play-btn">
+                <i class="fa-solid fa-play" style="font-size: 10px;"></i>
+                继续播放
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 正在解析 -->
+        <div class="grid-section">
+          <div class="grid-header">
+            <h3>正在解析 <span class="count">3</span></h3>
+            <span style="font-size: 11px; color: var(--accent-500); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+              <span style="width: 6px; height: 6px; background: var(--accent-500); border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;"></span>
+              LIVE
+            </span>
+          </div>
+          <div class="grid-cards">
+            <div class="card-web" style="opacity: 0.85;">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1485579149621-3123dd979885?w=800&h=400&fit=crop&q=80'); position: relative;">
+                <div class="shimmer-overlay"></div>
+                <span class="source-badge"><i class="fa-brands fa-youtube"></i>YouTube</span>
+                <span class="duration">42:18</span>
+              </div>
+              <div class="body">
+                <div class="title">OpenAI 工程师深度访谈：GPT-5 的推理突破</div>
+                <div class="summary">正在提取转录文本与字幕，预计 1 分钟内完成……</div>
+                <div class="meta">
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--accent-500); font-weight: 500;">
+                    <span style="width: 5px; height: 5px; background: var(--accent-500); border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;"></span>
+                    正在解析
+                  </span>
+                  <span class="time">2 分钟前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web" style="opacity: 0.85;">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=400&fit=crop&q=80'); position: relative;">
+                <div class="shimmer-overlay"></div>
+                <span class="source-badge"><i class="fa-solid fa-hashtag"></i>小红书</span>
+                <span class="duration">5 分钟</span>
+              </div>
+              <div class="body">
+                <div class="title">AI 产品经理的 5 个反常识 · 来自 Anthropic</div>
+                <div class="summary">正在提取图片文字与作者信息……</div>
+                <div class="meta">
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--accent-500); font-weight: 500;">
+                    <span style="width: 5px; height: 5px; background: var(--accent-500); border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;"></span>
+                    正在解析
+                  </span>
+                  <span class="time">3 分钟前</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 近期收藏 -->
+        <div class="grid-section">
+          <div class="grid-header">
+            <h3>近期收藏 <span class="count">125</span></h3>
+            <span class="sort">时间排序 <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i></span>
+          </div>
+          <div class="grid-cards">
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge"><i class="fa-brands fa-bilibili"></i>B 站</span>
+                <span class="duration">1:24:36</span>
+              </div>
+              <div class="body">
+                <div class="title">Lenny's Podcast · 与 Linear 创始人谈产品哲学</div>
+                <div class="summary">深度讨论为什么 Linear 拒绝 VC、坚持慢增长，以及它对 PMF 的独特理解。</div>
+                <div class="meta">
+                  <span class="tag">产品</span>
+                  <span class="tag">PMF</span>
+                  <span class="tag">创业</span>
+                  <span class="time">3 天前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge article"><i class="fa-solid fa-hashtag"></i>小红书</span>
+                <span class="duration">5 分钟</span>
+              </div>
+              <div class="body">
+                <div class="title">我是如何用 Notion + Heptabase 搭建第二大脑的</div>
+                <div class="summary">作者分享了 6 个核心工作流：晨间日记、卡片盒笔记、每周复盘、知识图谱构建……</div>
+                <div class="meta">
+                  <span class="tag">知识管理</span>
+                  <span class="tag">效率</span>
+                  <span class="time">5 天前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge"><i class="fa-solid fa-podcast"></i>YouTube</span>
+                <span class="duration">58:42</span>
+              </div>
+              <div class="body">
+                <div class="title">a16z · The Economics of AI Infrastructure</div>
+                <div class="summary">为什么 GPU 是新的石油？深度解读 AI 基础设施的成本结构与下一波创业机会。</div>
+                <div class="meta">
+                  <span class="tag">AI 知识</span>
+                  <span class="tag">商业</span>
+                  <span class="time">1 周前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge article"><i class="fa-solid fa-hashtag"></i>小红书</span>
+                <span class="duration">3 分钟</span>
+              </div>
+              <div class="body">
+                <div class="title">AI 产品经理的 5 个反常识 · 来自 Anthropic 培训</div>
+                <div class="summary">不要做 100% 准确率的功能；评测比 prompt 更重要；让用户改 prompt 而不是改 UI……</div>
+                <div class="meta">
+                  <span class="tag">AI 知识</span>
+                  <span class="tag">产品</span>
+                  <span class="time">1 周前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge"><i class="fa-brands fa-youtube"></i>YouTube</span>
+                <span class="duration">1:08:21</span>
+              </div>
+              <div class="body">
+                <div class="title">The Knowledge Project · Shane Parrish 谈决策框架</div>
+                <div class="summary">为什么聪明人会做愚蠢的决定？三个被忽视的心智模型：inversion、second-order thinking……</div>
+                <div class="meta">
+                  <span class="tag">思维模型</span>
+                  <span class="tag">决策</span>
+                  <span class="time">2 周前</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-web">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=400&fit=crop&q=80');">
+                <span class="source-badge article"><i class="fa-solid fa-hashtag"></i>小红书</span>
+                <span class="duration">8 分钟</span>
+              </div>
+              <div class="body">
+                <div class="title">Vibe Coding 实战 · 3 周用 AI 写完一个 SaaS</div>
+                <div class="summary">作者从 0 到 1 的完整复盘：Cursor + Claude 4 的协作模式、prompt 工程、最痛的 5 个坑……</div>
+                <div class="meta">
+                  <span class="tag">Vibe Coding</span>
+                  <span class="tag">AI 知识</span>
+                  <span class="time">3 周前</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; padding: 16px 0;">
+          <button style="padding: 10px 24px; background: var(--paper-100); color: var(--ink-700); border-radius: 999px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-arrow-down"></i>
+            加载更多
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

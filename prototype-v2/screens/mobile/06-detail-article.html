@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=440, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>文章详情 · 极简内容收藏 AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/phone-frame.css">
+<style>
+  .top-nav-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    z-index: 50;
+    padding: 14px 16px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-pill {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 12px;
+    background: rgba(250,250,247,0.9);
+    backdrop-filter: blur(10px);
+    border-radius: var(--r-full);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-900);
+    box-shadow: var(--shadow-sm);
+  }
+  .nav-actions { display: flex; gap: 8px; }
+  .nav-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(250,250,247,0.9);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-900);
+    font-size: 13px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 头图 */
+  .article-hero {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    background-size: cover;
+    background-position: center;
+  }
+  .article-hero::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, transparent, var(--paper-50));
+  }
+
+  /* 作者卡 */
+  .author-card {
+    margin: -40px 20px 0;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    position: relative;
+    z-index: 5;
+    box-shadow: var(--shadow-sm);
+  }
+  .author-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .author-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  .author-info { flex: 1; }
+  .author-info .name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-900);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .author-info .name .verified {
+    color: var(--accent-500);
+    font-size: 12px;
+  }
+  .author-info .handle {
+    font-size: 12px;
+    color: var(--ink-500);
+    font-family: var(--font-mono);
+  }
+  .author-info .meta {
+    font-size: 11px;
+    color: var(--ink-400);
+    margin-top: 4px;
+  }
+
+  /* 标题 */
+  .article-title-wrap {
+    padding: 20px 24px 0;
+  }
+  .article-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: -0.6px;
+    color: var(--ink-900);
+  }
+
+  /* 摘要框 */
+  .summary-card {
+    margin: 20px 20px 0;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, var(--accent-100) 0%, #FFEFE5 100%);
+    border-radius: var(--r-lg);
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before {
+    content: '"';
+    position: absolute;
+    top: -10px; left: 8px;
+    font-family: var(--font-display);
+    font-size: 80px;
+    color: rgba(232,74,31,0.2);
+    line-height: 1;
+  }
+  .summary-card .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--accent-700);
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .summary-card .text {
+    font-family: var(--font-display);
+    font-size: 17px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--ink-900);
+    position: relative;
+    font-style: italic;
+  }
+
+  /* 关键观点 */
+  .points-section {
+    padding: 28px 24px 0;
+  }
+  .point-row {
+    display: flex; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--ink-100);
+  }
+  .point-row:last-child { border-bottom: 0; }
+  .point-row .num {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--accent-500);
+    font-style: italic;
+    flex-shrink: 0;
+    width: 32px;
+    line-height: 1;
+  }
+  .point-row .text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-900);
+  }
+  .point-row .text strong { color: var(--ink-900); font-weight: 600; }
+
+  /* 图片引用 */
+  .image-block {
+    margin: 20px 20px 0;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background: var(--paper-200);
+  }
+  .image-block img {
+    width: 100%;
+    display: block;
+  }
+  .image-block .caption {
+    padding: 10px 14px;
+    background: var(--paper-100);
+    font-size: 12px;
+    color: var(--ink-500);
+    border-top: 1px solid var(--ink-100);
+  }
+  .image-block .caption i { color: var(--accent-500); margin-right: 6px; }
+
+  /* OCR 提取的图内文字 */
+  .ocr-card {
+    margin: 20px 20px 0;
+    padding: 16px;
+    background: #FFF8E8;
+    border-left: 3px solid var(--gold-500);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+  }
+  .ocr-card .head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--gold-500);
+    margin-bottom: 10px;
+  }
+  .ocr-card .text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-700);
+    font-style: italic;
+  }
+
+  /* Tag 编辑 */
+  .tag-section {
+    margin: 24px 20px 0;
+    padding: 18px;
+    background: var(--paper-100);
+    border-radius: var(--r-md);
+  }
+  .tag-section .head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .tag-section .label {
+    font-size: 12px;
+    color: var(--ink-500);
+    font-weight: 500;
+  }
+  .tag-section .label i { color: var(--accent-500); margin-right: 4px; }
+  .tag-section .edit {
+    font-size: 12px;
+    color: var(--ink-700);
+    font-weight: 500;
+  }
+  .tag-section .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag-section .tag {
+    padding: 5px 10px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-full);
+    font-size: 12px;
+    color: var(--ink-700);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .tag-section .tag i { font-size: 9px; color: var(--ink-400); cursor: pointer; }
+  .tag-section .tag.add {
+    background: transparent;
+    border-style: dashed;
+    color: var(--ink-500);
+  }
+
+  /* 浮动操作 */
+  .float-actions {
+    position: absolute;
+    bottom: 24px; right: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    z-index: 10;
+  }
+  .float-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--paper-50);
+    color: var(--ink-900);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+  }
+  .float-btn.danger:hover { color: var(--red-500); }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="phone-content">
+        <!-- 头图 + 导航 -->
+        <div class="article-hero" style="background-image:url('https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200&h=600&fit=crop&q=80');">
+          <div class="top-nav-bar">
+            <div class="nav-pill">
+              <i class="fa-solid fa-arrow-left" style="font-size:11px;"></i>
+              <span>返回</span>
+            </div>
+            <div class="nav-actions">
+              <div class="nav-btn"><i class="fa-solid fa-share-nodes"></i></div>
+              <div class="nav-btn"><i class="fa-solid fa-ellipsis"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 作者卡 -->
+        <div class="author-card">
+          <div class="author-row">
+            <div class="author-avatar" style="background-image:url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&q=80');"></div>
+            <div class="author-info">
+              <div class="name">@产品经理小敏 <i class="fa-solid fa-circle-check verified"></i></div>
+              <div class="handle">xiaohongshu.com/user/mi123</div>
+              <div class="meta">2.8 万粉丝 · 5 天前 · 阅读 8 分钟</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 标题 -->
+        <div class="article-title-wrap">
+          <h1 class="article-title">我是如何用 Notion + Heptabase 搭建第二大脑的</h1>
+        </div>
+
+        <!-- 一句话摘要 -->
+        <div class="summary-card">
+          <div class="label">SUMMARY · 一句话</div>
+          <div class="text">把笔记工具从"目录式"换成"网络式"，让知识自己发生连接。</div>
+        </div>
+
+        <!-- 关键观点 -->
+        <div class="points-section">
+          <div style="font-family: var(--font-mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; color:var(--accent-500); margin-bottom:6px;">KEY POINTS · 4 观点</div>
+          <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -0.4px; margin-bottom: 18px; color:var(--ink-900);">作者实践了 6 个月的 4 个核心判断</h2>
+
+          <div class="point-row">
+            <span class="num">01</span>
+            <div class="text"><strong>目录是反人性的</strong> — 人类记忆是网状的，强行套进目录就是强制遗忘。</div>
+          </div>
+          <div class="point-row">
+            <span class="num">02</span>
+            <div class="text"><strong>卡片盒笔记法</strong> — 1 张卡 = 1 个想法，原子化，不按主题分类。</div>
+          </div>
+          <div class="point-row">
+            <span class="num">03</span>
+            <div class="text"><strong>Heptabase 的图谱视图</strong> — 让 2 个月前写的笔记和今天写的自动产生联系。</div>
+          </div>
+          <div class="point-row">
+            <span class="num">04</span>
+            <div class="text"><strong>每日 5 分钟回顾</strong> — 每天只看 1 张卡 + 改 1 个连接，比写新的重要。</div>
+          </div>
+        </div>
+
+        <!-- 图内 OCR -->
+        <div class="ocr-card">
+          <div class="head">
+            <i class="fa-solid fa-eye"></i>
+            图片文字识别 · OCR
+          </div>
+          <div class="text">
+            "我每天早上第一件事是打开 Heptabase，看一眼昨天的卡片会不会和某张旧卡产生新的连接。99% 不会，但 1% 的意外发现就是知识增长的来源。"
+          </div>
+        </div>
+
+        <!-- 图片 -->
+        <div class="image-block">
+          <img src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=500&fit=crop&q=80" alt="">
+          <div class="caption"><i class="fa-solid fa-image"></i>作者的工作台：左侧 Heptabase，右侧 Notion，中间是笔记图谱</div>
+        </div>
+
+        <!-- Tag -->
+        <div class="tag-section">
+          <div class="head">
+            <span class="label"><i class="fa-solid fa-microchip"></i>AI Tag · 自动生成</span>
+            <span class="edit"><i class="fa-solid fa-pen" style="font-size:10px;margin-right:4px;"></i>编辑</span>
+          </div>
+          <div class="tags">
+            <span class="tag">知识管理 <i class="fa-solid fa-xmark"></i></span>
+            <span class="tag">效率 <i class="fa-solid fa-xmark"></i></span>
+            <span class="tag">Heptabase <i class="fa-solid fa-xmark"></i></span>
+            <span class="tag">Notion <i class="fa-solid fa-xmark"></i></span>
+            <span class="tag add"><i class="fa-solid fa-plus" style="font-size:9px;"></i> 添加</span>
+          </div>
+        </div>
+
+        <div style="height: 100px;"></div>
+      </div>
+
+      <div class="float-actions">
+        <div class="float-btn"><i class="fa-solid fa-quote-left"></i></div>
+        <div class="float-btn"><i class="fa-solid fa-message"></i></div>
+        <div class="float-btn danger"><i class="fa-regular fa-trash-can"></i></div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+<style id="__fit_viewport_style__">
+  html.fitv, html.fitv body { margin: 0; background: #0F0F0E; }
+  html.fitv body { overflow: hidden; min-height: 100svh; min-height: 100vh; }
+  html.fitv .phone-frame {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(var(--fit, 1));
+    transform-origin: center center;
+    margin: 0;
+  }
+</style>
+<script id="__fit_viewport__">
+  (function () {
+    // 总览 iframe 内不缩放，保留预览逻辑
+    if (window.self !== window.top) return;
+    var el = document.documentElement;
+    el.classList.add('fitv');
+    var W = 430, H = 932, PAD = 40;
+    function fit() {
+      var s = Math.min((window.innerWidth - PAD) / W, (window.innerHeight - PAD) / H);
+      el.style.setProperty('--fit', s.toFixed(4));
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>

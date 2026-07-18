@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memo · 可交互原型 App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  :root {
+    --dev-w: 430px;
+    --dev-h: 932px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: #FFFFFF;
+    overflow: hidden;
+  }
+
+  /* ===== 舞台：App 画面平铺居中 ===== */
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #FFFFFF;
+  }
+  #device {
+    width: var(--dev-w); height: var(--dev-h);
+    border: 0;
+    transform: scale(var(--fit, 1));
+    transform-origin: center center;
+    background: transparent;
+    color-scheme: light;
+  }
+  /* 加载态 */
+  #stage.loading::after {
+    content: '';
+    position: absolute;
+    width: 34px; height: 34px;
+    border: 3px solid rgba(0,0,0,0.1);
+    border-top-color: #FF5C2E;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 屏幕切换的微动效（作用在 iframe 上） */
+  #device.swap { animation: swapIn 0.34s cubic-bezier(0.2,0.8,0.2,1); }
+  @keyframes swapIn {
+    from { opacity: 0; transform: scale(var(--fit,1)) translateY(10px); }
+    to   { opacity: 1; transform: scale(var(--fit,1)) translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage" class="loading">
+  <iframe id="device" title="app 页面"></iframe>
+</div>
+
+<script>
+  const BASE_W = 430, BASE_H = 932;
+
+  // 页面顺序（与 screens/mobile 文件名一致）
+  const SCREENS = [
+    { id: '01-home',           title: '收藏库' },
+    { id: '02-home-empty',     title: '空状态' },
+    { id: '03-add',            title: '添加内容' },
+    { id: '04-detail-podcast', title: '播客详情' },
+    { id: '05-ai-chat',        title: 'AI 对话' },
+    { id: '06-detail-article', title: '文章详情' },
+    { id: '07-processing',     title: '解析中' },
+    { id: '08-search',         title: '搜索结果' },
+    { id: '09-onboarding',     title: '引导' },
+    { id: '10-unsupported',    title: '不支持类型' },
+    { id: '11-edit-tags',      title: '编辑 Tag' },
+    { id: '12-ai-empty',       title: 'AI · 空状态' },
+  ];
+  const byId = id => SCREENS.find(s => s.id === id);
+  const idxOf = id => SCREENS.findIndex(s => s.id === id);
+
+  const stage   = document.getElementById('stage');
+  const device  = document.getElementById('device');
+
+  let current = null;
+  let history = [];      // 用于「返回」
+  let pendingBack = false;
+
+  // ===== 平铺缩放：App 画面 contain 适配视口，尽量铺满不裁切 =====
+  function fit() {
+    const s = Math.min(
+      window.innerWidth  / BASE_W,
+      window.innerHeight / BASE_H
+    );
+    document.documentElement.style.setProperty('--fit', s.toFixed(4));
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  fit();
+
+  // ===== 路由 =====
+  function go(id, opts = {}) {
+    if (!byId(id)) return;
+    if (current && !opts.isBack && current !== id) history.push(current);
+    if (opts.isBack) pendingBack = true;
+    current = id;
+    stage.classList.add('loading');
+    device.src = `screens/mobile/${id}.html`;
+    location.hash = id;
+  }
+  function back() {
+    if (history.length) go(history.pop(), { isBack: true });
+    else go('01-home', { isBack: true });
+  }
+
+  // ===== 每个屏幕加载后：去手机外壳观感 + 接线交互 =====
+  device.addEventListener('load', () => {
+    stage.classList.remove('loading');
+    device.classList.remove('swap'); void device.offsetWidth; device.classList.add('swap');
+    let doc;
+    try { doc = device.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    stripChrome(doc);
+    wire(doc, current);
+  });
+
+  // 注入 CSS：去掉「玩具手机外壳」观感，让页面平铺全屏
+  function stripChrome(doc) {
+    try {
+      let st = doc.getElementById('__flush_style');
+      if (!st) {
+        st = doc.createElement('style');
+        st.id = '__flush_style';
+        st.textContent = `
+          html, body { margin: 0 !important; padding: 0 !important; background: transparent !important; }
+          .phone-frame {
+            padding: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: 0 !important;
+          }
+          .phone-screen {
+            border-radius: 0 !important;
+          }
+        `;
+        (doc.head || doc.documentElement).appendChild(st);
+      }
+    } catch (e) {}
+  }
+
+  // 工具：文本匹配点击目标
+  function onText(doc, texts, handler, sels) {
+    const selectors = sels || ['button', 'a', 'div', 'span', '.chip', 'p'];
+    const list = [];
+    selectors.forEach(sel => doc.querySelectorAll(sel).forEach(el => list.push(el)));
+    const arr = Array.isArray(texts) ? texts : [texts];
+    for (const el of list) {
+      const t = (el.textContent || '').trim();
+      if (arr.some(x => t === x || (t.length < 24 && t.includes(x)))) {
+        bind(el, handler);
+      }
+    }
+  }
+  function bind(el, handler) {
+    if (!el || el.__wired) return;
+    el.__wired = true;
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); handler(); }, true);
+  }
+  const nav = id => () => go(id);
+
+  // 每个屏幕的交互接线（全部来自 App 页面内部真实按钮）
+  function wire(doc, id) {
+    // 通用：底部 tab-bar（首页有）
+    const tabs = doc.querySelectorAll('.tab-item');
+    if (tabs.length) {
+      bind(tabs[0], nav('01-home'));
+      bind(tabs[tabs.length - 1], nav('12-ai-empty'));
+    }
+    bind(doc.querySelector('.tab-add'), nav('03-add'));
+
+    switch (id) {
+      case '01-home': {
+        bind(doc.querySelector('.topbar-actions .icon-btn'), nav('08-search'));
+        doc.querySelectorAll('.entry').forEach(en => {
+          if (en.classList.contains('processing')) return bind(en, nav('07-processing'));
+          const isXHS = (en.textContent || '').includes('小红书');
+          bind(en, nav(isXHS ? '06-detail-article' : '04-detail-podcast'));
+        });
+        break;
+      }
+      case '02-home-empty': {
+        bind(doc.querySelector('.empty-cta'), nav('03-add'));
+        break;
+      }
+      case '03-add': {
+        bind(doc.querySelector('.primary-cta'), nav('07-processing'));
+        bind(doc.querySelector('.cancel'), back);
+        onText(doc, ['收藏到 Memo'], nav('07-processing'));
+        break;
+      }
+      case '07-processing': {
+        // 点任意处 / 自动 → 进入播客详情
+        bind(doc.querySelector('.phone-screen') || doc.body, nav('04-detail-podcast'));
+        setTimeout(() => { if (current === '07-processing') go('04-detail-podcast'); }, 2600);
+        break;
+      }
+      case '04-detail-podcast': {
+        bind(doc.querySelector('.hero-nav .icon-btn'), back);
+        bind(doc.querySelector('.ask-btn'), nav('05-ai-chat'));
+        onText(doc, ['基于这篇问 AI'], nav('05-ai-chat'));
+        onText(doc, ['＋ 添加', '添加'], nav('11-edit-tags'), ['.action', 'span']);
+        break;
+      }
+      case '06-detail-article': {
+        onText(doc, ['返回'], back);
+        bind(doc.querySelector('.ask-btn'), nav('05-ai-chat'));
+        onText(doc, ['基于这篇问 AI', '问 AI'], nav('05-ai-chat'));
+        onText(doc, ['添加'], nav('11-edit-tags'), ['.tag', '.action', 'span']);
+        break;
+      }
+      case '05-ai-chat': {
+        wireBack(doc);
+        break;
+      }
+      case '12-ai-empty': {
+        wireBack(doc);
+        // 推荐问题 / 模板 → 进入对话
+        doc.querySelectorAll('.suggest, .template, .q-item, .prompt-card, .chip').forEach(el => bind(el, nav('05-ai-chat')));
+        break;
+      }
+      case '08-search': {
+        wireBack(doc);
+        doc.querySelectorAll('.entry, .card, .result, .result-item').forEach(en => {
+          const isXHS = (en.textContent || '').includes('小红书');
+          bind(en, nav(isXHS ? '06-detail-article' : '04-detail-podcast'));
+        });
+        break;
+      }
+      case '09-onboarding': {
+        onText(doc, ['跳过'], nav('01-home'), ['.skip', 'a', 'span']);
+        onText(doc, ['下一步', '开始使用', '开始', '立即体验'], nav('01-home'));
+        break;
+      }
+      case '10-unsupported': {
+        wireBack(doc);
+        onText(doc, ['返回', '返回收藏', '知道了', '告诉我们', '提交反馈', '反馈'], nav('01-home'));
+        break;
+      }
+      case '11-edit-tags': {
+        wireBack(doc);
+        onText(doc, ['保存修改', '保存', '完成'], back);
+        break;
+      }
+    }
+  }
+
+  // 尽力识别页面内的「返回」按钮（左上角）
+  function wireBack(doc) {
+    const candidates = [
+      '.hero-nav .icon-btn',
+      '.top-thin .icon-btn',
+      '.top-bar .left .icon-btn',
+      '.detail-nav .icon-btn',
+      '.chat-header .icon-btn',
+      '.header .icon-btn',
+    ];
+    for (const sel of candidates) {
+      const el = doc.querySelector(sel);
+      if (el) { bind(el, back); return; }
+    }
+    onText(doc, ['返回'], back);
+  }
+
+  // ===== 键盘便利项（无可见控件）=====
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft')  { const i = idxOf(current); if (i > 0) go(SCREENS[i - 1].id); }
+    if (e.key === 'ArrowRight') { const i = idxOf(current); if (i < SCREENS.length - 1) go(SCREENS[i + 1].id); }
+    if (e.key === 'Escape') back();
+  });
+
+  // ===== 启动 =====
+  const startId = (location.hash || '').slice(1);
+  go(byId(startId) ? startId : '01-home');
+</script>
+</body>
+</html>

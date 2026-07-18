@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=440, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>空状态 · 极简内容收藏 AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/phone-frame.css">
+<style>
+  /* ==========================================================
+     02 空状态 · v3 重构版
+     思路：editorial 留白 + 抽象扁平图 + 单 CTA + 来源 list 极简化
+     ========================================================== */
+  body { background: var(--paper-50); }
+
+  .empty-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper-50);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 顶部细 header - 极小 */
+  .top-thin {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+  }
+  .top-thin .brand {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-900);
+    letter-spacing: -0.2px;
+  }
+  .top-thin .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--paper-100);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-700);
+    font-size: 13px;
+  }
+
+  /* 主内容居中 */
+  .empty-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 32px;
+    text-align: center;
+    position: relative;
+  }
+
+  /* 抽象图 - 三个错落的书签 + 一个 spark */
+  .empty-art {
+    position: relative;
+    width: 200px;
+    height: 140px;
+    margin-bottom: 32px;
+  }
+  .empty-art .stamp {
+    position: absolute;
+    width: 56px;
+    height: 80px;
+    border-radius: 4px;
+    box-shadow: 0 12px 30px rgba(15,15,14,0.12);
+    display: flex; align-items: flex-start; justify-content: flex-start;
+    padding: 10px 8px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.2px;
+  }
+  .empty-art .stamp.s1 {
+    top: 0; left: 30px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-100);
+    color: var(--ink-900);
+    transform: rotate(-6deg);
+    z-index: 1;
+  }
+  .empty-art .stamp.s2 {
+    top: 8px; left: 80px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    transform: rotate(3deg);
+    z-index: 2;
+  }
+  .empty-art .stamp.s3 {
+    top: 14px; left: 130px;
+    background: var(--accent-500);
+    color: var(--paper-50);
+    transform: rotate(7deg);
+    z-index: 3;
+  }
+  /* spark 点缀 */
+  .empty-art .spark {
+    position: absolute;
+    top: -10px; right: 8px;
+    color: var(--accent-500);
+    font-size: 18px;
+    z-index: 4;
+  }
+
+  /* 大标题 - editorial */
+  .empty-title {
+    font-family: var(--font-display);
+    font-size: 38px;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -1.3px;
+    color: var(--ink-900);
+    margin-bottom: 12px;
+  }
+  .empty-title .it {
+    font-style: italic;
+    color: var(--accent-500);
+  }
+  .empty-sub {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-500);
+    max-width: 300px;
+    margin: 0 auto 28px;
+  }
+
+  /* 单一主 CTA */
+  .empty-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 22px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-radius: 999px;
+    font-size: 14.5px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(15,15,14,0.18);
+    transition: transform var(--t-base);
+  }
+  .empty-cta:active { transform: scale(0.97); }
+  .empty-cta i { font-size: 12px; }
+
+  /* 底部支持的来源 - 极简 inline 排列 */
+  .sources {
+    padding: 0 32px 24px;
+    border-top: 1px solid var(--ink-100);
+    padding-top: 16px;
+    text-align: center;
+  }
+  .sources .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-400);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .sources .list {
+    display: flex; justify-content: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .sources .item {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px;
+    color: var(--ink-700);
+  }
+  .sources .item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success-500);
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen cream">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="right">
+          <i class="fa-solid fa-signal" style="font-size:14px;"></i>
+          <i class="fa-solid fa-wifi" style="font-size:13px;"></i>
+          <span style="display:inline-flex;align-items:center;gap:1px;">
+            <span style="width:22px;height:11px;border:1.2px solid currentColor;border-radius:3px;display:inline-block;position:relative;">
+              <span style="position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:75%;background:currentColor;border-radius:1px;"></span>
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="empty-screen">
+        <!-- 极小 header -->
+        <div class="top-thin" style="padding-top:8px;">
+          <div class="brand">memo</div>
+          <div class="icon-btn"><i class="fa-solid fa-gear"></i></div>
+        </div>
+
+        <!-- 主体居中 -->
+        <div class="empty-main">
+          <!-- 抽象书签插画 -->
+          <div class="empty-art">
+            <i class="fa-solid fa-sparkles spark"></i>
+            <div class="stamp s1">凌晨 3 点读到的一句</div>
+            <div class="stamp s2">PMF 才是壁垒</div>
+            <div class="stamp s3">慢增长</div>
+          </div>
+
+          <h1 class="empty-title">
+            扔进来。<br><span class="it">找得到，</span>问得出。
+          </h1>
+          <p class="empty-sub">粘贴一个链接，或上传一段音频。<br>剩下的，AI 来做。</p>
+
+          <button class="empty-cta">
+            添加第 1 条
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- 底部 sources -->
+        <div class="sources">
+          <div class="label">支持来源</div>
+          <div class="list">
+            <span class="item"><span class="dot"></span>YouTube</span>
+            <span class="item"><span class="dot"></span>B 站</span>
+            <span class="item"><span class="dot"></span>小红书</span>
+            <span class="item"><span class="dot"></span>本地音频</span>
+          </div>
+        </div>
+
+        <div class="home-indicator"></div>
+      </div>
+    </div>
+  </div>
+<style id="__fit_viewport_style__">
+  html.fitv, html.fitv body { margin: 0; background: #0F0F0E; }
+  html.fitv body { overflow: hidden; min-height: 100svh; min-height: 100vh; }
+  html.fitv .phone-frame {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(var(--fit, 1));
+    transform-origin: center center;
+    margin: 0;
+  }
+</style>
+<script id="__fit_viewport__">
+  (function () {
+    // 总览 iframe 内不缩放，保留预览逻辑
+    if (window.self !== window.top) return;
+    var el = document.documentElement;
+    el.classList.add('fitv');
+    var W = 430, H = 932, PAD = 40;
+    function fit() {
+      var s = Math.min((window.innerWidth - PAD) / W, (window.innerHeight - PAD) / H);
+      el.style.setProperty('--fit', s.toFixed(4));
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>

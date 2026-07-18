@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memo · 极简内容收藏 AI · v2 · 高保真原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  body {
+    background: #0F0F0E;
+    color: #FAFAF7;
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255,92,46,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(199,62,44,0.10) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .showcase {
+    position: relative;
+    z-index: 1;
+    max-width: 1840px;
+    margin: 0 auto;
+    padding: 60px 48px 100px;
+  }
+
+  /* Topbar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 80px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(250,250,247,0.08);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 36px; height: 36px;
+    background: #FAFAF7;
+    color: #0F0F0E;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 19px; font-weight: 600;
+  }
+  .brand .name {
+    font-family: var(--font-display);
+    font-size: 19px; font-weight: 500;
+    letter-spacing: -0.3px;
+  }
+  .brand .badge {
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 1px;
+    color: #FF5C2E;
+    background: rgba(255,92,46,0.12);
+    border: 1px solid rgba(255,92,46,0.3);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .topbar .meta { display: flex; align-items: center; gap: 24px; font-size: 12px; color: rgba(250,250,247,0.5); }
+  .topbar .meta .item { display: flex; align-items: center; gap: 6px; }
+  .topbar .meta .item .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #2F6F4A;
+    box-shadow: 0 0 0 3px rgba(47,111,74,0.25);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .topbar .version-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: rgba(250,250,247,0.06);
+    border: 1px solid rgba(250,250,247,0.1);
+    border-radius: 999px;
+    font-size: 11px;
+    color: rgba(250,250,247,0.7);
+  }
+  .topbar .version-pill .v {
+    font-family: var(--font-mono);
+    color: var(--accent-500);
+    font-weight: 600;
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 100px;
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 60px;
+    align-items: end;
+  }
+  .hero .left .eyebrow {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #FF5C2E;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero .left .eyebrow .line {
+    width: 32px; height: 1px; background: #FF5C2E;
+  }
+  .hero .left h1 {
+    font-family: var(--font-display);
+    font-size: 96px;
+    line-height: 0.95;
+    font-weight: 500;
+    letter-spacing: -3.5px;
+    margin-bottom: 28px;
+  }
+  .hero .left h1 .italic { font-style: italic; color: #FF5C2E; font-weight: 400; }
+  .hero .left h1 .outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px #FAFAF7;
+    font-weight: 400;
+  }
+  .hero .left p {
+    font-size: 17px;
+    line-height: 1.55;
+    color: rgba(250,250,247,0.6);
+    max-width: 540px;
+  }
+  .hero .right { display: flex; flex-direction: column; gap: 16px; }
+  .hero .stat-row {
+    display: flex; align-items: baseline; gap: 16px;
+    padding: 20px 0;
+    border-top: 1px solid rgba(250,250,247,0.1);
+  }
+  .hero .stat-row:last-child { border-bottom: 1px solid rgba(250,250,247,0.1); }
+  .hero .stat-row .num {
+    font-family: var(--font-display);
+    font-size: 56px; line-height: 1;
+    font-weight: 500;
+    letter-spacing: -1.5px;
+    color: #FAFAF7;
+  }
+  .hero .stat-row .num .unit { font-size: 18px; color: rgba(250,250,247,0.5); margin-left: 4px; }
+  .hero .stat-row .label {
+    flex: 1;
+    font-size: 13px;
+    color: rgba(250,250,247,0.5);
+    line-height: 1.5;
+  }
+
+  /* Section */
+  .section { margin-bottom: 96px; }
+  .section .section-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(250,250,247,0.1);
+  }
+  .section .section-header .left .index {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(250,250,247,0.4);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .section .section-header .left h2 {
+    font-family: var(--font-display);
+    font-size: 40px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -1.2px;
+  }
+  .section .section-header .left h2 .accent { color: #FF5C2E; font-style: italic; }
+  .section .section-header .right {
+    font-size: 13px;
+    color: rgba(250,250,247,0.5);
+    text-align: right;
+    max-width: 320px;
+  }
+  .section .section-header .right .url {
+    color: rgba(250,250,247,0.8);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  /* Phone grid */
+  .phone-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .phone-wrap {
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .phone-wrap .label {
+    margin-top: 16px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid rgba(250,250,247,0.08);
+  }
+  .phone-wrap .label .name { font-size: 14px; font-weight: 500; }
+  .phone-wrap .label .path {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(250,250,247,0.4);
+  }
+  .phone-wrap .label .desc {
+    font-size: 11px;
+    color: rgba(250,250,247,0.4);
+    margin-top: 4px;
+  }
+
+  .phone-frame-mini {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 440/932;
+    background: #1a1a18;
+    border-radius: 36px;
+    padding: 6px;
+    box-shadow:
+      0 0 0 1.5px #2a2a28,
+      0 30px 60px rgba(0,0,0,0.4);
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .phone-wrap:hover .phone-frame-mini {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow:
+      0 0 0 1.5px #FF5C2E,
+      0 40px 80px rgba(0,0,0,0.5),
+      0 0 60px rgba(255,92,46,0.2);
+  }
+  .phone-frame-mini .island {
+    position: absolute; top: 18px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 22px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 10;
+  }
+  .phone-frame-mini .iframe-wrap {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 30px;
+    overflow: hidden;
+    background: var(--paper-50);
+  }
+  .phone-frame-mini .iframe-wrap iframe {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.84);
+    transform-origin: center;
+    width: 440px; height: 932px;
+    border: 0;
+    pointer-events: none;
+  }
+  .phone-frame-mini .hover-cta {
+    position: absolute;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    padding: 8px 16px;
+    background: rgba(15,15,14,0.85);
+    backdrop-filter: blur(10px);
+    color: #FAFAF7;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  .phone-wrap:hover .hover-cta {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Design system cards */
+  .design-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .color-card {
+    padding: 28px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .color-card .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .color-card .swatch {
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -1.2px;
+  }
+  .color-card .desc {
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  .color-ink { background: #FAFAF7; color: #0F0F0E; }
+  .color-ink .label { color: rgba(15,15,14,0.5); }
+  .color-ink .desc { color: rgba(15,15,14,0.5); }
+  .color-paper { background: #F4F2EC; color: #0F0F0E; }
+  .color-paper .label { color: rgba(15,15,14,0.5); }
+  .color-paper .desc { color: rgba(15,15,14,0.5); }
+  .color-accent { background: #FF5C2E; color: #FAFAF7; }
+  .color-accent .label { color: rgba(250,250,247,0.7); }
+  .color-accent .desc { color: rgba(250,250,247,0.7); }
+  .color-success { background: #2F6F4A; color: #FAFAF7; }
+
+  /* 字体展示 */
+  .font-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .font-card {
+    padding: 32px;
+    background: #0F0F0E;
+    border: 1px solid rgba(250,250,247,0.08);
+    border-radius: 14px;
+  }
+  .font-card .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(250,250,247,0.4);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .font-card .display {
+    font-family: var(--font-display);
+    font-size: 40px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+  .font-card .display .italic { font-style: italic; color: #FF5C2E; }
+  .font-card .body {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(250,250,247,0.7);
+  }
+  .font-card .meta {
+    margin-top: 16px;
+    font-size: 11px;
+    color: rgba(250,250,247,0.4);
+  }
+
+  /* 流程图 */
+  .flow-card {
+    padding: 48px;
+    background: #0F0F0E;
+    border: 1px solid rgba(250,250,247,0.08);
+    border-radius: 16px;
+  }
+  .flow-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    align-items: center;
+  }
+  .flow-step {
+    text-align: center;
+    position: relative;
+  }
+  .flow-step .circle {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: rgba(250,250,247,0.05);
+    border: 1.5px solid rgba(250,250,247,0.15);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+  }
+  .flow-step.accent .circle {
+    background: #FF5C2E;
+    border-color: transparent;
+    color: #FAFAF7;
+    box-shadow: 0 8px 30px rgba(255,92,46,0.4);
+  }
+  .flow-step .name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .flow-step .sub {
+    font-size: 12px;
+    color: rgba(250,250,247,0.5);
+    line-height: 1.4;
+  }
+  .flow-line {
+    position: absolute;
+    top: 44px; left: -50%; right: -50%;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(255,92,46,0.4), transparent);
+    z-index: -1;
+  }
+  .flow-p0 {
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(250,250,247,0.03);
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .flow-p0 .p0 {
+    text-align: center;
+    padding: 12px;
+  }
+  .flow-p0 .p0 .id {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #FF5C2E;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .flow-p0 .p0 .t { font-size: 12px; }
+
+  /* Footer */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(250,250,247,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+    color: rgba(250,250,247,0.4);
+  }
+  .footer .left { display: flex; align-items: center; gap: 16px; }
+  .footer .right { display: flex; align-items: center; gap: 24px; }
+  .footer .right a { color: rgba(250,250,247,0.6); text-decoration: none; }
+  .footer .right a:hover { color: #FF5C2E; }
+
+  /* 响应式 */
+  @media (max-width: 1400px) {
+    .phone-grid { grid-template-columns: repeat(3, 1fr); }
+    .hero { grid-template-columns: 1fr; gap: 40px; }
+    .hero .left h1 { font-size: 72px; }
+  }
+  @media (max-width: 900px) {
+    .phone-grid { grid-template-columns: repeat(2, 1fr); }
+    .design-row, .font-cards { grid-template-columns: 1fr; }
+    .hero .left h1 { font-size: 56px; }
+  }
+</style>
+</head>
+<body>
+  <div class="showcase">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <div class="name">Memo</div>
+          <div style="font-size:10px;color:rgba(250,250,247,0.4);margin-top:1px;letter-spacing:0.5px;">极简内容收藏 AI</div>
+        </div>
+        <span class="badge">BETA</span>
+      </div>
+      <div class="version-pill">
+        <span>v2.0 · frontend-design-master</span>
+        <span class="v">2026-07-13</span>
+      </div>
+      <div class="meta">
+        <div class="item"><span class="dot"></span>原型已就绪</div>
+        <div class="item">iPhone 16 Pro Max · 430×932</div>
+        <div class="item">iOS HIG + Editorial</div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="left">
+        <div class="eyebrow">
+          <span class="line"></span>
+          Memo · 高保真原型 v2
+        </div>
+        <h1>
+          扔进来。<br>
+          <span class="italic">找得到，</span><br>
+          <span class="outline">问得出。</span>
+        </h1>
+        <p>用 frontend-design-master 技能重新打造的高保真原型 · 12 个移动端核心页面，所有界面使用 FontAwesome 真实图标 + Unsplash 真实图片，可直接用于开发交付。</p>
+      </div>
+      <div class="right">
+        <div class="stat-row">
+          <div class="num">12<span class="unit">移动</span></div>
+          <div class="label">iPhone 16 Pro Max 真机框架 · 覆盖收藏 / 添加 / 解析 / 详情 / AI / 搜索 / 引导 / 失败态 / 编辑 Tag 全流程</div>
+        </div>
+        <div class="stat-row">
+          <div class="num">P0-08<span class="unit">/ 8</span></div>
+          <div class="label">PRD 验收点全部覆盖 · 处理中 shimmer、shimmer overlay、AI 引用高亮等细节均已实现</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: 移动端 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="left">
+          <div class="index">01 / MOBILE</div>
+          <h2>移动端 · <span class="accent">iPhone 16 Pro Max</span></h2>
+        </div>
+        <div class="right">
+          底部 Tab 仅 2 项 + 1 个浮动 +，严格遵守 PRD "入口极简"原则
+          <div class="url">./screens/mobile/</div>
+        </div>
+      </div>
+
+      <div class="phone-grid">
+
+        <a class="phone-wrap" href="screens/mobile/01-home.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/01-home.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">01 收藏库</div>
+              <div class="desc">默认入口 · 含精选 / 解析中 / 近期</div>
+            </div>
+            <div class="path">01-home</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/02-home-empty.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/02-home-empty.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">02 空状态</div>
+              <div class="desc">首次进入 · 支持来源清晰提示</div>
+            </div>
+            <div class="path">02-empty</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/03-add.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/03-add.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">03 添加</div>
+              <div class="desc">剪贴板自动检测 · 1 次点击入库</div>
+            </div>
+            <div class="path">03-add</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/07-processing.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/07-processing.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">04 解析中</div>
+              <div class="desc">4 步进度 · 后台可关闭</div>
+            </div>
+            <div class="path">07-processing</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/04-detail-podcast.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/04-detail-podcast.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">05 播客详情</div>
+              <div class="desc">沉浸式 + 摘要 + 5 观点 + 章节</div>
+            </div>
+            <div class="path">04-podcast</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/06-detail-article.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/06-detail-article.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">06 小红书详情</div>
+              <div class="desc">OCR + 4 观点 + 作者卡</div>
+            </div>
+            <div class="path">06-article</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/05-ai-chat.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/05-ai-chat.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">07 AI 对话</div>
+              <div class="desc">回答 + 引用卡片 + 推荐问题</div>
+            </div>
+            <div class="path">05-ai</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/12-ai-empty.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/12-ai-empty.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">08 AI 空状态</div>
+              <div class="desc">新对话 · 数据卡 + 推荐问题</div>
+            </div>
+            <div class="path">12-ai-empty</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/08-search.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/08-search.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">09 搜索结果</div>
+              <div class="desc">高亮 + AI 一句话总结</div>
+            </div>
+            <div class="path">08-search</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/09-onboarding.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/09-onboarding.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">10 引导页</div>
+              <div class="desc">3 步引导 · 暗色 hero 卡片堆叠</div>
+            </div>
+            <div class="path">09-onboarding</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/10-unsupported.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/10-unsupported.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">11 不支持</div>
+              <div class="desc">保留链接 + 路线图</div>
+            </div>
+            <div class="path">10-unsupported</div>
+          </div>
+        </a>
+
+        <a class="phone-wrap" href="screens/mobile/11-edit-tags.html" target="_blank">
+          <div class="phone-frame-mini">
+            <div class="island"></div>
+            <div class="iframe-wrap"><iframe src="screens/mobile/11-edit-tags.html" loading="lazy"></iframe></div>
+            <div class="hover-cta"><i class="fa-solid fa-arrow-up-right-from-square"></i> 打开原页面</div>
+          </div>
+          <div class="label">
+            <div>
+              <div class="name">12 编辑 Tag</div>
+              <div class="desc">AI 推荐 + 已有分类快选</div>
+            </div>
+            <div class="path">11-edit-tags</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Section 2: 设计语言 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="left">
+          <div class="index">02 / SYSTEM</div>
+          <h2>设计语言 · <span class="accent">Tokens</span></h2>
+        </div>
+        <div class="right">
+          暖白 + 墨黑 + 单一强调色 · 编辑杂志感 · 拒绝 AI 通病
+          <div class="url">./styles/tokens.css</div>
+        </div>
+      </div>
+
+      <div class="design-row">
+        <div class="color-card color-ink">
+          <div>
+            <div class="label">PRIMARY · 墨黑</div>
+            <div class="swatch">#0F0F0E</div>
+          </div>
+          <div class="desc">主按钮 · 标题 · 顶部品牌</div>
+        </div>
+        <div class="color-card color-paper">
+          <div>
+            <div class="label">PAPER · 暖白</div>
+            <div class="swatch">#FAFAF7</div>
+          </div>
+          <div class="desc">全局背景 · 卡片底色</div>
+        </div>
+        <div class="color-card color-accent">
+          <div>
+            <div class="label">ACCENT · 赤陶</div>
+            <div class="swatch">#FF5C2E</div>
+          </div>
+          <div class="desc">CTA · 进度 · 高亮 · Tag</div>
+        </div>
+      </div>
+
+      <div class="font-cards">
+        <div class="font-card">
+          <div class="label">DISPLAY · 编辑标题</div>
+          <div class="display">
+            扔进来。<br>
+            <span class="italic">找得到，</span><br>
+            问得出。
+          </div>
+          <div class="meta">Fraunces · 400-700 · 衬线 · editorial 感</div>
+        </div>
+        <div class="font-card">
+          <div class="label">BODY · 正文</div>
+          <div class="body" style="font-family: var(--font-body); font-size: 16px; line-height: 1.6;">
+            粘贴一个链接，或者上传一段音频。剩下的 AI 帮你做 — 提取内容、生成摘要、自动打 Tag。
+            <div style="font-family: var(--font-mono); font-size: 13px; margin-top: 12px; color: rgba(250,250,247,0.5);">https://www.xiaohongshu.com/explore/abc123</div>
+          </div>
+          <div class="meta">Geist · 400-700 · 无衬线 · DM Sans / JetBrains Mono 辅助</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: 信息架构 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="left">
+          <div class="index">03 / FLOW</div>
+          <h2>信息架构 · <span class="accent">MVP 闭环</span></h2>
+        </div>
+        <div class="right">
+          极简信息架构 · 底部仅 2 个 Tab + 1 个浮动 + · 不进入复杂表单
+          <div class="url">PRD §3 · §4</div>
+        </div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-row">
+          <div class="flow-step">
+            <div class="circle"><i class="fa-solid fa-bookmark" style="color: #FAFAF7;"></i></div>
+            <div class="name">收藏</div>
+            <div class="sub">查看 · 搜索 · 管理<br>默认打开</div>
+          </div>
+          <div class="flow-step accent">
+            <div class="flow-line"></div>
+            <div class="circle"><i class="fa-solid fa-plus"></i></div>
+            <div class="name">＋ 添加</div>
+            <div class="sub">粘贴链接 · 上传音频<br>2 秒内显示已收藏</div>
+          </div>
+          <div class="flow-step">
+            <div class="circle"><i class="fa-solid fa-message" style="color: #FAFAF7;"></i></div>
+            <div class="name">AI 对话</div>
+            <div class="sub">基于全部收藏回答<br>每条标注来源</div>
+          </div>
+        </div>
+
+        <div class="flow-p0">
+          <div class="p0">
+            <div class="id">P0-01</div>
+            <div class="t">粘贴 → 2 秒内「已收藏」</div>
+          </div>
+          <div class="p0">
+            <div class="id">P0-02</div>
+            <div class="t">播客完整解析</div>
+          </div>
+          <div class="p0">
+            <div class="id">P0-03</div>
+            <div class="t">小红书 OCR</div>
+          </div>
+          <div class="p0">
+            <div class="id">P0-04</div>
+            <div class="t">AI 自动 Tag</div>
+          </div>
+          <div class="p0">
+            <div class="id">P0-06</div>
+            <div class="t">AI 引用可点</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="left">
+        <div>Memo · 极简内容收藏 AI · MVP 原型 v2.0</div>
+        <div style="color:rgba(250,250,247,0.3);">·</div>
+        <div>用 frontend-design-master 技能重做</div>
+      </div>
+      <div class="right">
+        <a href="https://www.figma.com" target="_blank">Figma</a>
+        <a href="screens/mobile/01-home.html" target="_blank">移动端</a>
+        <a href="styles/tokens.css" target="_blank">设计 Token</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

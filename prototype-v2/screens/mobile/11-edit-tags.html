@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=440, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>编辑 Tag · 极简内容收藏 AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/phone-frame.css">
+<style>
+  .edit-wrap {
+    flex: 1;
+    display: flex; flex-direction: column;
+    background: var(--paper-50);
+  }
+
+  .edit-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px;
+  }
+
+  /* 内容预览 */
+  .preview-card {
+    margin: 16px 20px 0;
+    padding: 14px;
+    background: var(--paper-100);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .preview-card .cover {
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .preview-card .info { flex: 1; min-width: 0; }
+  .preview-card .info .src {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-500);
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+  }
+  .preview-card .info .title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-900);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Tag 编辑区 */
+  .tags-edit-section {
+    padding: 28px 20px 0;
+  }
+  .sec-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-500);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sec-label .line { width: 16px; height: 1.5px; background: var(--accent-500); }
+  .sec-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+    color: var(--ink-900);
+    margin-bottom: 6px;
+  }
+  .sec-sub {
+    font-size: 13px;
+    color: var(--ink-500);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  /* 当前 Tag */
+  .current-tags {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .current-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px 8px 14px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-radius: var(--r-full);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .current-tag .remove {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(250,250,247,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    cursor: pointer;
+    transition: background var(--t-base);
+  }
+  .current-tag .remove:hover { background: rgba(250,250,247,0.3); }
+  .current-tag .ai-tag {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent-500);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+
+  /* 添加输入框 */
+  .add-tag-input {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px;
+    background: var(--paper-50);
+    border: 1.5px solid var(--ink-200);
+    border-radius: var(--r-md);
+    margin-bottom: 24px;
+    transition: all var(--t-base);
+  }
+  .add-tag-input:focus-within {
+    border-color: var(--ink-900);
+    box-shadow: 0 0 0 4px rgba(15,15,14,0.06);
+  }
+  .add-tag-input i { color: var(--ink-400); font-size: 13px; }
+  .add-tag-input input { flex: 1; font-size: 14px; }
+  .add-tag-input .count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-400);
+  }
+
+  /* AI 推荐 */
+  .ai-suggest {
+    margin-bottom: 20px;
+  }
+  .ai-suggest .head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    color: var(--accent-500);
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+  }
+  .ai-suggest .head .ai-icon {
+    width: 20px; height: 20px;
+    background: var(--accent-500);
+    color: var(--paper-50);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+  }
+  .ai-suggest .tags {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .ai-suggest .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px;
+    background: var(--paper-50);
+    border: 1.5px dashed var(--accent-500);
+    color: var(--accent-700);
+    border-radius: var(--r-full);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--t-base);
+  }
+  .ai-suggest .tag:hover {
+    background: var(--accent-100);
+    border-style: solid;
+  }
+  .ai-suggest .tag i { font-size: 10px; }
+
+  /* 已有分类 */
+  .existing-section {
+    padding: 0 20px;
+  }
+  .existing-section .head {
+    font-size: 11px;
+    color: var(--ink-400);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .existing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .existing-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--paper-100);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all var(--t-base);
+    font-size: 12.5px;
+    color: var(--ink-700);
+  }
+  .existing-item:hover { background: var(--paper-200); }
+  .existing-item.added {
+    background: var(--green-100);
+    color: var(--green-500);
+  }
+  .existing-item .add-i { color: var(--ink-300); font-size: 10px; }
+  .existing-item.added .add-i { color: var(--green-500); }
+
+  /* 底部固定按钮 */
+  .edit-bottom {
+    padding: 12px 20px calc(var(--tab-bar) + 8px);
+    background: var(--paper-50);
+    border-top: 1px solid var(--ink-100);
+    display: flex; gap: 10px;
+  }
+  .edit-bottom .btn-cancel {
+    flex: 0 0 100px;
+    height: 52px;
+    background: var(--paper-100);
+    color: var(--ink-900);
+    border-radius: var(--r-md);
+    font-size: 15px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .edit-bottom .btn-save {
+    flex: 1;
+    height: 52px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    border-radius: var(--r-md);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+  }
+  .edit-bottom .btn-save:hover { background: var(--accent-500); }
+  .edit-bottom .btn-save .change {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: rgba(250,250,247,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="right">
+          <i class="fa-solid fa-signal" style="font-size:14px;"></i>
+          <i class="fa-solid fa-wifi" style="font-size:13px;"></i>
+          <span style="display:inline-flex;align-items:center;gap:1px;">
+            <span style="width:22px;height:11px;border:1.2px solid currentColor;border-radius:3px;display:inline-block;position:relative;">
+              <span style="position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:75%;background:currentColor;border-radius:1px;"></span>
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="edit-wrap">
+        <div class="phone-content">
+          <div class="edit-content">
+            <!-- 顶部导航 -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 0;">
+              <span style="font-size:14px;color:var(--ink-500);">
+                <i class="fa-solid fa-xmark"></i> 取消
+              </span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-400);letter-spacing:1px;">编辑 TAG</span>
+              <span style="font-size:14px;color:var(--ink-500);width:32px;"></span>
+            </div>
+
+            <!-- 内容预览 -->
+            <div class="preview-card">
+              <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=200&fit=crop&q=80');"></div>
+              <div class="info">
+                <div class="src">Lenny's Podcast · 1h 24m</div>
+                <div class="title">与 Linear 创始人谈产品哲学</div>
+              </div>
+            </div>
+
+            <!-- Tag 编辑区 -->
+            <div class="tags-edit-section">
+              <div class="sec-label"><span class="line"></span>CURRENT TAGS · 3</div>
+              <h2 class="sec-title">编辑这条内容的 Tag</h2>
+              <p class="sec-sub">AI 自动生成的 Tag 可以删除或调整，也可以从下方添加新的。</p>
+
+              <div class="current-tags">
+                <div class="current-tag">
+                  <span class="ai-tag"><i class="fa-solid fa-microchip" style="font-size:8px;"></i></span>
+                  产品
+                  <span class="remove"><i class="fa-solid fa-xmark"></i></span>
+                </div>
+                <div class="current-tag">
+                  <span class="ai-tag"><i class="fa-solid fa-microchip" style="font-size:8px;"></i></span>
+                  PMF
+                  <span class="remove"><i class="fa-solid fa-xmark"></i></span>
+                </div>
+                <div class="current-tag">
+                  <span class="ai-tag"><i class="fa-solid fa-microchip" style="font-size:8px;"></i></span>
+                  创业
+                  <span class="remove"><i class="fa-solid fa-xmark"></i></span>
+                </div>
+              </div>
+
+              <!-- 添加输入 -->
+              <div class="add-tag-input">
+                <i class="fa-solid fa-hashtag"></i>
+                <input type="text" placeholder="添加新 Tag，按回车确认">
+                <span class="count">3 / 8</span>
+              </div>
+
+              <!-- AI 推荐 -->
+              <div class="ai-suggest">
+                <div class="head">
+                  <span class="ai-icon"><i class="fa-solid fa-microchip" style="font-size:10px;"></i></span>
+                  AI 推荐 · 3 个
+                </div>
+                <div class="tags">
+                  <span class="tag">设计哲学 <i class="fa-solid fa-plus"></i></span>
+                  <span class="tag">慢公司 <i class="fa-solid fa-plus"></i></span>
+                  <span class="tag">Linear <i class="fa-solid fa-plus"></i></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 已有分类 -->
+            <div class="existing-section">
+              <div class="head">已有分类 · 点击快速添加</div>
+              <div class="existing-grid">
+                <div class="existing-item added">AI 知识 <span class="add-i"><i class="fa-solid fa-check"></i></span></div>
+                <div class="existing-item">产品 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">商业 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">设计 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">思维模型 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">效率 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">创业 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">Vibe Coding <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+                <div class="existing-item">决策 <span class="add-i"><i class="fa-solid fa-plus"></i></span></div>
+              </div>
+            </div>
+
+            <div style="height: 16px;"></div>
+          </div>
+        </div>
+
+        <!-- 底部固定按钮 -->
+        <div class="edit-bottom">
+          <div class="btn-cancel">取消</div>
+          <div class="btn-save">
+            保存修改
+            <span class="change">+ 1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+<style id="__fit_viewport_style__">
+  html.fitv, html.fitv body { margin: 0; background: #0F0F0E; }
+  html.fitv body { overflow: hidden; min-height: 100svh; min-height: 100vh; }
+  html.fitv .phone-frame {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(var(--fit, 1));
+    transform-origin: center center;
+    margin: 0;
+  }
+</style>
+<script id="__fit_viewport__">
+  (function () {
+    // 总览 iframe 内不缩放，保留预览逻辑
+    if (window.self !== window.top) return;
+    var el = document.documentElement;
+    el.classList.add('fitv');
+    var W = 430, H = 932, PAD = 40;
+    function fit() {
+      var s = Math.min((window.innerWidth - PAD) / W, (window.innerHeight - PAD) / H);
+      el.style.setProperty('--fit', s.toFixed(4));
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>
