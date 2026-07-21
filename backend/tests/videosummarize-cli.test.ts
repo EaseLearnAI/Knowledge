@@ -1,0 +1,38 @@
+import { describe, expect, it } from "vitest";
+import type { AppConfig } from "../src/config.js";
+import { VideoSummarizeProcessor } from "../src/features/video/videosummarize.processor.js";
+
+const config: AppConfig = {
+  nodeEnv: "test",
+  port: 0,
+  host: "127.0.0.1",
+  mongodbUri: "mongodb://localhost:27017/memo_knowledge_test",
+  jwtAccessSecret: "test-secret-with-at-least-thirty-two-characters",
+  accessTokenTtl: "15m",
+  refreshTokenTtlDays: 30,
+  corsOrigins: [],
+  videoSummarizeBin:
+    "/Users/mac/Desktop/03_学习与研究/study/视频解析学习/skill方案/cliskill/.venv/bin/videosummarize",
+  videoWorkspace: "/tmp/memo-videosummarize-doctor",
+  videoProcessor: "cli",
+  copywriterProvider: "local",
+  minimaxApiBase: "https://api.minimaxi.com",
+  minimaxModel: "MiniMax-M3",
+  enableWebTerminal: false,
+  webTerminalToken: "test-terminal-token-123456",
+  logLevel: "silent",
+};
+
+describe("真实 videosummarize 内核", () => {
+  it("doctor 确认 ffmpeg、yt-dlp 和 Whisper 可用", async () => {
+    const messages: string[] = [];
+    const processor = new VideoSummarizeProcessor(config);
+    await processor.doctor?.((_event, message) => {
+      messages.push(message);
+    });
+    const output = messages.join("\n");
+    expect(output).toContain("Status: Ready to use!");
+    expect(output).toContain("ffmpeg:");
+    expect(output).toContain("mlx-whisper:");
+  });
+});

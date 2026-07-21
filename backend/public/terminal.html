@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Memo API Web 终端</title>
+    <style>
+      :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      body { margin: 0; background: #080b10; color: #d8e0ea; }
+      header { padding: 16px 20px; border-bottom: 1px solid #253041; background: #0d121a; }
+      h1 { margin: 0 0 6px; font-size: 16px; color: #8dd8ff; }
+      p { margin: 0; color: #8290a3; font: 12px system-ui; }
+      .toolbar { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; padding: 12px 20px; }
+      input, button, select { border: 1px solid #2a394c; border-radius: 6px; background: #111927; color: #d8e0ea; padding: 9px 10px; }
+      button { cursor: pointer; background: #183650; color: #9de0ff; }
+      main { padding: 0 20px 20px; }
+      #terminal { min-height: 68vh; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #243044; border-radius: 8px; padding: 14px; background: #05070a; font-size: 12px; line-height: 1.55; }
+      .info { color: #a9d7a9; } .warn { color: #ffd479; } .error { color: #ff8f8f; } .muted { color: #718096; }
+      @media (max-width: 760px) { .toolbar { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Memo API Web 终端</h1>
+      <p>实时显示每次请求、响应、视频下载、转录和文案生成结果；密码与 Token 不会输出。</p>
+    </header>
+    <section class="toolbar">
+      <input id="baseUrl" value="" placeholder="API 地址，默认当前站点" />
+      <input id="terminalToken" value="dev-terminal-token-change-me" placeholder="Web 终端令牌" />
+      <button id="connect">连接日志</button>
+      <button id="clear">清空</button>
+    </section>
+    <main><div id="terminal"><span class="muted">等待连接…</span></div></main>
+    <script>
+      const output = document.querySelector("#terminal");
+      const baseInput = document.querySelector("#baseUrl");
+      const tokenInput = document.querySelector("#terminalToken");
+      let stream;
+      baseInput.value = location.origin;
+      const line = (value, level = "info") => {
+        const row = document.createElement("div");
+        row.className = level;
+        row.textContent = value;
+        output.append(row);
+        output.scrollTop = output.scrollHeight;
+      };
+      document.querySelector("#clear").onclick = () => { output.textContent = ""; };
+      document.querySelector("#connect").onclick = () => {
+        stream?.close();
+        output.textContent = "";
+        const base = baseInput.value.replace(/\/$/, "");
+        const token = encodeURIComponent(tokenInput.value);
+        line(`$ CONNECT ${base}/api/v1/logs/stream`, "muted");
+        stream = new EventSource(`${base}/api/v1/logs/stream?token=${token}`);
+        stream.onmessage = ({ data }) => {
+          const event = JSON.parse(data);
+          const meta = event.data ? ` ${JSON.stringify(event.data)}` : "";
+          line(`[${event.timestamp}] ${event.event} — ${event.message}${meta}`, event.level);
+        };
+        stream.onerror = () => line("日志连接中断，浏览器将自动重连。", "warn");
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "name": "memo-knowledge-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Memo 内容收藏、视频解析与文案生成后端",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/src/server.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:real-cli": "vitest run tests/videosummarize-cli.test.ts",
+    "smoke": "tsx scripts/smoke.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jose": "6.1.3",
+    "mongoose": "8.24.1",
+    "multer": "^2.0.2",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "@types/supertest": "^6.0.3",
+    "mongodb-memory-server": "10.3.0",
+    "supertest": "7.1.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "3.2.7"
+  },
+  "overrides": {
+    "@mongodb-js/saslprep": "1.4.11",
+    "@noble/hashes": "1.7.2",
+    "iconv-lite": "0.7.2",
+    "semver": "7.7.2",
+    "superagent": "10.2.3"
+  }
+}

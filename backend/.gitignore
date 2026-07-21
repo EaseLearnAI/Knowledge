@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+storage/uploads/*
+storage/workspaces/*
+storage/mongodb/*
+!storage/uploads/.gitkeep
+!storage/workspaces/.gitkeep
+npm-debug.log*

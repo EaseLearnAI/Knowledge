@@ -1,0 +1,6 @@
+.DS_Store
+*.bak
+
+# Local reference copy and independently deployed site repository.
+prototype-v2_副本/
+privacy-site/

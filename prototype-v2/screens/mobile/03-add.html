@@ -11,194 +11,89 @@
 <link rel="stylesheet" href="../../styles/tokens.css">
 <link rel="stylesheet" href="../../styles/phone-frame.css">
 <style>
-  .behind {
-    flex: 1;
+  /* ===== iOS 底部弹窗 ===== */
+  .add-screen { background: #12120E; }
+  .add-scrim {
+    position: absolute; inset: 0;
+    background: rgba(10,10,9,0.5);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    animation: fadeIn 0.25s var(--ease-out);
+  }
+  .add-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
     background: var(--paper-50);
-    padding: 60px 20px 100px;
-    filter: blur(2px);
-    opacity: 0.55;
-    pointer-events: none;
+    border-radius: 22px 22px 0 0;
+    padding: 10px 20px calc(var(--home-bar, 34px) + 16px);
+    box-shadow: 0 -18px 50px rgba(0,0,0,0.35);
+    animation: sheetUp 0.36s cubic-bezier(0.2,0.8,0.2,1);
   }
-  .behind .fake-title {
-    font-family: var(--font-display);
-    font-size: 28px;
-    color: var(--ink-900);
-    margin-bottom: 16px;
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet-grabber {
+    width: 38px; height: 5px; border-radius: 3px;
+    background: var(--ink-200); margin: 0 auto 14px;
   }
-  .behind .fake-card { height: 96px; background: var(--paper-100); border-radius: var(--r-md); margin-bottom: 10px; }
-
-  /* iOS 居中 action sheet */
-  .sheet {
-    position: absolute;
-    bottom: calc(var(--home-bar) + 12px);
-    left: 12px;
-    right: 12px;
-    background: rgba(250,250,247,0.96);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border-radius: 16px;
-    z-index: 95;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.3);
-    animation: slideUp 0.3s var(--ease-out);
+  .sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
   }
-
-  .sheet-header {
-    padding: 16px 18px 12px;
+  .sheet-cancel { font-size: 15px; color: var(--ink-500); cursor: pointer; }
+  .sheet-cancel:active { opacity: 0.6; }
+  .sheet-title { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+  .sheet-side { width: 30px; }
+  .sheet-desc {
+    font-size: 13.5px; line-height: 1.6; color: var(--ink-500);
+    margin: 0 2px 18px;
   }
-  .sheet-title {
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--ink-900);
-    text-align: center;
-    letter-spacing: -0.2px;
-  }
-
-  /* 输入框 - 核心交互 */
-  .input-section {
-    margin: 0 14px 6px;
-  }
-  .input-box {
-    position: relative;
-    background: var(--paper-50);
-    border: 1.5px solid var(--ink-900);
-    border-radius: 12px;
-    padding: 12px 14px;
-    box-shadow: 0 0 0 4px rgba(15,15,14,0.05);
-  }
-  .input-box .label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--accent-500);
-    letter-spacing: 1px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    display: flex; align-items: center; gap: 5px;
-  }
-  .input-box .label .pulse {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent-500);
-    animation: pulse 1.5s infinite;
-  }
-  .input-box input {
-    width: 100%;
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    color: var(--ink-900);
-    background: transparent;
-    border: none;
-    outline: none;
-    line-height: 1.4;
-  }
-  .input-box .caret {
-    display: inline-block;
-    width: 1.5px;
-    height: 14px;
-    background: var(--accent-500);
-    margin-left: 1px;
-    vertical-align: middle;
-    animation: blink 1s infinite;
-  }
-  @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
-
-  /* 来源标签 */
-  .source-tag {
-    display: inline-flex; align-items: center; gap: 4px;
-    margin-top: 8px;
-    padding: 3px 8px 3px 5px;
+  .sheet-field {
+    display: flex; align-items: flex-start; gap: 12px;
     background: var(--paper-100);
-    border-radius: 999px;
-    font-size: 11px;
-    color: var(--ink-700);
-  }
-  .source-tag .dot {
-    width: 14px; height: 14px;
-    border-radius: 4px;
-    background: #FF0050;
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px;
-    font-weight: 700;
-  }
-
-  /* 平台列表 */
-  .platforms {
-    margin: 12px 0 0;
-    border-top: 0.5px solid rgba(15,15,14,0.1);
-  }
-  .platform {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 0.5px solid rgba(15,15,14,0.08);
-    cursor: pointer;
-  }
-  .platform:last-of-type { border-bottom: 0; }
-  .platform:active { background: rgba(15,15,14,0.04); }
-  .platform .icon {
-    width: 30px; height: 30px;
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700;
-    color: white;
-    flex-shrink: 0;
-  }
-  .platform .name {
-    flex: 1;
-    font-size: 14px;
-    color: var(--ink-900);
-  }
-  .platform .check {
-    color: var(--success-500);
-    font-size: 13px;
-  }
-  .platform.dim { opacity: 0.45; }
-  .platform.dim .check { visibility: hidden; }
-
-  /* 主 CTA */
-  .primary-cta {
-    margin: 12px 14px 14px;
-    height: 48px;
-    background: var(--ink-900);
-    color: var(--paper-50);
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px;
-  }
-  .primary-cta .kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    background: rgba(250,250,247,0.15);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 4px;
-  }
-
-  /* 取消 */
-  .cancel {
-    margin: 8px 12px 0;
-    background: rgba(250,250,247,0.96);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
     border-radius: 16px;
-    padding: 14px;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--ink-900);
-    cursor: pointer;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    padding: 20px 18px;
+    min-height: 112px;
+    margin-bottom: 14px;
   }
+  .sheet-field > i { color: var(--ink-400); font-size: 18px; margin-top: 3px; }
+  .sheet-input {
+    flex: 1; border: 0; background: transparent; outline: none; resize: none;
+    font-family: var(--font-mono); font-size: 14px; line-height: 1.65;
+    color: var(--ink-900); word-break: break-all;
+  }
+  .sheet-detect {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper-100);
+    border-radius: 14px; padding: 12px 14px;
+    margin-bottom: 22px;
+  }
+  .detect-badge {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: #FF0050; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .detect-text { flex: 1; min-width: 0; }
+  .detect-name { font-size: 14px; font-weight: 600; color: var(--ink-900); }
+  .detect-desc { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+  .detect-ok {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 600; color: #2F6F4A; flex-shrink: 0;
+  }
+  .primary-cta {
+    height: 52px; width: 100%;
+    background: var(--ink-900); color: var(--paper-50);
+    border: 0; border-radius: 14px;
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--t-base) var(--ease-out);
+  }
+  .primary-cta:hover { background: var(--accent-500); }
+  .primary-cta:active { transform: scale(0.99); }
 </style>
 </head>
 <body>
   <div class="phone-frame">
     <div class="dynamic-island"></div>
-    <div class="phone-screen">
+    <div class="phone-screen add-screen">
       <div class="status-bar">
         <span>9:41</span>
         <div class="right">
@@ -208,61 +103,27 @@
         </div>
       </div>
 
-      <div class="behind">
-        <div class="fake-title">收藏库</div>
-        <div class="fake-card"></div>
+      <!-- 遮罩：点击关闭 -->
+      <div class="add-scrim cancel"></div>
+
+      <!-- iOS 底部弹窗 -->
+      <div class="add-sheet">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-head">
+          <span class="sheet-cancel cancel">取消</span>
+          <span class="sheet-title">添加内容</span>
+          <span class="sheet-side"></span>
+        </div>
+
+        <p class="sheet-desc">粘贴任意链接（小红书、播客、YouTube、B 站或网页），Memo 会自动识别来源、提取正文并生成摘要，帮你归档。</p>
+
+        <div class="sheet-field">
+          <i class="fa-solid fa-link"></i>
+          <textarea class="sheet-input" rows="3" spellcheck="false">https://www.xiaohongshu.com/explore/abc123def456</textarea>
+        </div>
+
+        <button class="primary-cta">收藏到 Memo</button>
       </div>
-
-      <div class="modal-backdrop"></div>
-
-      <div class="sheet">
-        <div class="sheet-header">
-          <div class="sheet-title">添加内容</div>
-        </div>
-
-        <!-- 核心：输入框 -->
-        <div class="input-section">
-          <div class="input-box">
-            <div class="label"><span class="pulse"></span>已检测到剪贴板</div>
-            <input type="text" value="https://www.xiaohongshu.com/explore/abc123def456">
-            <div class="source-tag">
-              <span class="dot">小</span>
-              小红书 · 图文
-            </div>
-          </div>
-        </div>
-
-        <!-- 其他支持来源 -->
-        <div class="platforms">
-          <div class="platform dim">
-            <div class="icon" style="background:#FF0000;"><i class="fa-brands fa-youtube" style="font-size:12px;"></i></div>
-            <div class="name">YouTube 视频 / 播客</div>
-            <i class="fa-solid fa-check check"></i>
-          </div>
-          <div class="platform dim">
-            <div class="icon" style="background:#00AEEC;">B</div>
-            <div class="name">B 站视频 / 播客</div>
-            <i class="fa-solid fa-check check"></i>
-          </div>
-          <div class="platform">
-            <div class="icon" style="background:#FF0050;"><i class="fa-solid fa-hashtag" style="font-size:12px;"></i></div>
-            <div class="name">小红书图文</div>
-            <i class="fa-solid fa-check check"></i>
-          </div>
-          <div class="platform dim">
-            <div class="icon" style="background:var(--ink-700);"><i class="fa-solid fa-microphone" style="font-size:12px;"></i></div>
-            <div class="name">本地音频上传</div>
-            <i class="fa-solid fa-check check"></i>
-          </div>
-        </div>
-
-        <div class="primary-cta">
-          收藏到 Memo
-          <span class="kbd">↵</span>
-        </div>
-      </div>
-
-      <div class="cancel">取消</div>
 
       <div class="home-indicator"></div>
     </div>
@@ -280,7 +141,6 @@
 </style>
 <script id="__fit_viewport__">
   (function () {
-    // 总览 iframe 内不缩放，保留预览逻辑
     if (window.self !== window.top) return;
     var el = document.documentElement;
     el.classList.add('fitv');
