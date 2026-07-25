@@ -12,7 +12,8 @@ import { UserModel } from "./user.model.js";
 
 type PublicUser = {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   nickname: string;
   createdAt: Date;
 };
@@ -24,26 +25,30 @@ type AuthResult = {
   tokenType: "Bearer";
 };
 
-function publicUser(user: {
+type AuthUserRecord = {
   _id: unknown;
-  email: string;
+  email?: string | null;
+  phone?: string | null;
   nickname: string;
   createdAt: Date;
-}): PublicUser {
+};
+
+function publicUser(user: AuthUserRecord): PublicUser {
   return {
     id: String(user._id),
-    email: user.email,
+    email: user.email ?? null,
+    phone: user.phone ?? null,
     nickname: user.nickname,
     createdAt: user.createdAt,
   };
 }
 
 async function issueTokens(
-  user: { _id: unknown; email: string; nickname: string; createdAt: Date },
+  user: AuthUserRecord,
   config: AppConfig,
 ): Promise<AuthResult> {
   const accessToken = await createAccessToken(
-    { userId: String(user._id), email: user.email },
+    { userId: String(user._id) },
     config,
   );
   const refreshToken = createRefreshToken();
@@ -65,18 +70,32 @@ async function issueTokens(
   };
 }
 
+function identityFilter(identifier: RegisterInput["identifier"] | LoginInput["identifier"]) {
+  return identifier.type === "email"
+    ? { email: identifier.value }
+    : { phone: identifier.value };
+}
+
+function defaultNickname(identifier: RegisterInput["identifier"]): string {
+  if (identifier.type === "email") {
+    return identifier.value.split("@")[0] || "Memo 用户";
+  }
+  return `用户${identifier.value.slice(-4)}`;
+}
+
 export async function register(input: RegisterInput, config: AppConfig): Promise<AuthResult> {
-  const existing = await UserModel.exists({ email: input.email });
+  const filter = identityFilter(input.identifier);
+  const existing = await UserModel.exists(filter);
   if (existing) {
-    throw new AppError(409, "EMAIL_EXISTS", "该邮箱已注册");
+    throw new AppError(409, "ACCOUNT_EXISTS", "该手机号或邮箱已注册");
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
   try {
     const user = await UserModel.create({
-      email: input.email,
+      ...filter,
       passwordHash,
-      nickname: input.nickname ?? input.email.split("@")[0] ?? "Memo 用户",
+      nickname: input.nickname ?? defaultNickname(input.identifier),
     });
     return issueTokens(user, config);
   } catch (error: unknown) {
@@ -86,16 +105,18 @@ export async function register(input: RegisterInput, config: AppConfig): Promise
       "code" in error &&
       error.code === 11000
     ) {
-      throw new AppError(409, "EMAIL_EXISTS", "该邮箱已注册");
+      throw new AppError(409, "ACCOUNT_EXISTS", "该手机号或邮箱已注册");
     }
     throw error;
   }
 }
 
 export async function login(input: LoginInput, config: AppConfig): Promise<AuthResult> {
-  const user = await UserModel.findOne({ email: input.email }).select("+passwordHash");
+  const user = await UserModel.findOne(identityFilter(input.identifier)).select(
+    "+passwordHash",
+  );
   if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
-    throw new AppError(401, "INVALID_CREDENTIALS", "邮箱或密码错误");
+    throw new AppError(401, "INVALID_CREDENTIALS", "手机号、邮箱或密码错误");
   }
   return issueTokens(user, config);
 }

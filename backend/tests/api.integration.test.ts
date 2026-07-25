@@ -57,9 +57,9 @@ afterAll(async () => {
   await mongo.stop();
 });
 
-async function register(email = "tester@example.com") {
+async function register(identifier = "tester@example.com") {
   const response = await api.post("/api/v1/auth/register").send({
-    email,
+    identifier,
     password: "Password123",
     nickname: "测试用户",
   });
@@ -97,7 +97,7 @@ describe("注册、登录和令牌刷新", () => {
     expect(me.body.data).not.toHaveProperty("passwordHash");
 
     const login = await api.post("/api/v1/auth/login").send({
-      email: "tester@example.com",
+      identifier: "TESTER@example.com",
       password: "Password123",
     });
     expect(login.status).toBe(200);
@@ -120,9 +120,9 @@ describe("注册、登录和令牌刷新", () => {
     expect(logout.status).toBe(204);
   });
 
-  it("拒绝弱密码、重复邮箱和错误密码", async () => {
+  it("拒绝弱密码、重复账号和错误密码", async () => {
     const weak = await api.post("/api/v1/auth/register").send({
-      email: "tester@example.com",
+      identifier: "tester@example.com",
       password: "123",
     });
     expect(weak.status).toBe(422);
@@ -130,18 +130,57 @@ describe("注册、登录和令牌刷新", () => {
 
     await register();
     const duplicate = await api.post("/api/v1/auth/register").send({
-      email: "tester@example.com",
+      identifier: "tester@example.com",
       password: "Password123",
     });
     expect(duplicate.status).toBe(409);
-    expect(duplicate.body.error.code).toBe("EMAIL_EXISTS");
+    expect(duplicate.body.error.code).toBe("ACCOUNT_EXISTS");
 
     const wrong = await api.post("/api/v1/auth/login").send({
-      email: "tester@example.com",
+      identifier: "tester@example.com",
       password: "WrongPassword1",
     });
     expect(wrong.status).toBe(401);
     expect(wrong.body.error.code).toBe("INVALID_CREDENTIALS");
+  });
+
+  it("支持中国手机号注册、规范化、登录和重复校验", async () => {
+    const registered = await register("138 0013 8000");
+    expect(registered.accessToken).toBeTypeOf("string");
+
+    const me = await api
+      .get("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${registered.accessToken}`);
+    expect(me.status).toBe(200);
+    expect(me.body.data.phone).toBe("+8613800138000");
+    expect(me.body.data.email).toBeNull();
+
+    const login = await api.post("/api/v1/auth/login").send({
+      identifier: "+86 138-0013-8000",
+      password: "Password123",
+    });
+    expect(login.status).toBe(200);
+
+    const duplicate = await api.post("/api/v1/auth/register").send({
+      identifier: "8613800138000",
+      password: "Password123",
+    });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error.code).toBe("ACCOUNT_EXISTS");
+  });
+
+  it("拒绝无效手机号或邮箱", async () => {
+    const invalidPhone = await api.post("/api/v1/auth/register").send({
+      identifier: "12345",
+      password: "Password123",
+    });
+    expect(invalidPhone.status).toBe(422);
+
+    const invalidEmail = await api.post("/api/v1/auth/register").send({
+      identifier: "not-an-email@",
+      password: "Password123",
+    });
+    expect(invalidEmail.status).toBe(422);
   });
 });
 

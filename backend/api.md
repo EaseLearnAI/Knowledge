@@ -44,11 +44,17 @@
 
 ```json
 {
-  "email": "user@example.com",
+  "identifier": "user@example.com",
   "password": "Password123",
   "nickname": "沐阳"
 }
 ```
+
+`identifier` 同时支持：
+
+- 邮箱，例如 `user@example.com`；
+- 中国大陆手机号，例如 `13800138000`，服务端会规范化为 `+8613800138000`；
+- 国际 E.164 手机号，例如 `+14155552671`。
 
 成功 `201`：
 
@@ -59,6 +65,7 @@
     "user": {
       "id": "687...",
       "email": "user@example.com",
+      "phone": null,
       "nickname": "沐阳",
       "createdAt": "2026-07-19T09:00:00.000Z"
     },
@@ -73,8 +80,8 @@
 
 | HTTP | code | 场景 |
 |---:|---|---|
-| 409 | `EMAIL_EXISTS` | 邮箱已注册 |
-| 422 | `VALIDATION_ERROR` | 邮箱错误、密码少于 8 位或不含字母/数字 |
+| 409 | `ACCOUNT_EXISTS` | 手机号或邮箱已注册 |
+| 422 | `VALIDATION_ERROR` | 手机号/邮箱错误、密码少于 8 位或不含字母/数字 |
 
 ### 2.2 登录
 
@@ -84,7 +91,7 @@
 
 ```json
 {
-  "email": "user@example.com",
+  "identifier": "13800138000",
   "password": "Password123"
 }
 ```
@@ -95,7 +102,7 @@
 
 | HTTP | code | 场景 |
 |---:|---|---|
-| 401 | `INVALID_CREDENTIALS` | 邮箱或密码错误 |
+| 401 | `INVALID_CREDENTIALS` | 手机号、邮箱或密码错误 |
 | 422 | `VALIDATION_ERROR` | 参数格式错误 |
 
 ### 2.3 刷新登录态

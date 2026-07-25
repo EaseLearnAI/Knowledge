@@ -1,7 +1,8 @@
 import { model, Schema } from "mongoose";
 
 export type UserRecord = {
-  email: string;
+  email?: string;
+  phone?: string;
   passwordHash: string;
   nickname: string;
   createdAt: Date;
@@ -12,10 +13,17 @@ const userSchema = new Schema<UserRecord>(
   {
     email: {
       type: String,
-      required: true,
       trim: true,
       lowercase: true,
       unique: true,
+      sparse: true,
+      index: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
       index: true,
     },
     passwordHash: { type: String, required: true, select: false },

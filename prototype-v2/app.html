@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Memo · 可交互原型 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +16,7 @@
     margin: 0; padding: 0; width: 100%; height: 100%;
     background: #FFFFFF; overflow: hidden;
     font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    touch-action: manipulation;
   }
   #app { position: fixed; inset: 0; }
   /* 每个页面：全屏铺开，仅激活项显示 */
@@ -960,6 +961,138 @@
     color: var(--ink-900);
     box-shadow: var(--shadow-xs);
     font-weight: 500;
+  }
+
+/* ===== 13/14-auth ===== */
+.auth-screen .auth-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 34px 28px calc(var(--home-bar) + 24px);
+    overflow-y: auto;
+    background: var(--paper-50);
+  }
+.auth-screen .auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+.auth-screen .auth-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+  }
+.auth-screen .auth-brand-name {
+    font-family: var(--font-display);
+    font-size: 25px;
+    font-weight: 600;
+    letter-spacing: -0.7px;
+  }
+.auth-screen .auth-kicker {
+    color: var(--accent-500);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+.auth-screen h1 {
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+.auth-screen .auth-subtitle {
+    color: var(--ink-500);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+.auth-screen .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+.auth-screen .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+.auth-screen .auth-field label {
+    font-size: 12px;
+    color: var(--ink-700);
+    font-weight: 600;
+  }
+.auth-screen .auth-field input {
+    width: 100%;
+    height: 52px;
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    padding: 0 16px;
+    background: var(--paper-50);
+    font-size: 16px;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  }
+.auth-screen .auth-field input:focus {
+    border-color: var(--ink-900);
+    box-shadow: 0 0 0 3px rgba(15, 15, 14, 0.08);
+  }
+.auth-screen .auth-hint {
+    color: var(--ink-400);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+.auth-screen .auth-error {
+    min-height: 20px;
+    color: #B42318;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+.auth-screen .auth-submit {
+    height: 52px;
+    border-radius: 14px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: opacity var(--t-fast), transform var(--t-fast);
+  }
+.auth-screen .auth-submit:active { transform: scale(0.985); }
+.auth-screen .auth-submit[disabled] { opacity: 0.5; }
+.auth-screen .auth-switch {
+    margin-top: auto;
+    padding-top: 28px;
+    text-align: center;
+    color: var(--ink-500);
+    font-size: 13px;
+  }
+.auth-screen .auth-switch button {
+    color: var(--ink-900);
+    font-weight: 700;
+    padding: 10px 4px;
+  }
+.auth-screen .auth-service-note {
+    margin-top: 12px;
+    text-align: center;
+    color: var(--ink-400);
+    font-size: 10px;
+    line-height: 1.5;
   }
 
 /* ===== 06-detail-article ===== */
@@ -3445,9 +3578,7 @@
             下一步
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
-          <div class="signin">
-            已有账号？<a>登录</a>
-          </div>
+          <div class="signin" data-auth-account-status></div>
         </div>
       </div>
       <div class="home-indicator"></div>
@@ -3772,6 +3903,76 @@
     </div>
   </div>
 </section>
+
+<section class="screen auth-screen" id="s-13-auth-login" data-id="13-auth-login">
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="right"></div></div>
+      <main class="auth-shell">
+        <div class="auth-brand">
+          <div class="auth-mark">M</div>
+          <div class="auth-brand-name">Memo</div>
+        </div>
+        <div class="auth-kicker">Welcome back</div>
+        <h1>欢迎回来</h1>
+        <p class="auth-subtitle">登录后继续使用你的个人知识库。</p>
+        <form class="auth-form" data-auth-form="login">
+          <div class="auth-field">
+            <label for="memo-login-identifier">手机号或者邮箱</label>
+            <input id="memo-login-identifier" name="identifier" type="text" inputmode="email" autocomplete="username" enterkeyhint="next" placeholder="手机号或者邮箱" aria-label="登录手机号或者邮箱" autocorrect="off" autocapitalize="none" spellcheck="false" required>
+          </div>
+          <div class="auth-field">
+            <label for="memo-login-password">密码</label>
+            <input id="memo-login-password" name="password" type="password" autocomplete="current-password" enterkeyhint="done" placeholder="输入密码" required>
+          </div>
+          <div class="auth-error" role="alert" aria-live="polite"></div>
+          <button class="auth-submit" type="submit">登录</button>
+        </form>
+        <div class="auth-switch">还没有账号？<button type="button" data-auth-route="register">立即注册</button></div>
+        <div class="auth-service-note">账号仅用于身份验证，收藏与对话仍保存在你的设备上。</div>
+      </main>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen auth-screen" id="s-14-auth-register" data-id="14-auth-register">
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="right"></div></div>
+      <main class="auth-shell">
+        <div class="auth-brand">
+          <div class="auth-mark">M</div>
+          <div class="auth-brand-name">Memo</div>
+        </div>
+        <div class="auth-kicker">Create account</div>
+        <h1>创建你的 Memo</h1>
+        <p class="auth-subtitle">用一个账号保存登录状态，开始建立自己的知识库。</p>
+        <form class="auth-form" data-auth-form="register">
+          <div class="auth-field">
+            <label for="memo-register-nickname">昵称</label>
+            <input id="memo-register-nickname" name="nickname" type="text" autocomplete="nickname" enterkeyhint="next" maxlength="40" placeholder="怎么称呼你">
+          </div>
+          <div class="auth-field">
+            <label for="memo-register-identifier">手机号或者邮箱</label>
+            <input id="memo-register-identifier" name="identifier" type="text" inputmode="email" autocomplete="username" enterkeyhint="next" placeholder="手机号或者邮箱" aria-label="注册手机号或者邮箱" autocorrect="off" autocapitalize="none" spellcheck="false" required>
+          </div>
+          <div class="auth-field">
+            <label for="memo-register-password">密码</label>
+            <input id="memo-register-password" name="password" type="password" autocomplete="off" enterkeyhint="done" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="至少 8 位" minlength="8" required>
+            <div class="auth-hint">至少 8 位，并同时包含字母和数字。</div>
+          </div>
+          <div class="auth-error" role="alert" aria-live="polite"></div>
+          <button class="auth-submit" type="submit">创建账号</button>
+        </form>
+        <div class="auth-switch">已有账号？<button type="button" data-auth-route="login">直接登录</button></div>
+      </main>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</section>
 </div>
 
 <script>
@@ -3789,6 +3990,8 @@
     { id: '10-unsupported', title: '不支持类型' },
     { id: '11-edit-tags', title: '编辑 Tag' },
     { id: '12-ai-empty', title: 'AI · 空状态' },
+    { id: '13-auth-login', title: '登录' },
+    { id: '14-auth-register', title: '注册' },
   ];
   const idxOf = id => SCREENS.findIndex(s => s.id === id);
   const rootOf = id => document.getElementById('s-' + id);
