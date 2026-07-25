@@ -38,6 +38,7 @@
     transform-origin: center center;
   }
   .screen .phone-screen { border-radius: 0; }
+  .phase-two-ai { display: none !important; }
   /* 可点击元素的手型（增强可交互感，不改布局） */
   .screen [data-nav] { cursor: pointer; }
 </style>
@@ -2709,7 +2710,7 @@
           <div class="add-circle"><i class="fa-solid fa-plus" style="font-size:22px;"></i></div>
           <span class="tab-label">添加</span>
         </div>
-        <div class="tab-item">
+        <div class="tab-item phase-two-ai" aria-hidden="true">
           <i class="fa-solid fa-message tab-icon"></i>
           <span>AI 问答</span>
         </div>
@@ -3023,7 +3024,7 @@
         <div class="icon-btn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
-        <button class="ask-btn">
+        <button class="ask-btn phase-two-ai" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           基于这篇问 AI
         </button>
@@ -3033,7 +3034,7 @@
   </div>
 </section>
 
-<section class="screen" id="s-05-ai-chat" data-id="05-ai-chat">
+<section class="screen phase-two-ai" id="s-05-ai-chat" data-id="05-ai-chat" aria-hidden="true">
 <div class="phone-frame">
     <div class="dynamic-island"></div>
     <div class="phone-screen">
@@ -3272,7 +3273,7 @@
 
       <div class="float-actions">
         <div class="float-btn"><i class="fa-solid fa-quote-left"></i></div>
-        <div class="float-btn"><i class="fa-solid fa-message"></i></div>
+        <div class="float-btn phase-two-ai" aria-hidden="true"><i class="fa-solid fa-message"></i></div>
         <div class="float-btn danger"><i class="fa-regular fa-trash-can"></i></div>
       </div>
 
@@ -3752,7 +3753,7 @@
   </div>
 </section>
 
-<section class="screen" id="s-12-ai-empty" data-id="12-ai-empty">
+<section class="screen phase-two-ai" id="s-12-ai-empty" data-id="12-ai-empty" aria-hidden="true">
 <div class="phone-frame">
     <div class="dynamic-island"></div>
     <div class="phone-screen">
@@ -3982,14 +3983,12 @@
     { id: '02-home-empty', title: '空状态' },
     { id: '03-add', title: '添加内容' },
     { id: '04-detail-podcast', title: '播客详情' },
-    { id: '05-ai-chat', title: 'AI 对话' },
     { id: '06-detail-article', title: '文章详情' },
     { id: '07-processing', title: '解析中' },
     { id: '08-search', title: '搜索结果' },
     { id: '09-onboarding', title: '引导' },
     { id: '10-unsupported', title: '不支持类型' },
     { id: '11-edit-tags', title: '编辑 Tag' },
-    { id: '12-ai-empty', title: 'AI · 空状态' },
     { id: '13-auth-login', title: '登录' },
     { id: '14-auth-register', title: '注册' },
   ];
@@ -4126,7 +4125,7 @@
     const root = rootOf(id);
     if (!root) return;
     const tabs = root.querySelectorAll('.tab-item');
-    if (tabs.length) { bind(tabs[0], nav('01-home')); bind(tabs[tabs.length - 1], nav('12-ai-empty')); }
+    if (tabs.length) bind(tabs[0], nav('01-home'));
     bind(root.querySelector('.tab-add'), nav('03-add'));
 
     switch (id) {
@@ -4151,14 +4150,10 @@
         break;
       case '04-detail-podcast':
         bind(root.querySelector('.hero-nav .icon-btn'), back);
-        bind(root.querySelector('.ask-btn'), nav('05-ai-chat'));
-        onText(root, ['基于这篇问 AI'], nav('05-ai-chat'));
         onText(root, ['＋ 添加', '添加'], nav('11-edit-tags'), ['.action', 'span']);
         break;
       case '06-detail-article':
         onText(root, ['返回'], back);
-        bind(root.querySelector('.ask-btn'), nav('05-ai-chat'));
-        onText(root, ['基于这篇问 AI', '问 AI'], nav('05-ai-chat'));
         onText(root, ['添加'], nav('11-edit-tags'), ['.tag', '.action', 'span']);
         break;
       case '05-ai-chat':

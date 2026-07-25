@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  const PHASE_TWO_AI_SCREENS = new Set(["05-ai-chat", "12-ai-empty"]);
+
   const state = {
     items: [],
     conversations: [],
@@ -47,6 +49,9 @@
 
   const route = (requestedID) => {
     let id = requestedID;
+    if (PHASE_TWO_AI_SCREENS.has(id)) {
+      id = state.items.length ? "01-home" : "02-home-empty";
+    }
     if (!state.preferences.hasCompletedOnboarding && id !== "09-onboarding") {
       id = "09-onboarding";
     } else if (
@@ -73,6 +78,12 @@
     state.items.filter((item) =>
       ["queued", "fetching", "extracting", "enriching"].includes(item.status),
     );
+
+  function prepareMVPExperience() {
+    document.querySelectorAll(".phase-two-ai").forEach((element) => {
+      element.remove();
+    });
+  }
 
   function replaceItem(nextItem) {
     const index = state.items.findIndex((item) => item.id === nextItem.id);
@@ -1029,15 +1040,6 @@
         return;
       }
 
-      if (
-        target.closest(".ask-btn") ||
-        target.closest("#s-06-detail-article .float-actions .float-btn:nth-child(2)")
-      ) {
-        intercept(event);
-        await ask("请总结这篇内容，并告诉我最值得记住的三点。", state.currentItemID);
-        return;
-      }
-
       const podcastFooterActions = root("04-detail-podcast")?.querySelectorAll(
         ".action-bar .icon-btn",
       );
@@ -1051,9 +1053,7 @@
         await toggleFavorite();
         return;
       }
-      if (
-        target.closest("#s-06-detail-article .float-actions .float-btn:nth-child(3)")
-      ) {
+      if (target.closest("#s-06-detail-article .float-actions .float-btn:last-child")) {
         intercept(event);
         await deleteCurrentItem();
         return;
@@ -1316,6 +1316,7 @@
 
   async function bootstrap() {
     try {
+      prepareMVPExperience();
       const snapshot = await native("bootstrap");
       hydrateSnapshot(snapshot);
       installInputHandlers();

@@ -20,7 +20,7 @@ export class MockVideoProcessor implements VideoProcessor {
       "可靠的内容系统必须保存原始证据，并让每个结论能回到视频时间戳。",
       "视频处理应先获取字幕，没有字幕时再使用 Whisper 做本地转录。",
       "产品需要把转录、摘要、标签和用户笔记分层保存，重新生成不能覆盖用户文字。",
-      "最小可用闭环是添加内容、自动解析、进入收藏库、搜索和基于来源提问。",
+      "最小可用闭环是添加内容、自动解析、进入收藏库、查看摘要并搜索。",
     ];
     const segments = lines.map((text, index) => ({
       startMs: index * 20_000,

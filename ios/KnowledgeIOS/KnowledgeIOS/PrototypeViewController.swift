@@ -11,14 +11,12 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         "02-home-empty",
         "03-add",
         "04-detail-podcast",
-        "05-ai-chat",
         "06-detail-article",
         "07-processing",
         "08-search",
         "09-onboarding",
         "10-unsupported",
         "11-edit-tags",
-        "12-ai-empty",
         "13-auth-login",
         "14-auth-register",
     ]
@@ -162,21 +160,14 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       exposeButton('#s-04-detail-podcast .hero-nav .right .icon-btn:first-child', '分享');
       exposeButton('#s-04-detail-podcast .hero-nav .right .icon-btn:nth-child(2)', '打开原始内容');
       exposeButton('#s-04-detail-podcast .hero-play', '打开原内容播放');
-      exposeButton('#s-04-detail-podcast .ask-btn', '基于这篇问 AI');
       exposeButton('#s-04-detail-podcast .action-bar .icon-btn:first-child', '从收藏中移除');
       exposeButton('#s-04-detail-podcast .action-bar .icon-btn:nth-child(2)', '标记为喜欢');
       exposeButton('#s-06-detail-article .nav-pill', '返回');
-      exposeButton('#s-06-detail-article .ask-btn', '基于这篇问 AI');
       exposeButton('#s-06-detail-article .nav-actions .nav-btn:first-child', '分享');
       exposeButton('#s-06-detail-article .nav-actions .nav-btn:nth-child(2)', '更多');
       exposeButton('#s-06-detail-article .tag-section .edit', '编辑 Tag');
       exposeButton('#s-06-detail-article .float-actions .float-btn:first-child', '查看引用');
-      exposeButton('#s-06-detail-article .float-actions .float-btn:nth-child(2)', '基于这篇问 AI');
-      exposeButton('#s-06-detail-article .float-actions .float-btn:nth-child(3)', '删除收藏');
-      exposeButton('#s-12-ai-empty .ai-head-r .icon-btn:first-child', '对话历史');
-      exposeButton('#s-12-ai-empty .ai-head-r .icon-btn:nth-child(2)', '设置');
-      exposeButton('#s-12-ai-empty .side-new', '新对话');
-      exposeButton('#s-12-ai-empty .side-close', '关闭对话历史');
+      exposeButton('#s-06-detail-article .float-actions .float-btn:last-child', '删除收藏');
       exposeButton('#s-10-unsupported .alert-actions .btn:first-child', '不保留');
       exposeButton('#s-10-unsupported .alert-actions .btn:nth-child(2)', '保留链接');
       exposeButton('#s-11-edit-tags .btn-save', '保存修改');
@@ -189,16 +180,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       labelInput('#s-03-add .sheet-input', '内容链接');
       labelInput('#s-08-search .search-input input', '搜索收藏');
       labelInput('#s-11-edit-tags .add-tag-input input', '添加新 Tag');
-      labelInput('#s-05-ai-chat .ai-input input', '向 Memo AI 提问');
-      labelInput('#s-12-ai-empty .composer input', '向知识助手提问');
       labelInput('#s-13-auth-login input[name="identifier"]', '登录手机号或者邮箱');
       labelInput('#s-13-auth-login input[name="password"]', '登录密码');
       labelInput('#s-14-auth-register input[name="nickname"]', '昵称');
       labelInput('#s-14-auth-register input[name="identifier"]', '注册手机号或者邮箱');
       labelInput('#s-14-auth-register input[name="password"]', '注册密码');
-
-      exposeButton('#s-05-ai-chat .send-btn', '发送问题');
-      exposeButton('#s-12-ai-empty .composer-send', '发送问题');
 
       document.querySelectorAll('.tab-add').forEach((element) => {
         element.setAttribute('role', 'button');

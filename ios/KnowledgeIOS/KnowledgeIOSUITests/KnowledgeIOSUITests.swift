@@ -106,36 +106,22 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(webView.staticTexts["产品"].waitForExistence(timeout: 5))
     }
 
-    func testGroundedAIAnswerUsesSavedContent() {
+    func testMVPDetailShowsAnalysisWithoutAIChat() {
         let app = launchAndIngestExample()
         let webView = app.webViews["prototype-webview"]
 
-        let askButton = webView.buttons["基于这篇问 AI"]
-        XCTAssertTrue(askButton.waitForExistence(timeout: 5))
-        askButton.tap()
+        let title = webView.staticTexts["Example Domain"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertFalse(webView.buttons["基于这篇问 AI"].exists)
+        XCTAssertFalse(webView.staticTexts["Memo AI"].exists)
 
-        let memoTitle = webView.staticTexts["Memo AI"]
-        XCTAssertTrue(memoTitle.waitForExistence(timeout: 5))
-        XCTAssertGreaterThanOrEqual(memoTitle.frame.minY, webView.frame.minY + 44)
-        let groundedAnswer = webView.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS %@", "只整理了你已收藏的原文")
-        ).firstMatch
-        XCTAssertTrue(groundedAnswer.waitForExistence(timeout: 20))
-
-        let frameBeforeDoubleTap = groundedAnswer.frame
-        groundedAnswer.doubleTap()
-        let frameAfterDoubleTap = groundedAnswer.frame
+        let frameBeforeDoubleTap = title.frame
+        title.doubleTap()
+        let frameAfterDoubleTap = title.frame
         XCTAssertEqual(frameAfterDoubleTap.midX, frameBeforeDoubleTap.midX, accuracy: 1)
         XCTAssertEqual(frameAfterDoubleTap.midY, frameBeforeDoubleTap.midY, accuracy: 1)
         XCTAssertEqual(frameAfterDoubleTap.width, frameBeforeDoubleTap.width, accuracy: 1)
         XCTAssertEqual(frameAfterDoubleTap.height, frameBeforeDoubleTap.height, accuracy: 1)
-
-        let questionField = webView.textFields["向 Memo AI 提问"]
-        XCTAssertTrue(questionField.waitForExistence(timeout: 3))
-        questionField.tap()
-        questionField.typeText("More")
-        webView.buttons["发送问题"].tap()
-        XCTAssertTrue(app.toolbars.buttons["Done"].waitForNonExistence(timeout: 3))
     }
 
     func testRegistrationLogoutAndLoginFlow() {
