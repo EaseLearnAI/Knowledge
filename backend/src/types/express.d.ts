@@ -4,7 +4,6 @@ declare global {
       requestId: string;
       auth?: {
         userId: string;
-        email: string;
       };
     }
   }

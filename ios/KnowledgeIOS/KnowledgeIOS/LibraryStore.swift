@@ -35,14 +35,15 @@ actor LibraryStore {
         }
     }
 
-    func snapshot(modelStatus: String) -> AppSnapshot {
+    func snapshot(modelStatus: String, auth: AuthSnapshot) -> AppSnapshot {
         AppSnapshot(
             items: state.items.sorted { $0.createdAt > $1.createdAt },
             conversations: state.conversations.sorted {
                 $0.updatedAt > $1.updatedAt
             },
             preferences: state.preferences,
-            modelStatus: modelStatus
+            modelStatus: modelStatus,
+            auth: auth
         )
     }
 

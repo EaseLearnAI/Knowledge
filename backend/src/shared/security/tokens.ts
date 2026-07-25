@@ -5,7 +5,6 @@ import { AppError } from "../errors/app-error.js";
 
 export type AccessTokenPayload = {
   userId: string;
-  email: string;
 };
 
 function secret(config: AppConfig): Uint8Array {
@@ -16,7 +15,7 @@ export async function createAccessToken(
   payload: AccessTokenPayload,
   config: AppConfig,
 ): Promise<string> {
-  return new SignJWT({ email: payload.email })
+  return new SignJWT()
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(payload.userId)
     .setIssuedAt()
@@ -32,10 +31,10 @@ export async function verifyAccessToken(
     const { payload } = await jwtVerify(token, secret(config), {
       algorithms: ["HS256"],
     });
-    if (!payload.sub || typeof payload.email !== "string") {
+    if (!payload.sub) {
       throw new Error("invalid payload");
     }
-    return { userId: payload.sub, email: payload.email };
+    return { userId: payload.sub };
   } catch {
     throw new AppError(401, "TOKEN_INVALID", "访问令牌无效或已过期");
   }

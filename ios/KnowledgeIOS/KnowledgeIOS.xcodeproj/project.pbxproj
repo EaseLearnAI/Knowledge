@@ -16,6 +16,7 @@
 		5D6E87029709D2CFD0803F8F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7D51FF88A1892AD4E16ED /* AppDelegate.swift */; };
 		776B8A2058BF6374A6BAB199 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE22F58087E9AA9A5653128 /* Models.swift */; };
 		D377D7D2AAF4A7DB4B44A164 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603FB3B2A6E6DBF60062A5B7 /* LibraryStore.swift */; };
+		E5F13B6B42FA952B75E95851 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01141A762D022B851673CE8A /* AuthService.swift */; };
 		E992E1255CD148196551B79B /* NativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78AE0EFC2CE6D38DB42DCBA /* NativeBridge.swift */; };
 		EEF8CC9E8A5CBB5A77B72F4F /* AppRuntime.js in Resources */ = {isa = PBXBuildFile; fileRef = CC033250248A849FBF6F678A /* AppRuntime.js */; };
 		EFD39F78E521571C8C0BFE18 /* app.html in Resources */ = {isa = PBXBuildFile; fileRef = 990A87DCBB7A44C6934427F1 /* app.html */; };
@@ -33,6 +34,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		01141A762D022B851673CE8A /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		0A491E50BBA01B036B8F7532 /* ContentProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProcessor.swift; sourceTree = "<group>"; };
 		36F6059DB5E067FDCE6FAD46 /* styles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = styles; path = "../../prototype-v2/styles"; sourceTree = SOURCE_ROOT; };
 		3DA1CCE6BF1EF0BB9C6B4353 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
@@ -47,6 +49,7 @@
 		D1D0332A38229864C2DBFB48 /* KnowledgeIOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeIOSUITests.swift; sourceTree = "<group>"; };
 		D2E2C380722349006134AFC7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		D6F7B45D9DFD3C7B9D4AA7A2 /* KnowledgeIOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KnowledgeIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E66549C56E4ECA71ADC312BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FE9DA2C56C0A2C6341B365BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -58,7 +61,9 @@
 				BDB7D51FF88A1892AD4E16ED /* AppDelegate.swift */,
 				CC033250248A849FBF6F678A /* AppRuntime.js */,
 				FE9DA2C56C0A2C6341B365BA /* Assets.xcassets */,
+				01141A762D022B851673CE8A /* AuthService.swift */,
 				0A491E50BBA01B036B8F7532 /* ContentProcessor.swift */,
+				E66549C56E4ECA71ADC312BA /* Info.plist */,
 				603FB3B2A6E6DBF60062A5B7 /* LibraryStore.swift */,
 				9AE22F58087E9AA9A5653128 /* Models.swift */,
 				A78AE0EFC2CE6D38DB42DCBA /* NativeBridge.swift */,
@@ -212,6 +217,7 @@
 			files = (
 				4CF71BF48449AD4831579E27 /* AIService.swift in Sources */,
 				5D6E87029709D2CFD0803F8F /* AppDelegate.swift in Sources */,
+				E5F13B6B42FA952B75E95851 /* AuthService.swift in Sources */,
 				30F0404BCF1D874DEE1DBADC /* ContentProcessor.swift in Sources */,
 				D377D7D2AAF4A7DB4B44A164 /* LibraryStore.swift in Sources */,
 				776B8A2058BF6374A6BAB199 /* Models.swift in Sources */,
@@ -281,17 +287,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Memo;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
-					UIInterfaceOrientationPortrait,
-				);
-				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
+				INFOPLIST_FILE = KnowledgeIOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -435,17 +431,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Memo;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
-					UIInterfaceOrientationPortrait,
-				);
-				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
+				INFOPLIST_FILE = KnowledgeIOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

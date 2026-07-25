@@ -1,6 +1,10 @@
 import UIKit
 import WebKit
 
+private final class MemoWebView: WKWebView {
+    override var inputAccessoryView: UIView? { nil }
+}
+
 final class PrototypeViewController: UIViewController, WKNavigationDelegate {
     private static let validScreenIDs: Set<String> = [
         "01-home",
@@ -15,6 +19,8 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         "10-unsupported",
         "11-edit-tags",
         "12-ai-empty",
+        "13-auth-login",
+        "14-auth-register",
     ]
 
     private lazy var webView: WKWebView = {
@@ -44,7 +50,7 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
             name: "nativeBridge"
         )
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = MemoWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.isOpaque = false
         webView.backgroundColor = .white
@@ -52,6 +58,12 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
+        webView.scrollView.keyboardDismissMode = .interactive
+        webView.inputAssistantItem.leadingBarButtonGroups = []
+        webView.inputAssistantItem.trailingBarButtonGroups = []
+        webView.scrollView.minimumZoomScale = 1
+        webView.scrollView.maximumZoomScale = 1
+        webView.scrollView.pinchGestureRecognizer?.isEnabled = false
         webView.allowsBackForwardNavigationGestures = false
         webView.allowsLinkPreview = false
         webView.accessibilityIdentifier = "prototype-webview"
@@ -81,6 +93,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         :root {
           --font-body: 'Memo CJK Sans', 'Geist', -apple-system,
             'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+          --memo-safe-top: env(safe-area-inset-top);
+          --memo-safe-bottom: env(safe-area-inset-bottom);
+          --home-bar: max(34px, var(--memo-safe-bottom));
+          --memo-viewport-height: 100dvh;
+          --memo-viewport-offset-top: 0px;
         }
         html, body, button, input, textarea {
           font-family: 'Memo CJK Sans', 'Geist', -apple-system,
@@ -88,8 +105,18 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         }
         .screen .phone-frame {
           width: 100vw !important;
-          height: 100vh !important;
+          height: var(--memo-viewport-height) !important;
+          position: absolute !important;
+          inset: var(--memo-viewport-offset-top) 0 auto !important;
           transform: none !important;
+        }
+        .screen .phone-screen {
+          padding-top: var(--memo-safe-top) !important;
+        }
+        .screen .dynamic-island,
+        .screen .status-bar,
+        .screen .home-indicator {
+          display: none !important;
         }
         #s-06-detail-article .top-nav-bar {
           position: sticky !important;
@@ -105,6 +132,21 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         }
       `;
       document.head.appendChild(style);
+
+      const syncVisualViewport = () => {
+        const viewport = window.visualViewport;
+        document.documentElement.style.setProperty(
+          '--memo-viewport-height',
+          `${viewport?.height || window.innerHeight}px`
+        );
+        document.documentElement.style.setProperty(
+          '--memo-viewport-offset-top',
+          `${viewport?.offsetTop || 0}px`
+        );
+      };
+      syncVisualViewport();
+      window.visualViewport?.addEventListener('resize', syncVisualViewport);
+      window.visualViewport?.addEventListener('scroll', syncVisualViewport);
 
       const exposeButton = (selector, label) => {
         const element = document.querySelector(selector);
@@ -149,6 +191,14 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       labelInput('#s-11-edit-tags .add-tag-input input', '添加新 Tag');
       labelInput('#s-05-ai-chat .ai-input input', '向 Memo AI 提问');
       labelInput('#s-12-ai-empty .composer input', '向知识助手提问');
+      labelInput('#s-13-auth-login input[name="identifier"]', '登录手机号或者邮箱');
+      labelInput('#s-13-auth-login input[name="password"]', '登录密码');
+      labelInput('#s-14-auth-register input[name="nickname"]', '昵称');
+      labelInput('#s-14-auth-register input[name="identifier"]', '注册手机号或者邮箱');
+      labelInput('#s-14-auth-register input[name="password"]', '注册密码');
+
+      exposeButton('#s-05-ai-chat .send-btn', '发送问题');
+      exposeButton('#s-12-ai-empty .composer-send', '发送问题');
 
       document.querySelectorAll('.tab-add').forEach((element) => {
         element.setAttribute('role', 'button');
@@ -181,6 +231,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadPrototype()
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        applySafeAreaInsets()
     }
 
     private func loadPrototype() {
@@ -225,6 +280,28 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         }
         webView.evaluateJavaScript(
             "window.MemoRuntime?.nativeEvent(\(json));"
+        )
+    }
+
+    func dismissKeyboard() {
+        webView.evaluateJavaScript(
+            "document.activeElement instanceof HTMLElement && document.activeElement.blur();"
+        ) { [weak self] _, _ in
+            self?.webView.endEditing(true)
+            self?.view.endEditing(true)
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        applySafeAreaInsets()
+    }
+
+    private func applySafeAreaInsets() {
+        let top = view.safeAreaInsets.top
+        let bottom = view.safeAreaInsets.bottom
+        webView.evaluateJavaScript(
+            "document.documentElement.style.setProperty('--memo-safe-top', '\(top)px');" +
+            "document.documentElement.style.setProperty('--memo-safe-bottom', '\(bottom)px');"
         )
     }
 

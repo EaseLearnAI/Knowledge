@@ -329,11 +329,12 @@ components:
               format: uuid
     RegisterRequest:
       type: object
-      required: [email, password]
+      required: [identifier, password]
       properties:
-        email:
+        identifier:
           type: string
-          format: email
+          description: 邮箱、中国大陆手机号或 E.164 国际手机号
+          examples: [user@example.com, "13800138000", "+14155552671"]
         password:
           type: string
           minLength: 8
@@ -343,11 +344,11 @@ components:
           maxLength: 40
     LoginRequest:
       type: object
-      required: [email, password]
+      required: [identifier, password]
       properties:
-        email:
+        identifier:
           type: string
-          format: email
+          description: 注册时使用的手机号或邮箱
         password:
           type: string
     AuthResponse:
