@@ -8,7 +8,9 @@
 
 ## 1. 一句话说明这个项目
 
-Memo 是一个“把网页、文章、播客和视频变成可搜索、可总结、可继续提问的个人知识库”的产品。目前仓库中已经包含：
+Memo 一期是一个“把网页、文章、播客和视频变成可搜索、可总结的个人知识库”的产品。目前主分支包含：
+
+> 上线范围说明：一期不提供 AI 问答机器人，只发布内容提取、分析、收藏与搜索闭环。完整问答能力保存在 `codex/phase2-ai-chat`（基线提交 `42dff1c`），用于二期继续开发。
 
 1. 一套与原 HTML 原型同源的可安装 iOS App；
 2. 一套 Node.js + Express + MongoDB 的独立后端；
@@ -29,8 +31,8 @@ Memo 是一个“把网页、文章、播客和视频变成可搜索、可总结
 |---|---|---|
 | 原型 | 已完成 | `prototype-v2` 提供 12 个移动端产品状态及 Web 展示页 |
 | iOS App | 可构建、可运行 | 工程位于 `ios/KnowledgeIOS`，Bundle ID 为 `ai.easelearn.knowledge` |
-| iOS 本地交互 | 已实现 | 添加网页、处理进度、保存、搜索、Tag、收藏、删除、分享、打开原文、知识问答、对话历史、设置与清空数据 |
-| iOS UI 自动化 | 已验证 | 覆盖首次启动、真实链接处理、搜索、Tag、知识问答和设置等 6 条流程 |
+| iOS 本地交互 | 已实现 | 添加网页、处理进度、保存、搜索、Tag、收藏、删除、分享、打开原文、设置与清空数据 |
+| iOS UI 自动化 | 已验证 | 覆盖首次启动、真实链接处理、搜索、Tag、一期无问答入口和设置等流程 |
 | iOS Release Archive | 已生成 | 已生成无签名 Archive，证明 Release 构建链路可通过 |
 | 后端 API | 已实现 | Express 5 + TypeScript + MongoDB/Mongoose |
 | 登录注册 | 已实现 | 密码哈希、JWT Access Token、Refresh Token 轮换与退出 |
@@ -47,22 +49,23 @@ Memo 是一个“把网页、文章、播客和视频变成可搜索、可总结
 
 当前 iOS 工程和后端均可在本机运行，Release 无签名 Archive 也已成功生成。但是公开上架还需要 Apple Developer 签名身份、Provisioning Profile 和 App Store Connect 权限。后端公开部署还需要生产 MongoDB、服务器、域名和 HTTPS。
 
-#### “前后端都完成”不等于“iOS 已经完全接入后端”
+#### “认证已接入”不等于“所有数据已经云端化”
 
-当前 iOS App 是本地优先版本：网页收藏、摘要、Tag、搜索和对话保存在设备中，主要交互不依赖账号和服务器。后端是独立完成并可供客户端接入的服务，提供账号、视频解析、云端内容和日志能力。
+当前 iOS App 已接入后端手机号/邮箱认证：首次打开先完成产品引导，再注册或登录；Access Token 与 Refresh Token 保存在系统 Keychain，并支持会话恢复、刷新和退出。未登录时不会加载收藏、摘要、Tag、搜索和对话，也不能调用原生业务桥接；认证后的内容仍保存在设备中。后端同时提供视频解析、云端内容和日志能力。
 
 也就是说：
 
 - iOS 本地收藏链路是真实可用的；
 - 后端视频解析链路也是真实可用的；
-- 但当前 iOS 页面还没有加入登录页面、Token 管理、视频上传和后端任务订阅；
+- iOS 已加入登录/注册页面、Token 管理和退出登录；
+- 但当前 iOS 还没有接入视频上传和后端任务订阅；
 - `backend/docs/前端接入指南.md` 已经定义了下一步对接方式。
 
-这个拆分是为了遵守“不得修改原有逻辑、通过添加新文件实现”的要求，也避免在后端尚未正式部署时破坏现有 App 的本地可用性。
+认证之外继续保持本地优先，避免在后端尚未正式部署时破坏现有 App 的收藏与问答能力。
 
 #### 当前隐私页描述的是“本地优先 iOS 版本”
 
-隐私支持页面写明“不要求账号、不把收藏发送到自有服务器”，这与当前 iOS 实现一致。后续如果把账号、云同步或服务器视频解析正式接入公开版本，必须同步更新隐私政策和 App Store Privacy 申报，不能继续沿用原文。
+当前 iOS 要求手机号或邮箱账号，但收藏与对话仍不上传自有内容服务器。公开发布前必须把隐私支持页和 App Store Privacy 申报更新为实际认证数据链路；后续接入云同步或服务器视频解析时还需再次更新。
 
 ---
 
@@ -392,7 +395,7 @@ sequenceDiagram
     participant A as Auth API
     participant M as MongoDB
 
-    U->>C: 输入邮箱和密码
+    U->>C: 输入手机号或邮箱和密码
     C->>A: POST /api/v1/auth/register 或 /login
     A->>M: 查询用户 / 保存 bcrypt 密码哈希
     A->>M: 保存 Refresh Token 的哈希
@@ -420,7 +423,8 @@ sequenceDiagram
 
 | 字段 | 作用 |
 |---|---|
-| `email` | 登录标识，唯一索引 |
+| `email` | 可选邮箱登录标识，稀疏唯一索引 |
+| `phone` | 可选 E.164 手机号登录标识，稀疏唯一索引 |
 | `passwordHash` | bcrypt 哈希，默认查询不返回 |
 | `nickname` | 用户昵称 |
 | `createdAt / updatedAt` | 创建和更新时间 |
@@ -627,9 +631,9 @@ sequenceDiagram
 
 ### 7.4 注册与登录
 
-1. 前端提交邮箱、密码和可选昵称；
+1. 前端提交手机号或邮箱、密码和可选昵称；
 2. Zod 校验格式和密码强度；
-3. 服务端检查邮箱唯一性；
+3. 服务端规范化登录标识并检查手机号或邮箱唯一性；
 4. bcrypt 以 cost 12 生成密码哈希；
 5. 创建 User；
 6. 生成 JWT Access Token 和随机 Refresh Token；
@@ -858,9 +862,9 @@ sequenceDiagram
 | 文件 | 作用 |
 |---|---|
 | `src/features/auth/auth.routes.ts` | 注册、登录、刷新、退出和当前用户路由 |
-| `src/features/auth/auth.schemas.ts` | 邮箱、密码、昵称和 Refresh Token 的 Zod 校验 |
+| `src/features/auth/auth.schemas.ts` | 手机号/邮箱标识、密码、昵称和 Refresh Token 的 Zod 校验与规范化 |
 | `src/features/auth/auth.service.ts` | 注册登录业务、bcrypt 校验、Token 签发、轮换和撤销 |
-| `src/features/auth/user.model.ts` | User 的 Mongoose Schema 和唯一邮箱索引 |
+| `src/features/auth/user.model.ts` | User 的 Mongoose Schema，以及手机号和邮箱的稀疏唯一索引 |
 | `src/features/auth/refresh-token.model.ts` | Refresh Token 哈希、过期时间、撤销时间和 TTL 索引 |
 
 ### 9.8 后端视频模块
@@ -1045,25 +1049,24 @@ RUN_REAL_VIDEO_TEST=1 npx vitest run tests/real-local-video.test.ts
 
 ### 11.2 当前限制
 
-1. iOS 还没有正式接入后端账号和视频任务；
+1. iOS 已接入后端账号，但还没有接入视频任务；
 2. 本地进程内串行队列不适合多实例和高并发生产环境；
 3. 上传文件保存在服务器本地磁盘，生产环境应改为对象存储；
 4. 视频平台解析依赖平台页面、Cookie 和下载工具，平台变化可能导致失败；
 5. 默认本地文案质量稳定但不等于大模型的语言质量；
 6. 当前 iOS Archive 无签名，不能直接上传 App Store；
 7. 还没有生产 MongoDB、正式域名、HTTPS、监控告警和备份方案；
-8. 一旦 iOS 接入账号/云端处理，需要更新隐私政策。
+8. 认证接入后必须更新公开隐私政策；云端处理上线时还需按实际数据链路再次更新。
 
 ### 11.3 推荐的下一阶段顺序
 
-#### 第一阶段：把后端接入 iOS
+#### 第一阶段：继续把视频后端接入 iOS
 
-1. 增加登录/注册页面，但不改变现有首页视觉；
-2. 新增 `APIClient`、`AuthStore` 和 Keychain Token 存储；
-3. 新增视频 URL/上传调用；
-4. 将后端任务状态映射到当前 `07-processing` 原型页；
-5. 用 SSE 更新进度，完成后进入现有详情页；
-6. 保留当前本地网页收藏能力，形成“本地网页 + 云端视频”的双路径。
+1. 配置生产认证服务 URL、HTTPS 和正式密钥；
+2. 新增视频 URL/上传调用；
+3. 将后端任务状态映射到当前 `07-processing` 原型页；
+4. 用 SSE 更新进度，完成后进入现有详情页；
+5. 保留当前本地网页收藏能力，形成“本地网页 + 云端视频”的双路径。
 
 #### 第二阶段：生产化后端
 

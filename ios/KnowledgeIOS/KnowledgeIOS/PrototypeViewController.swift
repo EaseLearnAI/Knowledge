@@ -1,20 +1,24 @@
 import UIKit
 import WebKit
 
+private final class MemoWebView: WKWebView {
+    override var inputAccessoryView: UIView? { nil }
+}
+
 final class PrototypeViewController: UIViewController, WKNavigationDelegate {
     private static let validScreenIDs: Set<String> = [
         "01-home",
         "02-home-empty",
         "03-add",
         "04-detail-podcast",
-        "05-ai-chat",
         "06-detail-article",
         "07-processing",
         "08-search",
         "09-onboarding",
         "10-unsupported",
         "11-edit-tags",
-        "12-ai-empty",
+        "13-auth-login",
+        "14-auth-register",
     ]
 
     private lazy var webView: WKWebView = {
@@ -44,7 +48,7 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
             name: "nativeBridge"
         )
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = MemoWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.isOpaque = false
         webView.backgroundColor = .white
@@ -52,6 +56,12 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
+        webView.scrollView.keyboardDismissMode = .interactive
+        webView.inputAssistantItem.leadingBarButtonGroups = []
+        webView.inputAssistantItem.trailingBarButtonGroups = []
+        webView.scrollView.minimumZoomScale = 1
+        webView.scrollView.maximumZoomScale = 1
+        webView.scrollView.pinchGestureRecognizer?.isEnabled = false
         webView.allowsBackForwardNavigationGestures = false
         webView.allowsLinkPreview = false
         webView.accessibilityIdentifier = "prototype-webview"
@@ -81,6 +91,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         :root {
           --font-body: 'Memo CJK Sans', 'Geist', -apple-system,
             'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+          --memo-safe-top: env(safe-area-inset-top);
+          --memo-safe-bottom: env(safe-area-inset-bottom);
+          --home-bar: max(34px, var(--memo-safe-bottom));
+          --memo-viewport-height: 100dvh;
+          --memo-viewport-offset-top: 0px;
         }
         html, body, button, input, textarea {
           font-family: 'Memo CJK Sans', 'Geist', -apple-system,
@@ -88,8 +103,18 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         }
         .screen .phone-frame {
           width: 100vw !important;
-          height: 100vh !important;
+          height: var(--memo-viewport-height) !important;
+          position: absolute !important;
+          inset: var(--memo-viewport-offset-top) 0 auto !important;
           transform: none !important;
+        }
+        .screen .phone-screen {
+          padding-top: var(--memo-safe-top) !important;
+        }
+        .screen .dynamic-island,
+        .screen .status-bar,
+        .screen .home-indicator {
+          display: none !important;
         }
         #s-06-detail-article .top-nav-bar {
           position: sticky !important;
@@ -106,6 +131,21 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       `;
       document.head.appendChild(style);
 
+      const syncVisualViewport = () => {
+        const viewport = window.visualViewport;
+        document.documentElement.style.setProperty(
+          '--memo-viewport-height',
+          `${viewport?.height || window.innerHeight}px`
+        );
+        document.documentElement.style.setProperty(
+          '--memo-viewport-offset-top',
+          `${viewport?.offsetTop || 0}px`
+        );
+      };
+      syncVisualViewport();
+      window.visualViewport?.addEventListener('resize', syncVisualViewport);
+      window.visualViewport?.addEventListener('scroll', syncVisualViewport);
+
       const exposeButton = (selector, label) => {
         const element = document.querySelector(selector);
         if (!element) return;
@@ -120,21 +160,14 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       exposeButton('#s-04-detail-podcast .hero-nav .right .icon-btn:first-child', '分享');
       exposeButton('#s-04-detail-podcast .hero-nav .right .icon-btn:nth-child(2)', '打开原始内容');
       exposeButton('#s-04-detail-podcast .hero-play', '打开原内容播放');
-      exposeButton('#s-04-detail-podcast .ask-btn', '基于这篇问 AI');
       exposeButton('#s-04-detail-podcast .action-bar .icon-btn:first-child', '从收藏中移除');
       exposeButton('#s-04-detail-podcast .action-bar .icon-btn:nth-child(2)', '标记为喜欢');
       exposeButton('#s-06-detail-article .nav-pill', '返回');
-      exposeButton('#s-06-detail-article .ask-btn', '基于这篇问 AI');
       exposeButton('#s-06-detail-article .nav-actions .nav-btn:first-child', '分享');
       exposeButton('#s-06-detail-article .nav-actions .nav-btn:nth-child(2)', '更多');
       exposeButton('#s-06-detail-article .tag-section .edit', '编辑 Tag');
       exposeButton('#s-06-detail-article .float-actions .float-btn:first-child', '查看引用');
-      exposeButton('#s-06-detail-article .float-actions .float-btn:nth-child(2)', '基于这篇问 AI');
-      exposeButton('#s-06-detail-article .float-actions .float-btn:nth-child(3)', '删除收藏');
-      exposeButton('#s-12-ai-empty .ai-head-r .icon-btn:first-child', '对话历史');
-      exposeButton('#s-12-ai-empty .ai-head-r .icon-btn:nth-child(2)', '设置');
-      exposeButton('#s-12-ai-empty .side-new', '新对话');
-      exposeButton('#s-12-ai-empty .side-close', '关闭对话历史');
+      exposeButton('#s-06-detail-article .float-actions .float-btn:last-child', '删除收藏');
       exposeButton('#s-10-unsupported .alert-actions .btn:first-child', '不保留');
       exposeButton('#s-10-unsupported .alert-actions .btn:nth-child(2)', '保留链接');
       exposeButton('#s-11-edit-tags .btn-save', '保存修改');
@@ -147,8 +180,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
       labelInput('#s-03-add .sheet-input', '内容链接');
       labelInput('#s-08-search .search-input input', '搜索收藏');
       labelInput('#s-11-edit-tags .add-tag-input input', '添加新 Tag');
-      labelInput('#s-05-ai-chat .ai-input input', '向 Memo AI 提问');
-      labelInput('#s-12-ai-empty .composer input', '向知识助手提问');
+      labelInput('#s-13-auth-login input[name="identifier"]', '登录手机号或者邮箱');
+      labelInput('#s-13-auth-login input[name="password"]', '登录密码');
+      labelInput('#s-14-auth-register input[name="nickname"]', '昵称');
+      labelInput('#s-14-auth-register input[name="identifier"]', '注册手机号或者邮箱');
+      labelInput('#s-14-auth-register input[name="password"]', '注册密码');
 
       document.querySelectorAll('.tab-add').forEach((element) => {
         element.setAttribute('role', 'button');
@@ -181,6 +217,11 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadPrototype()
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        applySafeAreaInsets()
     }
 
     private func loadPrototype() {
@@ -225,6 +266,28 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         }
         webView.evaluateJavaScript(
             "window.MemoRuntime?.nativeEvent(\(json));"
+        )
+    }
+
+    func dismissKeyboard() {
+        webView.evaluateJavaScript(
+            "document.activeElement instanceof HTMLElement && document.activeElement.blur();"
+        ) { [weak self] _, _ in
+            self?.webView.endEditing(true)
+            self?.view.endEditing(true)
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        applySafeAreaInsets()
+    }
+
+    private func applySafeAreaInsets() {
+        let top = view.safeAreaInsets.top
+        let bottom = view.safeAreaInsets.bottom
+        webView.evaluateJavaScript(
+            "document.documentElement.style.setProperty('--memo-safe-top', '\(top)px');" +
+            "document.documentElement.style.setProperty('--memo-safe-bottom', '\(bottom)px');"
         )
     }
 

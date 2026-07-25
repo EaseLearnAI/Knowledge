@@ -1,10 +1,13 @@
 (() => {
   "use strict";
 
+  const PHASE_TWO_AI_SCREENS = new Set(["05-ai-chat", "12-ai-empty"]);
+
   const state = {
     items: [],
     conversations: [],
     preferences: { hasCompletedOnboarding: false },
+    auth: { isAuthenticated: false, user: null },
     modelStatus: "local-extractive",
     currentItemID: null,
     currentConversationID: null,
@@ -44,7 +47,20 @@
     event.stopImmediatePropagation();
   };
 
-  const route = (id) => {
+  const route = (requestedID) => {
+    let id = requestedID;
+    if (PHASE_TWO_AI_SCREENS.has(id)) {
+      id = state.items.length ? "01-home" : "02-home-empty";
+    }
+    if (!state.preferences.hasCompletedOnboarding && id !== "09-onboarding") {
+      id = "09-onboarding";
+    } else if (
+      state.preferences.hasCompletedOnboarding &&
+      !state.auth.isAuthenticated &&
+      !["13-auth-login", "14-auth-register"].includes(id)
+    ) {
+      id = "13-auth-login";
+    }
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -62,6 +78,12 @@
     state.items.filter((item) =>
       ["queued", "fetching", "extracting", "enriching"].includes(item.status),
     );
+
+  function prepareMVPExperience() {
+    document.querySelectorAll(".phase-two-ai").forEach((element) => {
+      element.remove();
+    });
+  }
 
   function replaceItem(nextItem) {
     const index = state.items.findIndex((item) => item.id === nextItem.id);
@@ -512,6 +534,10 @@
     const context = screen.querySelector(".composer-context");
     if (context)
       context.innerHTML = `<i class="fa-solid fa-book-bookmark"></i> 回答将基于你的 ${ready.length} 条收藏，并标注来源`;
+    const greetingName = screen.querySelector(".msg-text b");
+    if (greetingName && state.auth.user?.nickname) {
+      greetingName.textContent = state.auth.user.nickname;
+    }
     const tags = new Map();
     ready.forEach((item) =>
       item.tags.forEach((tag) => tags.set(tag, (tags.get(tag) || 0) + 1)),
@@ -699,6 +725,9 @@
   async function ask(question, itemID = null) {
     const normalized = question.trim();
     if (!normalized) return;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     route("05-ai-chat");
     const currentConversation = state.conversations.find(
       (conversation) => conversation.id === state.currentConversationID,
@@ -742,15 +771,95 @@
       button.childNodes[0].textContent =
         state.onboardingStep === 2 ? "开始使用 " : "下一步 ";
     }
+    const accountStatus = screen?.querySelector("[data-auth-account-status]");
+    if (accountStatus) {
+      const identifier = state.auth.user?.email || state.auth.user?.phone;
+      accountStatus.textContent = identifier
+        ? `已登录 · ${identifier}`
+        : "";
+    }
+  }
+
+  function routeAfterAuthentication() {
+    if (!state.preferences.hasCompletedOnboarding) route("09-onboarding");
+    else goToLibrary();
+  }
+
+  function hydrateSnapshot(snapshot) {
+    state.items = snapshot.items || [];
+    state.conversations = snapshot.conversations || [];
+    state.preferences = snapshot.preferences || state.preferences;
+    state.modelStatus = snapshot.modelStatus || state.modelStatus;
+    state.auth = snapshot.auth || state.auth;
+    renderHome();
+    renderSearch();
+    renderAssistantHome();
+    updateOnboarding();
+  }
+
+  function setAuthFormState(form, isLoading, errorMessage = "") {
+    const button = form.querySelector(".auth-submit");
+    const error = form.querySelector(".auth-error");
+    if (button) {
+      button.disabled = isLoading;
+      button.textContent = isLoading
+        ? "请稍候…"
+        : form.dataset.authForm === "register"
+          ? "创建账号"
+          : "登录";
+    }
+    if (error) error.textContent = errorMessage;
+  }
+
+  async function submitAuthForm(form) {
+    const mode = form.dataset.authForm;
+    const values = new FormData(form);
+    setAuthFormState(form, true);
+    try {
+      const auth = await native(mode, {
+        identifier: String(values.get("identifier") || ""),
+        password: String(values.get("password") || ""),
+        nickname: String(values.get("nickname") || ""),
+      });
+      state.auth = auth;
+      hydrateSnapshot(await native("bootstrap"));
+      form.reset();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      updateOnboarding();
+      renderAssistantHome();
+      routeAfterAuthentication();
+    } catch (error) {
+      setAuthFormState(form, false, error.message || String(error));
+      return;
+    }
+    setAuthFormState(form, false);
   }
 
   async function finishOnboarding() {
     await native("completeOnboarding");
     state.preferences.hasCompletedOnboarding = true;
-    goToLibrary();
+    if (state.auth.isAuthenticated) goToLibrary();
+    else route("13-auth-login");
   }
 
   function installInputHandlers() {
+    document.querySelectorAll("[data-auth-form]").forEach((form) => {
+      form.addEventListener("submit", async (event) => {
+        intercept(event);
+        await submitAuthForm(form);
+      });
+      const fields = [...form.querySelectorAll("input")];
+      fields.forEach((field, index) => {
+        field.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" || index === fields.length - 1) return;
+          event.preventDefault();
+          fields[index + 1]?.focus();
+        });
+      });
+    });
+
     const urlInput = root("03-add")?.querySelector(".sheet-input");
     urlInput?.setAttribute("inputmode", "url");
     urlInput?.setAttribute("enterkeyhint", "done");
@@ -806,6 +915,17 @@
     async (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
+
+      const authRoute = target.closest("[data-auth-route]");
+      if (authRoute) {
+        intercept(event);
+        route(
+          authRoute.dataset.authRoute === "register"
+            ? "14-auth-register"
+            : "13-auth-login",
+        );
+        return;
+      }
 
       const addControl = target.closest(".tab-add, .empty-cta");
       if (addControl) {
@@ -920,15 +1040,6 @@
         return;
       }
 
-      if (
-        target.closest(".ask-btn") ||
-        target.closest("#s-06-detail-article .float-actions .float-btn:nth-child(2)")
-      ) {
-        intercept(event);
-        await ask("请总结这篇内容，并告诉我最值得记住的三点。", state.currentItemID);
-        return;
-      }
-
       const podcastFooterActions = root("04-detail-podcast")?.querySelectorAll(
         ".action-bar .icon-btn",
       );
@@ -942,9 +1053,7 @@
         await toggleFavorite();
         return;
       }
-      if (
-        target.closest("#s-06-detail-article .float-actions .float-btn:nth-child(3)")
-      ) {
+      if (target.closest("#s-06-detail-article .float-actions .float-btn:last-child")) {
         intercept(event);
         await deleteCurrentItem();
         return;
@@ -1168,6 +1277,16 @@
         route("02-home-empty");
         return;
       }
+      if (event.name === "loggedOut") {
+        state.auth = { isAuthenticated: false, user: null };
+        state.items = [];
+        state.conversations = [];
+        renderHome();
+        renderSearch();
+        renderAssistantHome();
+        route("13-auth-login");
+        return;
+      }
       if (event.payload?.id) replaceItem(event.payload);
       if (event.name === "itemDeleted") {
         state.items = state.items.filter(
@@ -1197,16 +1316,20 @@
 
   async function bootstrap() {
     try {
+      prepareMVPExperience();
       const snapshot = await native("bootstrap");
-      state.items = snapshot.items || [];
-      state.conversations = snapshot.conversations || [];
-      state.preferences = snapshot.preferences || state.preferences;
-      state.modelStatus = snapshot.modelStatus || state.modelStatus;
-      renderHome();
-      renderSearch();
-      renderAssistantHome();
+      hydrateSnapshot(snapshot);
       installInputHandlers();
-      updateOnboarding();
+
+      if (!state.preferences.hasCompletedOnboarding) {
+        route("09-onboarding");
+        return;
+      }
+
+      if (!state.auth.isAuthenticated) {
+        route("13-auth-login");
+        return;
+      }
 
       const requested = location.hash.replace("#", "") || "01-home";
       if (requested === "01-home") {

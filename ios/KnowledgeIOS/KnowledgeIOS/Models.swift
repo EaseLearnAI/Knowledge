@@ -81,6 +81,7 @@ struct AppSnapshot: Codable, Sendable {
     let conversations: [Conversation]
     let preferences: AppPreferences
     let modelStatus: String
+    let auth: AuthSnapshot
 }
 
 struct ContentEnrichment: Sendable {
