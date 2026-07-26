@@ -7,10 +7,13 @@ import type { AppConfig } from "./config.js";
 import { createAuthRouter } from "./features/auth/auth.routes.js";
 import { createHealthRouter } from "./features/health/health.routes.js";
 import { createTerminalRouter } from "./features/terminal/terminal.routes.js";
+import { ArkCopywriter } from "./features/video/ark-copywriter.js";
+import { ArkVideoProcessor } from "./features/video/ark-video.processor.js";
 import { LocalCopywriter } from "./features/video/local-copywriter.js";
 import { MiniMaxCopywriter } from "./features/video/minimax-copywriter.js";
 import { MockVideoProcessor } from "./features/video/mock-video.processor.js";
 import { VideoTaskRunner } from "./features/video/task-runner.js";
+import { VolcAsrVideoProcessor } from "./features/video/volc-asr-video.processor.js";
 import { createVideoRouter } from "./features/video/video.routes.js";
 import type { Copywriter, VideoProcessor } from "./features/video/video.types.js";
 import { VideoSummarizeProcessor } from "./features/video/videosummarize.processor.js";
@@ -36,11 +39,17 @@ export function createApp(dependencies: AppDependencies): CreatedApp {
     dependencies.videoProcessor ??
     (config.videoProcessor === "mock"
       ? new MockVideoProcessor()
+      : config.videoProcessor === "ark"
+        ? new ArkVideoProcessor(config)
+      : config.videoProcessor === "volc_asr"
+        ? new VolcAsrVideoProcessor(config)
       : new VideoSummarizeProcessor(config));
   const copywriter =
     dependencies.copywriter ??
     (config.copywriterProvider === "minimax"
       ? new MiniMaxCopywriter(config)
+      : config.copywriterProvider === "ark"
+        ? new ArkCopywriter(config)
       : new LocalCopywriter());
   const runner = new VideoTaskRunner(processor, copywriter, logger);
   const app = express();

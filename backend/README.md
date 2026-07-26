@@ -5,9 +5,13 @@
 ## 已实现
 
 - 注册、登录、访问令牌、刷新令牌轮换、退出和当前用户；
+- 基于 `installationId` 的无感游客会话，首屏不强制登录；
 - YouTube、B站、抖音、小红书链接入队；
 - 本地 MP4/MOV/WebM/MP3/M4A/WAV 上传；
 - 复用本机 `videosummarize`：下载、FFmpeg 抽音频、本地 Whisper 转录；
+- 火山方舟音频理解：48kbps MP3、长音频按 4 分钟切片、Files API 临时上传、语音转写后主动删除；
+- 火山录音文件识别适配器：支持 `volc.bigasr.auc` 的 submit/query 轮询和句级时间戳；
+- 火山方舟结构化总结，可与音频转写共用一把 `ARK_API_KEY`；
 - 串行视频任务队列，避免 Apple Silicon 多个 MLX 进程冲突；
 - 一句话摘要、观看价值、关键观点、章节、行动项、Tag 和 Markdown 文案；
 - MiniMax OpenAI 兼容文案适配器，默认模型 `MiniMax-M3`；
@@ -19,7 +23,7 @@
 ## 启动
 
 ```bash
-cd /Users/mac/Desktop/test/Knowledge/backend
+cd backend
 cp .env.example .env
 npm install
 npm run dev
@@ -55,6 +59,57 @@ npm run build
 ```
 
 常规测试使用临时 MongoDB 和 Mock 视频源，速度快且可重复；真实测试会调用本机 FFmpeg 与 Whisper。
+
+## 火山方舟转写与总结
+
+当前最小上线配置：
+
+```dotenv
+VIDEO_PROCESSOR=ark
+COPYWRITER_PROVIDER=ark
+ARK_API_KEY=从运行环境注入，不要提交
+ARK_AUDIO_MODEL=doubao-seed-2-0-lite-260428
+ARK_SUMMARY_MODEL=doubao-seed-2-0-lite-260428
+```
+
+处理流程：
+
+```text
+视频链接
+→ videosummarize 下载器
+→ FFmpeg 生成 16kHz 单声道 48kbps MP3
+→ 每 4 分钟切片并逐段上传方舟 Files API
+→ Responses API 逐段转写并合并
+→ Responses API 结构化总结
+→ 删除方舟临时文件与本地工作目录
+```
+
+`ark-...` 格式的方舟 Key 适用于该路径。专用豆包语音 ASR 使用语音控制台的
+APP ID 与 Access Token，不是同一种密钥；可切换为：
+
+```dotenv
+VIDEO_PROCESSOR=volc_asr
+VOLC_ASR_APP_ID=从运行环境注入
+VOLC_ASR_ACCESS_TOKEN=从运行环境注入
+VOLC_ASR_RESOURCE_ID=volc.bigasr.auc
+```
+
+专用 ASR 由火山服务端主动拉取音频 URL。社交平台的临时 CDN 链接可能限制服务端
+拉取，因此云服务器上线前应配合对象存储生成短期公开 URL；未配置对象存储时，
+默认的 `ark` 分段上传路径更稳。
+首次调用前，需要在火山方舟控制台开通
+`doubao-seed-2-0-lite-260428` 模型。
+
+游客会话：
+
+```http
+POST /api/v1/auth/guest
+Content-Type: application/json
+
+{"installationId":"67ee89ba-7050-4c04-a3d7-ac61a63499b3"}
+```
+
+同一个 `installationId` 会返回同一个游客用户，但每次都会轮换出新的访问令牌和刷新令牌。
 
 ## MiniMax 文案
 

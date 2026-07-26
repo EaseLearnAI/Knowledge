@@ -1,5 +1,13 @@
 .DS_Store
 *.bak
+.env
+.env.*
+!.env.example
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/workspaces/*
+!backend/storage/workspaces/.gitkeep
+backend/storage/logs/
 
 # Local reference copy and independently deployed site repository.
 prototype-v2_副本/

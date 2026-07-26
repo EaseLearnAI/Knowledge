@@ -25,8 +25,37 @@ const envSchema = z.object({
     "/Users/mac/Desktop/03_学习与研究/study/视频解析学习/skill方案/cliskill/.venv/bin/videosummarize",
   ),
   VIDEOSUMMARIZE_WORKSPACE: z.string().default("./storage/workspaces"),
-  VIDEO_PROCESSOR: z.enum(["cli", "mock"]).default("cli"),
-  COPYWRITER_PROVIDER: z.enum(["local", "minimax"]).default("local"),
+  VIDEO_PROCESSOR: z.enum(["cli", "ark", "volc_asr", "mock"]).default("cli"),
+  COPYWRITER_PROVIDER: z.enum(["local", "minimax", "ark"]).default("local"),
+  VOLC_ASR_APP_ID: z.string().optional(),
+  VOLC_ASR_ACCESS_TOKEN: z.string().optional(),
+  VOLC_ASR_API_BASE: z
+    .string()
+    .url()
+    .default("https://openspeech.bytedance.com/api/v3/auc/bigmodel"),
+  VOLC_ASR_RESOURCE_ID: z.string().min(1).default("volc.bigasr.auc"),
+  VOLC_ASR_POLL_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .min(200)
+    .max(10_000)
+    .default(1_000),
+  VOLC_ASR_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(10_000)
+    .max(900_000)
+    .default(300_000),
+  ARK_API_KEY: z.string().optional(),
+  ARK_API_BASE: z.string().url().default("https://ark.cn-beijing.volces.com/api/v3"),
+  ARK_AUDIO_MODEL: z.string().min(1).default("doubao-seed-2-0-lite-260428"),
+  ARK_SUMMARY_MODEL: z.string().min(1).default("doubao-seed-2-0-lite-260428"),
+  ARK_REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(10_000)
+    .max(900_000)
+    .default(300_000),
   MINIMAX_API_KEY: z.string().optional(),
   MINIMAX_API_BASE: z.string().url().default("https://api.minimaxi.com"),
   MINIMAX_MODEL: z.string().min(1).default("MiniMax-M3"),
@@ -46,8 +75,19 @@ export type AppConfig = {
   corsOrigins: string[];
   videoSummarizeBin: string;
   videoWorkspace: string;
-  videoProcessor: "cli" | "mock";
-  copywriterProvider: "local" | "minimax";
+  videoProcessor: "cli" | "ark" | "volc_asr" | "mock";
+  copywriterProvider: "local" | "minimax" | "ark";
+  volcAsrAppId?: string;
+  volcAsrAccessToken?: string;
+  volcAsrApiBase: string;
+  volcAsrResourceId: string;
+  volcAsrPollIntervalMs: number;
+  volcAsrTimeoutMs: number;
+  arkApiKey?: string;
+  arkApiBase: string;
+  arkAudioModel: string;
+  arkSummaryModel: string;
+  arkRequestTimeoutMs: number;
   minimaxApiKey?: string;
   minimaxApiBase: string;
   minimaxModel: string;
@@ -78,6 +118,19 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     videoWorkspace: resolve(env.VIDEOSUMMARIZE_WORKSPACE),
     videoProcessor: env.VIDEO_PROCESSOR,
     copywriterProvider: env.COPYWRITER_PROVIDER,
+    ...(env.VOLC_ASR_APP_ID ? { volcAsrAppId: env.VOLC_ASR_APP_ID } : {}),
+    ...(env.VOLC_ASR_ACCESS_TOKEN
+      ? { volcAsrAccessToken: env.VOLC_ASR_ACCESS_TOKEN }
+      : {}),
+    volcAsrApiBase: env.VOLC_ASR_API_BASE,
+    volcAsrResourceId: env.VOLC_ASR_RESOURCE_ID,
+    volcAsrPollIntervalMs: env.VOLC_ASR_POLL_INTERVAL_MS,
+    volcAsrTimeoutMs: env.VOLC_ASR_TIMEOUT_MS,
+    ...(env.ARK_API_KEY ? { arkApiKey: env.ARK_API_KEY } : {}),
+    arkApiBase: env.ARK_API_BASE,
+    arkAudioModel: env.ARK_AUDIO_MODEL,
+    arkSummaryModel: env.ARK_SUMMARY_MODEL,
+    arkRequestTimeoutMs: env.ARK_REQUEST_TIMEOUT_MS,
     ...(env.MINIMAX_API_KEY ? { minimaxApiKey: env.MINIMAX_API_KEY } : {}),
     minimaxApiBase: env.MINIMAX_API_BASE,
     minimaxModel: env.MINIMAX_MODEL,

@@ -6,7 +6,11 @@ import {
   createRefreshToken,
   hashToken,
 } from "../../shared/security/tokens.js";
-import type { LoginInput, RegisterInput } from "./auth.schemas.js";
+import type {
+  GuestInput,
+  LoginInput,
+  RegisterInput,
+} from "./auth.schemas.js";
 import { RefreshTokenModel } from "./refresh-token.model.js";
 import { UserModel } from "./user.model.js";
 
@@ -14,6 +18,7 @@ type PublicUser = {
   id: string;
   email: string | null;
   phone: string | null;
+  accountType: "guest" | "registered";
   nickname: string;
   createdAt: Date;
 };
@@ -29,6 +34,7 @@ type AuthUserRecord = {
   _id: unknown;
   email?: string | null;
   phone?: string | null;
+  accountType: "guest" | "registered";
   nickname: string;
   createdAt: Date;
 };
@@ -38,6 +44,7 @@ function publicUser(user: AuthUserRecord): PublicUser {
     id: String(user._id),
     email: user.email ?? null,
     phone: user.phone ?? null,
+    accountType: user.accountType,
     nickname: user.nickname,
     createdAt: user.createdAt,
   };
@@ -94,6 +101,7 @@ export async function register(input: RegisterInput, config: AppConfig): Promise
   try {
     const user = await UserModel.create({
       ...filter,
+      accountType: "registered",
       passwordHash,
       nickname: input.nickname ?? defaultNickname(input.identifier),
     });
@@ -115,8 +123,47 @@ export async function login(input: LoginInput, config: AppConfig): Promise<AuthR
   const user = await UserModel.findOne(identityFilter(input.identifier)).select(
     "+passwordHash",
   );
-  if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+  if (
+    !user ||
+    !user.passwordHash ||
+    !(await bcrypt.compare(input.password, user.passwordHash))
+  ) {
     throw new AppError(401, "INVALID_CREDENTIALS", "手机号、邮箱或密码错误");
+  }
+  return issueTokens(user, config);
+}
+
+export async function createGuestSession(
+  input: GuestInput,
+  config: AppConfig,
+): Promise<AuthResult> {
+  let user;
+  try {
+    user = await UserModel.findOneAndUpdate(
+      { installationId: input.installationId },
+      {
+        $setOnInsert: {
+          installationId: input.installationId,
+          accountType: "guest",
+          nickname: "Memo 用户",
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      user = await UserModel.findOne({ installationId: input.installationId });
+    } else {
+      throw error;
+    }
+  }
+  if (!user) {
+    throw new AppError(500, "GUEST_SESSION_FAILED", "无法创建游客会话");
   }
   return issueTokens(user, config);
 }

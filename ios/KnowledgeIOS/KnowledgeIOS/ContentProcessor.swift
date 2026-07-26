@@ -2,10 +2,19 @@ import Foundation
 
 actor ContentProcessor {
     private let aiService: AIService
+    private let authStore: AuthStore
+    private let videoClient: VideoBackendClient
     private let session: URLSession
 
-    init(aiService: AIService = .shared) {
+    init(
+        aiService: AIService = .shared,
+        authStore: AuthStore = .shared
+    ) {
         self.aiService = aiService
+        self.authStore = authStore
+        videoClient = VideoBackendClient(
+            environment: ProcessInfo.processInfo.environment
+        )
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 25
         configuration.timeoutIntervalForResource = 40
@@ -20,6 +29,10 @@ actor ContentProcessor {
         guard let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme) else {
             throw ContentProcessingError.invalidURL
+        }
+
+        if Self.isSupportedVideo(url) {
+            return try await processVideo(url: url, onProgress: onProgress)
         }
 
         await onProgress(.fetching)
@@ -52,6 +65,48 @@ actor ContentProcessor {
             title: title,
             content: combinedContent,
             enrichment: enrichment
+        )
+    }
+
+    private func processVideo(
+        url: URL,
+        onProgress: @Sendable (ProcessingStage) async -> Void
+    ) async throws -> ProcessedContent {
+        let accessToken = try await authStore.accessToken()
+        await onProgress(.fetching)
+        let task = try await videoClient.createCapture(
+            url: url,
+            accessToken: accessToken
+        )
+        let completed = try await videoClient.waitForTask(
+            task,
+            accessToken: accessToken,
+            onStage: { stage in
+                if stage == "copywriting" {
+                    await onProgress(.enriching)
+                } else {
+                    await onProgress(.extracting)
+                }
+            }
+        )
+        let item = try await videoClient.item(
+            id: completed.sourceItemId,
+            accessToken: accessToken
+        )
+        guard let transcript = item.transcript,
+              let copywriting = item.copywriting else {
+            throw ContentProcessingError.invalidBackendResult
+        }
+        return ProcessedContent(
+            kind: .video,
+            sourceName: item.platform,
+            title: item.title,
+            content: transcript.text,
+            enrichment: ContentEnrichment(
+                summary: copywriting.oneSentenceSummary,
+                keyPoints: copywriting.keyPoints,
+                tags: item.tags.isEmpty ? copywriting.tags : item.tags
+            )
         )
     }
 
@@ -106,6 +161,20 @@ actor ContentProcessor {
             return .podcast
         }
         return .article
+    }
+
+    private static func isSupportedVideo(_ url: URL) -> Bool {
+        let host = url.host()?.lowercased() ?? ""
+        return [
+            "youtube.com",
+            "youtu.be",
+            "bilibili.com",
+            "b23.tv",
+            "douyin.com",
+            "iesdouyin.com",
+            "xiaohongshu.com",
+            "xhslink.com",
+        ].contains { host == $0 || host.hasSuffix(".\($0)") }
     }
 
     private static func sourceName(for url: URL) -> String {
@@ -244,6 +313,7 @@ enum ContentProcessingError: LocalizedError {
     case contentTooLarge
     case unsupportedEncoding
     case noReadableContent
+    case invalidBackendResult
 
     var errorDescription: String? {
         switch self {
@@ -259,6 +329,175 @@ enum ContentProcessingError: LocalizedError {
             "暂时无法识别这个网页的文字编码"
         case .noReadableContent:
             "没有提取到可阅读正文，这个来源可能需要登录"
+        case .invalidBackendResult:
+            "后端任务已完成，但没有返回可用的转录和总结"
+        }
+    }
+}
+
+private struct VideoBackendClient: Sendable {
+    private let baseURL: URL
+    private let session: URLSession
+
+    init(environment: [String: String]) {
+        let configured = environment["KNOWLEDGE_API_BASE"]
+            ?? Bundle.main.object(forInfoDictionaryKey: "MEMO_API_BASE_URL") as? String
+            ?? "http://127.0.0.1:3100/api/v1"
+        baseURL = URL(string: configured)
+            ?? URL(string: "http://127.0.0.1:3100/api/v1")!
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 20
+        configuration.timeoutIntervalForResource = 60
+        configuration.waitsForConnectivity = false
+        session = URLSession(configuration: configuration)
+    }
+
+    func createCapture(url: URL, accessToken: String) async throws -> RemoteVideoTask {
+        var request = authorizedRequest(path: "captures", accessToken: accessToken)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(UUID().uuidString, forHTTPHeaderField: "Idempotency-Key")
+        request.httpBody = try JSONEncoder().encode(
+            CaptureBody(url: url.absoluteString, quality: "balanced", language: "auto")
+        )
+        return try await send(request)
+    }
+
+    func waitForTask(
+        _ initialTask: RemoteVideoTask,
+        accessToken: String,
+        onStage: @Sendable (String) async -> Void
+    ) async throws -> RemoteVideoTask {
+        var task = initialTask
+        let deadline = Date().addingTimeInterval(15 * 60)
+        while task.status != "completed" {
+            if task.status == "failed" {
+                throw VideoBackendError.taskFailed(
+                    task.error?.message ?? "视频解析失败"
+                )
+            }
+            guard Date() < deadline else {
+                throw VideoBackendError.taskTimedOut
+            }
+            await onStage(task.stage)
+            try await Task.sleep(for: .seconds(2))
+            let request = authorizedRequest(
+                path: "tasks/\(task.id)",
+                accessToken: accessToken
+            )
+            task = try await send(request)
+        }
+        return task
+    }
+
+    func item(id: String, accessToken: String) async throws -> RemoteVideoItem {
+        try await send(
+            authorizedRequest(path: "items/\(id)", accessToken: accessToken)
+        )
+    }
+
+    private func authorizedRequest(path: String, accessToken: String) -> URLRequest {
+        var request = URLRequest(url: baseURL.appending(path: path))
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        return request
+    }
+
+    private func send<Value: Decodable>(_ request: URLRequest) async throws -> Value {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw VideoBackendError.connectionFailed
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw VideoBackendError.invalidResponse
+        }
+        let envelope: VideoEnvelope<Value>
+        do {
+            envelope = try JSONDecoder().decode(VideoEnvelope<Value>.self, from: data)
+        } catch {
+            throw VideoBackendError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode), let value = envelope.data else {
+            throw VideoBackendError.server(
+                envelope.error?.message ?? "后端请求失败（HTTP \(http.statusCode)）"
+            )
+        }
+        return value
+    }
+}
+
+private struct CaptureBody: Encodable {
+    let url: String
+    let quality: String
+    let language: String
+}
+
+private struct VideoEnvelope<Value: Decodable>: Decodable {
+    let data: Value?
+    let error: VideoProblem?
+}
+
+private struct VideoProblem: Decodable {
+    let message: String
+}
+
+private struct RemoteVideoTask: Decodable {
+    let id: String
+    let sourceItemId: String
+    let status: String
+    let stage: String
+    let error: VideoTaskProblem?
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "_id"
+        case sourceItemId
+        case status
+        case stage
+        case error
+    }
+}
+
+private struct VideoTaskProblem: Decodable {
+    let message: String
+}
+
+private struct RemoteVideoItem: Decodable {
+    let title: String
+    let platform: String
+    let tags: [String]
+    let transcript: RemoteTranscript?
+    let copywriting: RemoteCopywriting?
+}
+
+private struct RemoteTranscript: Decodable {
+    let text: String
+}
+
+private struct RemoteCopywriting: Decodable {
+    let oneSentenceSummary: String
+    let keyPoints: [String]
+    let tags: [String]
+}
+
+private enum VideoBackendError: LocalizedError {
+    case connectionFailed
+    case invalidResponse
+    case server(String)
+    case taskFailed(String)
+    case taskTimedOut
+
+    var errorDescription: String? {
+        switch self {
+        case .connectionFailed:
+            "无法连接视频解析后端，请确认服务已启动"
+        case .invalidResponse:
+            "视频解析后端返回了无法识别的数据"
+        case .server(let message), .taskFailed(let message):
+            message
+        case .taskTimedOut:
+            "视频解析超过 15 分钟，请稍后重试"
         }
     }
 }

@@ -3,8 +3,14 @@ import type { AppConfig } from "../../config.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { validate } from "../../shared/http/validate.js";
 import { requireAuth } from "../../shared/security/auth.middleware.js";
-import { loginSchema, refreshSchema, registerSchema } from "./auth.schemas.js";
 import {
+  guestSchema,
+  loginSchema,
+  refreshSchema,
+  registerSchema,
+} from "./auth.schemas.js";
+import {
+  createGuestSession,
   getCurrentUser,
   login,
   logout,
@@ -14,6 +20,10 @@ import {
 
 export function createAuthRouter(config: AppConfig): Router {
   const router = Router();
+
+  router.post("/guest", validate(guestSchema), async (request, response) => {
+    sendSuccess(response, await createGuestSession(request.body, config), 201);
+  });
 
   router.post("/register", validate(registerSchema), async (request, response) => {
     sendSuccess(response, await register(request.body, config), 201);

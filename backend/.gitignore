@@ -5,6 +5,7 @@ coverage/
 storage/uploads/*
 storage/workspaces/*
 storage/mongodb/*
+storage/logs/
 !storage/uploads/.gitkeep
 !storage/workspaces/.gitkeep
 npm-debug.log*

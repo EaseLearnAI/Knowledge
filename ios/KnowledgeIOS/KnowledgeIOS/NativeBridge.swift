@@ -293,7 +293,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         let status = UIAlertController(
             title: "Memo 设置",
             message: """
-            所有收藏、摘要、Tag 和搜索索引默认只保存在这台设备上。网页内容仅在你主动收藏时直接请求来源网站，不上传到 Memo 服务器。
+            收藏结果、摘要、Tag 和搜索索引保存在设备上。你主动提交的视频链接会发送到 Memo 后端，由后端提取音频并调用云端模型生成转录和总结。
             """,
             preferredStyle: .actionSheet
         )
@@ -326,7 +326,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             message: """
             Memo 使用手机号或邮箱账号验证身份，不接入广告、追踪或第三方分析 SDK。
 
-            登录令牌保存在系统 Keychain。收藏内容、摘要和 Tag 仍保存在设备的受保护存储中。若设备支持并启用了 Apple Intelligence，内容分析使用系统端侧模型；否则使用本地可追溯摘要。
+            首次使用会自动创建匿名游客账号，登录令牌保存在系统 Keychain。只有你主动提交的视频链接和处理所需音频会发送到 Memo 后端与云端模型；结果同时保存在后端账号和设备受保护存储中。
             """,
             preferredStyle: .alert
         )

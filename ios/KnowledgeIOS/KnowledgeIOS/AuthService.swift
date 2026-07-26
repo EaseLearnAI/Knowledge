@@ -5,6 +5,7 @@ struct AuthUser: Codable, Sendable {
     let id: String
     let email: String?
     let phone: String?
+    let accountType: String?
     let nickname: String
     let createdAt: String
 
@@ -52,12 +53,14 @@ actor AuthStore {
     private let credentials = KeychainCredentialStore()
     private let client: BackendAPIClient
     private let mode: AuthMode
+    private let installationID: UUID
     private var session: AuthSession?
 
     init() {
         let environment = ProcessInfo.processInfo.environment
         mode = AuthMode(rawValue: environment["KNOWLEDGE_AUTH_MODE"] ?? "live") ?? .live
         client = BackendAPIClient(environment: environment)
+        installationID = Self.loadInstallationID()
         session = try? credentials.load()
     }
 
@@ -66,7 +69,17 @@ actor AuthStore {
             return Self.testSession.snapshot
         }
         guard var current = session else {
-            return AuthSnapshot(isAuthenticated: false, user: nil)
+            guard mode == .live else {
+                return AuthSnapshot(isAuthenticated: false, user: nil)
+            }
+            do {
+                let guest = try await client.guest(installationID: installationID)
+                try credentials.save(guest)
+                session = guest
+                return guest.snapshot
+            } catch {
+                return AuthSnapshot(isAuthenticated: false, user: nil)
+            }
         }
         if mode == .mock {
             return current.snapshot
@@ -152,6 +165,19 @@ actor AuthStore {
         guard session != nil else { throw AuthValidationError.authenticationRequired }
     }
 
+    func accessToken() async throws -> String {
+        if mode == .bypass {
+            return Self.testSession.accessToken
+        }
+        if session == nil {
+            _ = await restoreSession()
+        }
+        guard let current = session else {
+            throw AuthValidationError.authenticationRequired
+        }
+        return current.accessToken
+    }
+
     private func validate(_ current: AuthSession) async throws -> AuthSession {
         let user = try await client.currentUser(accessToken: current.accessToken)
         return AuthSession(
@@ -214,6 +240,17 @@ actor AuthStore {
         }
     }
 
+    private static func loadInstallationID() -> UUID {
+        let key = "ai.easelearn.knowledge.installation-id"
+        if let value = UserDefaults.standard.string(forKey: key),
+           let id = UUID(uuidString: value) {
+            return id
+        }
+        let id = UUID()
+        UserDefaults.standard.set(id.uuidString, forKey: key)
+        return id
+    }
+
     private static func mockSession(identifier: String, nickname: String?) -> AuthSession {
         let isEmail = identifier.contains("@")
         return AuthSession(
@@ -221,6 +258,7 @@ actor AuthStore {
                 id: UUID().uuidString,
                 email: isEmail ? identifier : nil,
                 phone: isEmail ? nil : identifier,
+                accountType: "registered",
                 nickname: nickname
                     ?? (isEmail
                         ? identifier.split(separator: "@").first.map(String.init)
@@ -275,6 +313,13 @@ private struct BackendAPIClient: Sendable {
         try await post(
             path: "auth/login",
             body: LoginBody(identifier: identifier, password: password)
+        )
+    }
+
+    func guest(installationID: UUID) async throws -> AuthSession {
+        try await post(
+            path: "auth/guest",
+            body: GuestBody(installationId: installationID.uuidString)
         )
     }
 
@@ -362,6 +407,10 @@ private struct LoginBody: Encodable {
 
 private struct RefreshBody: Encodable {
     let refreshToken: String
+}
+
+private struct GuestBody: Encodable {
+    let installationId: String
 }
 
 private struct EmptyResponse: Codable {

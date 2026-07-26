@@ -63,5 +63,10 @@ export const refreshSchema = z.object({
   refreshToken: z.string().min(32),
 });
 
+export const guestSchema = z.object({
+  installationId: z.string().uuid("installationId 必须是 UUID"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type GuestInput = z.infer<typeof guestSchema>;
