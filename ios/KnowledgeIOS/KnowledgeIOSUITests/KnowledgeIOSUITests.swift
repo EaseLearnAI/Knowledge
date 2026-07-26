@@ -75,6 +75,10 @@ final class KnowledgeIOSUITests: XCTestCase {
             accuracy: 2
         )
         XCTAssertFalse(relaunchedWebView.buttons["收藏"].exists)
+        addButton.tap()
+        XCTAssertTrue(
+            relaunchedWebView.textViews["内容链接"].waitForExistence(timeout: 3)
+        )
     }
 
     func testSearchOpensRealSavedResult() {
