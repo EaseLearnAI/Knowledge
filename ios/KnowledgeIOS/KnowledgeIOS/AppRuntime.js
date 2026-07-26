@@ -417,10 +417,22 @@
     state.currentItemID = itemID;
     if (item.status === "failed") {
       const unsupported = root("10-unsupported");
-      const message = unsupported?.querySelector(".unsupported-card p, .modal-card p");
-      if (message) message.textContent = item.errorMessage || "这个来源暂时无法解析";
+      const title = unsupported?.querySelector(".alert-title");
+      if (title) title.textContent = "链接解析失败";
+      const message = unsupported?.querySelector(".alert-sub");
+      if (message) {
+        const detail = item.errorMessage || "这个链接暂时无法解析";
+        message.textContent = /video unavailable/i.test(detail)
+          ? "这个 YouTube 视频不存在或不可访问，请检查视频 ID 是否混淆了字母 O 和数字 0。"
+          : detail;
+      }
       const url = unsupported?.querySelector(".alert-url");
       if (url) url.textContent = item.sourceURL;
+      const actions = unsupported?.querySelectorAll(".alert-actions .btn");
+      if (actions?.[0]) actions[0].textContent = "删除记录";
+      if (actions?.[1]) actions[1].textContent = "返回资料库";
+      const note = unsupported?.querySelector(".auto-tag");
+      if (note) note.innerHTML = '<i class="fa-solid fa-circle-info"></i>错误已记录，可删除后重新提交';
       route("10-unsupported");
       return;
     }

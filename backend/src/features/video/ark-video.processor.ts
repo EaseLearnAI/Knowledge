@@ -148,11 +148,32 @@ export class PythonAudioPreparer implements AudioPreparer {
           resolvePromise(stdout);
           return;
         }
+        const providerMessage = stderr.trim();
+        if (/video unavailable/i.test(providerMessage)) {
+          reject(
+            new AppError(
+              422,
+              "MEDIA_NOT_FOUND",
+              "这个 YouTube 视频不存在或不可访问，请检查视频 ID（例如字母 O 和数字 0）以及公开视频权限",
+            ),
+          );
+          return;
+        }
+        if (/sign in|cookies|login required/i.test(providerMessage)) {
+          reject(
+            new AppError(
+              422,
+              "MEDIA_LOGIN_REQUIRED",
+              "这个视频需要登录平台账号后才能访问，当前只支持公开链接",
+            ),
+          );
+          return;
+        }
         reject(
           new AppError(
             502,
             "AUDIO_PREPARE_FAILED",
-            stderr.trim() || `音频准备脚本退出码 ${code}`,
+            providerMessage || `音频准备脚本退出码 ${code}`,
           ),
         );
       });
