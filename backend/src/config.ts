@@ -25,6 +25,8 @@ const envSchema = z.object({
     "/Users/mac/Desktop/03_学习与研究/study/视频解析学习/skill方案/cliskill/.venv/bin/videosummarize",
   ),
   VIDEOSUMMARIZE_WORKSPACE: z.string().default("./storage/workspaces"),
+  VIDEO_COOKIE_BROWSER: z.string().trim().min(1).optional(),
+  VIDEO_COOKIE_FILE: z.string().trim().min(1).optional(),
   VIDEO_PROCESSOR: z.enum(["cli", "ark", "volc_asr", "mock"]).default("cli"),
   COPYWRITER_PROVIDER: z.enum(["local", "minimax", "ark"]).default("local"),
   VOLC_ASR_APP_ID: z.string().optional(),
@@ -75,6 +77,8 @@ export type AppConfig = {
   corsOrigins: string[];
   videoSummarizeBin: string;
   videoWorkspace: string;
+  videoCookieBrowser?: string;
+  videoCookieFile?: string;
   videoProcessor: "cli" | "ark" | "volc_asr" | "mock";
   copywriterProvider: "local" | "minimax" | "ark";
   volcAsrAppId?: string;
@@ -116,6 +120,12 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
       .filter(Boolean),
     videoSummarizeBin: env.VIDEOSUMMARIZE_BIN,
     videoWorkspace: resolve(env.VIDEOSUMMARIZE_WORKSPACE),
+    ...(env.VIDEO_COOKIE_BROWSER
+      ? { videoCookieBrowser: env.VIDEO_COOKIE_BROWSER }
+      : {}),
+    ...(env.VIDEO_COOKIE_FILE
+      ? { videoCookieFile: resolve(env.VIDEO_COOKIE_FILE) }
+      : {}),
     videoProcessor: env.VIDEO_PROCESSOR,
     copywriterProvider: env.COPYWRITER_PROVIDER,
     ...(env.VOLC_ASR_APP_ID ? { volcAsrAppId: env.VOLC_ASR_APP_ID } : {}),

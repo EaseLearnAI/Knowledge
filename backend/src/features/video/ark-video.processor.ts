@@ -42,6 +42,51 @@ function languageInstruction(language: VideoLanguage): string {
   return "请自动判断音频语言。";
 }
 
+function compactPreparationError(stderr: string): string {
+  const lines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const preferred =
+    lines.findLast((line) => line.startsWith("MEDIA_DOWNLOAD_ERROR:")) ??
+    lines.findLast((line) => line.startsWith("ERROR:")) ??
+    lines.at(-1) ??
+    "";
+  return preferred.replace(/^MEDIA_DOWNLOAD_ERROR:\s*/, "").slice(0, 600);
+}
+
+export function mapAudioPreparationError(
+  stderr: string,
+  exitCode: number | null,
+): AppError {
+  if (/video unavailable/i.test(stderr)) {
+    return new AppError(
+      422,
+      "MEDIA_NOT_FOUND",
+      "这个 YouTube 视频不存在或不可访问，请检查视频 ID（例如字母 O 和数字 0）以及公开视频权限",
+    );
+  }
+  if (/HTTP Error 412|Precondition Failed/i.test(stderr)) {
+    return new AppError(
+      422,
+      "MEDIA_PLATFORM_BLOCKED",
+      "B站拒绝了媒体请求（HTTP 412）。请确认本机 Chrome 已登录 B站后重试；云端部署需配置 VIDEO_COOKIE_FILE",
+    );
+  }
+  if (/sign in|cookies|login required/i.test(stderr)) {
+    return new AppError(
+      422,
+      "MEDIA_LOGIN_REQUIRED",
+      "这个视频需要平台登录权限，请确认后端 Cookie 已配置且账号有访问权限",
+    );
+  }
+  return new AppError(
+    502,
+    "AUDIO_PREPARE_FAILED",
+    compactPreparationError(stderr) || `音频准备脚本退出码 ${exitCode}`,
+  );
+}
+
 export class PythonAudioPreparer implements AudioPreparer {
   constructor(private readonly config: AppConfig) {}
 
@@ -72,6 +117,12 @@ export class PythonAudioPreparer implements AudioPreparer {
       "--output-dir",
       workspace,
       ...(input.titleHint ? ["--title", input.titleHint] : []),
+      ...(this.config.videoCookieBrowser
+        ? ["--cookies-browser", this.config.videoCookieBrowser]
+        : []),
+      ...(this.config.videoCookieFile
+        ? ["--cookies-file", this.config.videoCookieFile]
+        : []),
     ];
     await report("audio.prepare.started", "开始下载媒体并提取压缩音频");
     const output = await this.run(python, args, report);
@@ -135,10 +186,7 @@ export class PythonAudioPreparer implements AudioPreparer {
         stdout += chunk.toString("utf8");
       });
       child.stderr.on("data", (chunk: Buffer) => {
-        const value = chunk.toString("utf8");
-        stderr += value;
-        const message = value.trim();
-        if (message) void report("audio.prepare.stderr", message);
+        stderr += chunk.toString("utf8");
       });
       child.on("error", (error) => {
         reject(new AppError(503, "VIDEO_PREPARER_UNAVAILABLE", error.message));
@@ -148,34 +196,11 @@ export class PythonAudioPreparer implements AudioPreparer {
           resolvePromise(stdout);
           return;
         }
-        const providerMessage = stderr.trim();
-        if (/video unavailable/i.test(providerMessage)) {
-          reject(
-            new AppError(
-              422,
-              "MEDIA_NOT_FOUND",
-              "这个 YouTube 视频不存在或不可访问，请检查视频 ID（例如字母 O 和数字 0）以及公开视频权限",
-            ),
-          );
-          return;
-        }
-        if (/sign in|cookies|login required/i.test(providerMessage)) {
-          reject(
-            new AppError(
-              422,
-              "MEDIA_LOGIN_REQUIRED",
-              "这个视频需要登录平台账号后才能访问，当前只支持公开链接",
-            ),
-          );
-          return;
-        }
-        reject(
-          new AppError(
-            502,
-            "AUDIO_PREPARE_FAILED",
-            providerMessage || `音频准备脚本退出码 ${code}`,
-          ),
-        );
+        const error = mapAudioPreparationError(stderr, code);
+        void report("audio.prepare.failed", error.message, {
+          code: error.code,
+        });
+        reject(error);
       });
     });
   }

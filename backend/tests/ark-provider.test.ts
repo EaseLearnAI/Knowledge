@@ -12,6 +12,7 @@ import {
 } from "../src/features/video/ark-response.client.js";
 import {
   ArkVideoProcessor,
+  mapAudioPreparationError,
   type AudioPreparer,
 } from "../src/features/video/ark-video.processor.js";
 import type { TranscriptResult } from "../src/features/video/video.types.js";
@@ -60,6 +61,44 @@ function responseResult(text: string): ArkResponseResult {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("mapAudioPreparationError", () => {
+  it("把 B站 412 映射为可行动且不含堆栈的错误", () => {
+    const error = mapAudioPreparationError(
+      [
+        "ERROR: [BiliBili] Unable to download JSON metadata: HTTP Error 412: Precondition Failed",
+        "Traceback (most recent call last):",
+        "  File \"/secret/local/path.py\", line 1",
+      ].join("\n"),
+      2,
+    );
+
+    expect(error).toMatchObject({
+      statusCode: 422,
+      code: "MEDIA_PLATFORM_BLOCKED",
+    });
+    expect(error.message).toContain("Chrome 已登录");
+    expect(error.message).not.toContain("Traceback");
+    expect(error.message).not.toContain("/secret/");
+  });
+
+  it("普通下载错误只保留短错误行", () => {
+    const error = mapAudioPreparationError(
+      [
+        "Traceback (most recent call last):",
+        "  File \"/secret/local/path.py\", line 1",
+        "MEDIA_DOWNLOAD_ERROR: ERROR: extractor failed",
+      ].join("\n"),
+      2,
+    );
+
+    expect(error).toMatchObject({
+      statusCode: 502,
+      code: "AUDIO_PREPARE_FAILED",
+      message: "ERROR: extractor failed",
+    });
+  });
 });
 
 describe("ArkResponseClient", () => {
