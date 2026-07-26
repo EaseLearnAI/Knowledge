@@ -66,6 +66,15 @@ final class KnowledgeIOSUITests: XCTestCase {
                 .staticTexts["Example Domain"]
                 .waitForExistence(timeout: 8)
         )
+        let relaunchedWebView = app.webViews["prototype-webview"]
+        let addButton = relaunchedWebView.buttons["添加"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 3))
+        XCTAssertEqual(
+            addButton.frame.midX,
+            relaunchedWebView.frame.midX,
+            accuracy: 2
+        )
+        XCTAssertFalse(relaunchedWebView.buttons["收藏"].exists)
     }
 
     func testSearchOpensRealSavedResult() {
