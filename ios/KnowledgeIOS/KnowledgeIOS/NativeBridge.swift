@@ -10,6 +10,8 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let aiService: AIService
     private let authStore: AuthStore
     private var didApplyLaunchSetup = false
+    private var shouldResetLibraryOnNextAuth = false
+    private var shouldSkipOnboardingOnNextAuth = false
 
     init(
         owner: PrototypeViewController,
@@ -57,6 +59,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             "login",
             "register",
             "logout",
+            "routeChanged",
         ]
         if !publicActions.contains(action) {
             try await authStore.requireAuthentication()
@@ -67,18 +70,18 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             if !didApplyLaunchSetup {
                 didApplyLaunchSetup = true
                 let environment = ProcessInfo.processInfo.environment
-                if environment["KNOWLEDGE_RESET_ON_LAUNCH"] == "1" {
-                    try await store.reset()
-                }
-                if environment["KNOWLEDGE_SKIP_ONBOARDING"] == "1" {
-                    try await store.completeOnboarding()
-                }
+                shouldResetLibraryOnNextAuth =
+                    environment["KNOWLEDGE_RESET_ON_LAUNCH"] == "1"
+                shouldSkipOnboardingOnNextAuth =
+                    environment["KNOWLEDGE_SKIP_ONBOARDING"] == "1"
                 if environment["KNOWLEDGE_RESET_AUTH_ON_LAUNCH"] == "1" {
                     await authStore.resetSession()
                 }
             }
             let status = await aiService.modelStatus()
             let auth = await authStore.restoreSession()
+            try await prepareLibrary(for: auth)
+            owner?.updateAuthSnapshot(auth)
             let snapshot = await store.snapshot(modelStatus: status, auth: auth)
             if auth.isAuthenticated {
                 return try jsonObject(snapshot)
@@ -95,27 +98,39 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
 
         case "login":
             owner?.dismissKeyboard()
-            return try jsonObject(
-                try await authStore.login(
-                    identifier: requiredString("identifier", in: payload),
-                    password: requiredString("password", in: payload)
-                )
+            let auth = try await authStore.login(
+                identifier: requiredString("identifier", in: payload),
+                password: requiredString("password", in: payload)
             )
+            try await prepareLibrary(for: auth)
+            owner?.updateAuthSnapshot(auth)
+            return try jsonObject(auth)
 
         case "register":
             owner?.dismissKeyboard()
             let nickname = (payload["nickname"] as? String)?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            return try jsonObject(
-                try await authStore.register(
-                    identifier: requiredString("identifier", in: payload),
-                    password: requiredString("password", in: payload),
-                    nickname: nickname
-                )
+            let auth = try await authStore.register(
+                identifier: requiredString("identifier", in: payload),
+                password: requiredString("password", in: payload),
+                nickname: nickname
             )
+            try await prepareLibrary(for: auth)
+            owner?.updateAuthSnapshot(auth)
+            return try jsonObject(auth)
 
         case "logout":
             await authStore.logout()
+            try? await store.deactivate()
+            owner?.updateAuthSnapshot(
+                AuthSnapshot(isAuthenticated: false, user: nil)
+            )
+            return ["ok": true]
+
+        case "routeChanged":
+            owner?.updateNativeRoute(
+                try requiredString("screenID", in: payload)
+            )
             return ["ok": true]
 
         case "addURL":
@@ -193,7 +208,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             return ["ok": true]
 
         case "showSettings":
-            presentSettings()
+            owner?.presentNativeSettings()
             return ["ok": true]
 
         case "reset":
@@ -203,6 +218,22 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
 
         default:
             throw BridgeError.unknownAction(action)
+        }
+    }
+
+    private func prepareLibrary(for auth: AuthSnapshot) async throws {
+        guard let user = auth.user, auth.isAuthenticated else {
+            try await store.deactivate()
+            return
+        }
+        try await store.activate(ownerID: user.id)
+        if shouldResetLibraryOnNextAuth {
+            try await store.reset()
+            shouldResetLibraryOnNextAuth = false
+        }
+        if shouldSkipOnboardingOnNextAuth {
+            try await store.completeOnboarding()
+            shouldSkipOnboardingOnNextAuth = false
         }
     }
 
@@ -286,71 +317,6 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             )
             owner.present(alert, animated: true)
         }
-    }
-
-    private func presentSettings() {
-        guard let owner else { return }
-        let status = UIAlertController(
-            title: "Memo 设置",
-            message: """
-            所有收藏、摘要、Tag 和搜索索引默认只保存在这台设备上。网页内容仅在你主动收藏时直接请求来源网站，不上传到 Memo 服务器。
-            """,
-            preferredStyle: .actionSheet
-        )
-        status.addAction(
-            UIAlertAction(title: "隐私说明", style: .default) { _ in
-                self.presentPrivacyNotice()
-            }
-        )
-        status.addAction(
-            UIAlertAction(title: "清空本机全部数据", style: .destructive) { _ in
-                self.confirmReset()
-            }
-        )
-        status.addAction(
-            UIAlertAction(title: "退出登录", style: .destructive) { _ in
-                Task {
-                    await self.authStore.logout()
-                    self.emit(name: "loggedOut", object: [:])
-                }
-            }
-        )
-        status.addAction(UIAlertAction(title: "取消", style: .cancel))
-        owner.present(status, animated: true)
-    }
-
-    private func presentPrivacyNotice() {
-        guard let owner else { return }
-        let notice = UIAlertController(
-            title: "隐私说明",
-            message: """
-            Memo 使用手机号或邮箱账号验证身份，不接入广告、追踪或第三方分析 SDK。
-
-            登录令牌保存在系统 Keychain。收藏内容、摘要和 Tag 仍保存在设备的受保护存储中。若设备支持并启用了 Apple Intelligence，内容分析使用系统端侧模型；否则使用本地可追溯摘要。
-            """,
-            preferredStyle: .alert
-        )
-        notice.addAction(UIAlertAction(title: "知道了", style: .default))
-        owner.present(notice, animated: true)
-    }
-
-    private func confirmReset() {
-        guard let owner else { return }
-        let alert = UIAlertController(
-            title: "确定清空全部数据？",
-            message: "此操作无法撤销。",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        alert.addAction(
-            UIAlertAction(title: "清空", style: .destructive) { _ in
-                Task {
-                    try? await self.store.reset()
-                    self.emit(name: "libraryReset", object: [:])
-                }
-            }
-        )
-        owner.present(alert, animated: true)
     }
 
     private func requiredString(

@@ -76,6 +76,7 @@
       document.activeElement.blur();
     }
     if (typeof window.go === "function") window.go(id);
+    native("routeChanged", { screenID: id }).catch(() => {});
     requestAnimationFrame(() => {
       window.scrollTo(0, 0);
       if (document.documentElement) document.documentElement.scrollTop = 0;
@@ -1292,6 +1293,13 @@
   );
 
   window.MemoRuntime = {
+    openSearch() {
+      if (!state.auth.isAuthenticated) return;
+      state.searchQuery = "";
+      renderSearch();
+      route("08-search");
+      setTimeout(() => root("08-search")?.querySelector("input")?.focus(), 200);
+    },
     async nativeEvent(event) {
       if (!event || !event.name) return;
       if (event.name === "libraryReset") {
@@ -1302,7 +1310,7 @@
         route("02-home-empty");
         return;
       }
-      if (event.name === "loggedOut") {
+      if (event.name === "loggedOut" || event.name === "accountDeleted") {
         state.auth = { isAuthenticated: false, user: null };
         state.items = [];
         state.conversations = [];

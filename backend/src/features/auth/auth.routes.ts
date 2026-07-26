@@ -3,8 +3,16 @@ import type { AppConfig } from "../../config.js";
 import { sendSuccess } from "../../shared/http/response.js";
 import { validate } from "../../shared/http/validate.js";
 import { requireAuth } from "../../shared/security/auth.middleware.js";
-import { loginSchema, refreshSchema, registerSchema } from "./auth.schemas.js";
 import {
+  changePasswordSchema,
+  deleteAccountSchema,
+  loginSchema,
+  refreshSchema,
+  registerSchema,
+} from "./auth.schemas.js";
+import {
+  changePassword,
+  deleteAccount,
   getCurrentUser,
   login,
   logout,
@@ -35,6 +43,28 @@ export function createAuthRouter(config: AppConfig): Router {
   router.get("/me", requireAuth(config), async (request, response) => {
     sendSuccess(response, await getCurrentUser(request.auth!.userId));
   });
+
+  router.patch(
+    "/me/password",
+    requireAuth(config),
+    validate(changePasswordSchema),
+    async (request, response) => {
+      sendSuccess(
+        response,
+        await changePassword(request.auth!.userId, request.body, config),
+      );
+    },
+  );
+
+  router.delete(
+    "/me",
+    requireAuth(config),
+    validate(deleteAccountSchema),
+    async (request, response) => {
+      await deleteAccount(request.auth!.userId, request.body);
+      response.status(204).send();
+    },
+  );
 
   return router;
 }

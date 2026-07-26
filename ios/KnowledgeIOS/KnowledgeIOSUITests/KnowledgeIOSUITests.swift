@@ -34,6 +34,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         startButton.tap()
 
         XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 3))
+        assertNativeHeader(in: app)
     }
 
     func testRealURLIngestionPersistsAcrossRelaunch() {
@@ -88,7 +89,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         let webView = app.webViews["prototype-webview"]
         XCTAssertTrue(webView.waitForExistence(timeout: 8))
 
-        let searchButton = webView.buttons["搜索"]
+        let searchButton = app.buttons["搜索"]
         XCTAssertTrue(searchButton.waitForExistence(timeout: 5))
         searchButton.tap()
 
@@ -189,9 +190,10 @@ final class KnowledgeIOSUITests: XCTestCase {
 
         completeOnboarding(in: webView)
         XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 5))
-        webView.buttons["设置"].tap()
-        XCTAssertTrue(app.sheets["Memo 设置"].waitForExistence(timeout: 5))
+        openSettings(in: app)
         app.buttons["退出登录"].tap()
+        XCTAssertTrue(app.alerts["退出登录？"].waitForExistence(timeout: 3))
+        app.buttons["确认退出"].tap()
 
         XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
         webView.buttons["登录"].tap()
@@ -242,9 +244,10 @@ final class KnowledgeIOSUITests: XCTestCase {
 
         completeOnboarding(in: webView)
         XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 5))
-        webView.buttons["设置"].tap()
-        XCTAssertTrue(app.sheets["Memo 设置"].waitForExistence(timeout: 5))
+        openSettings(in: app)
         app.buttons["退出登录"].tap()
+        XCTAssertTrue(app.alerts["退出登录？"].waitForExistence(timeout: 3))
+        app.buttons["确认退出"].tap()
 
         XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
         webView.buttons["登录"].tap()
@@ -273,21 +276,145 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(webView.waitForExistence(timeout: 8))
         XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
         XCTAssertFalse(webView.buttons["收藏到 Memo"].exists)
-        XCTAssertFalse(webView.buttons["搜索"].exists)
+        XCTAssertFalse(app.buttons["搜索"].exists)
     }
 
-    func testSettingsExposePrivacyAndLocalReset() {
+    func testNativeSettingsExposeOnlyMinimumAccountActions() {
         let app = launchApp(reset: true, skipOnboarding: true)
         let webView = app.webViews["prototype-webview"]
         XCTAssertTrue(webView.waitForExistence(timeout: 8))
 
-        let settingsButton = webView.buttons["设置"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
-        settingsButton.tap()
+        openSettings(in: app)
 
-        XCTAssertTrue(app.sheets["Memo 设置"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["隐私说明"].exists)
-        XCTAssertTrue(app.buttons["清空本机全部数据"].exists)
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["修改密码"].exists)
+        XCTAssertTrue(app.buttons["删除账号"].exists)
+        XCTAssertTrue(app.buttons["退出登录"].exists)
+        XCTAssertTrue(app.buttons["隐私政策"].exists)
+        XCTAssertFalse(app.buttons["偏好设置"].exists)
+        XCTAssertFalse(app.buttons["AI 设置"].exists)
+        XCTAssertFalse(app.buttons["会员权益"].exists)
+
+        app.buttons["隐私政策"].tap()
+        XCTAssertTrue(
+            app.otherElements["隐私政策浏览器"].waitForExistence(timeout: 5)
+        )
+    }
+
+    func testNativeNavigationSupportsAccessibilityTextSize() {
+        let app = launchApp(
+            reset: true,
+            skipOnboarding: true,
+            accessibilityTextSize: true
+        )
+        XCTAssertTrue(
+            app.webViews["prototype-webview"].waitForExistence(timeout: 8)
+        )
+        assertNativeHeader(in: app)
+        app.buttons["侧边栏"].tap()
+        XCTAssertTrue(app.buttons["设置"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["UI 测试"].exists)
+    }
+
+    func testChangePasswordAndDeleteAccountNativeFlows() {
+        let app = launchApp(reset: true, skipOnboarding: true)
+        let webView = app.webViews["prototype-webview"]
+        XCTAssertTrue(webView.waitForExistence(timeout: 8))
+
+        openSettings(in: app)
+        app.buttons["修改密码"].tap()
+        XCTAssertTrue(app.navigationBars["修改密码"].waitForExistence(timeout: 3))
+
+        let current = app.secureTextFields["当前密码"]
+        let new = app.secureTextFields["新密码"]
+        let confirmation = app.secureTextFields["确认新密码"]
+        current.tap()
+        current.typeText("Password123")
+        new.tap()
+        new.typeText("NewPassword123")
+        confirmation.tap()
+        confirmation.typeText("NewPassword123")
+        app.buttons["保存新密码"].tap()
+        XCTAssertTrue(app.alerts["密码已更新"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+
+        app.buttons["删除账号"].tap()
+        XCTAssertTrue(app.alerts["删除账号？"].waitForExistence(timeout: 3))
+        let deletePassword = app.secureTextFields["删除账号当前密码"]
+        deletePassword.tap()
+        deletePassword.typeText("NewPassword123")
+        app.buttons["永久删除"].tap()
+        XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
+    }
+
+    func testNativeAccountActionsExposeValidationErrors() {
+        let app = launchApp(reset: true, skipOnboarding: true)
+        XCTAssertTrue(
+            app.webViews["prototype-webview"].waitForExistence(timeout: 8)
+        )
+        openSettings(in: app)
+        app.buttons["修改密码"].tap()
+
+        let new = app.secureTextFields["新密码"]
+        let confirmation = app.secureTextFields["确认新密码"]
+        new.tap()
+        new.typeText("NewPassword123")
+        confirmation.tap()
+        confirmation.typeText("Different123")
+        app.buttons["保存新密码"].tap()
+        XCTAssertTrue(app.alerts["无法修改密码"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["两次输入的新密码不一致"].exists)
+        app.buttons["知道了"].tap()
+
+        app.navigationBars.buttons["设置"].tap()
+        app.buttons["删除账号"].tap()
+        XCTAssertTrue(app.alerts["删除账号？"].waitForExistence(timeout: 3))
+        app.buttons["永久删除"].tap()
+        XCTAssertTrue(app.alerts["操作失败"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["请输入密码"].exists)
+    }
+
+    func testLocalLibraryIsIsolatedByAccountAndRestoredOnRelogin() {
+        var app = launchApp(
+            screenID: "03-add",
+            reset: true,
+            skipOnboarding: true,
+            bypassIdentifier: "owner-a@memo.local"
+        )
+        var webView = app.webViews["prototype-webview"]
+        XCTAssertTrue(webView.waitForExistence(timeout: 8))
+        let urlField = webView.textViews["内容链接"]
+        XCTAssertTrue(urlField.waitForExistence(timeout: 5))
+        urlField.tap()
+        urlField.typeText(exampleURL)
+        dismissKeyboard(in: app)
+        webView.buttons["收藏到 Memo"].tap()
+        XCTAssertTrue(
+            webView.staticTexts["Example Domain"].waitForExistence(timeout: 30)
+        )
+
+        app.terminate()
+        app = launchApp(
+            reset: false,
+            skipOnboarding: true,
+            bypassIdentifier: "owner-b@memo.local"
+        )
+        webView = app.webViews["prototype-webview"]
+        XCTAssertTrue(webView.waitForExistence(timeout: 8))
+        XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 5))
+        XCTAssertFalse(webView.staticTexts["Example Domain"].exists)
+
+        app.terminate()
+        app = launchApp(
+            reset: false,
+            skipOnboarding: true,
+            bypassIdentifier: "owner-a@memo.local"
+        )
+        XCTAssertTrue(
+            app.webViews["prototype-webview"]
+                .staticTexts["Example Domain"]
+                .waitForExistence(timeout: 8)
+        )
     }
 
     private func launchAndIngestExample() -> XCUIApplication {
@@ -328,6 +455,28 @@ final class KnowledgeIOSUITests: XCTestCase {
         startButton.tap()
     }
 
+    private func assertNativeHeader(in app: XCUIApplication) {
+        let sidebar = app.buttons["侧边栏"]
+        let search = app.buttons["搜索"]
+        XCTAssertTrue(sidebar.waitForExistence(timeout: 5))
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(sidebar.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(sidebar.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(search.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(search.frame.height, 44)
+    }
+
+    private func openSettings(in app: XCUIApplication) {
+        assertNativeHeader(in: app)
+        app.buttons["侧边栏"].tap()
+        let settings = app.buttons["设置"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["每日回顾"].exists)
+        XCTAssertFalse(app.buttons["AI 洞察"].exists)
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
+    }
+
     private func addScreenshot(named name: String, from app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
@@ -340,14 +489,23 @@ final class KnowledgeIOSUITests: XCTestCase {
         reset: Bool,
         skipOnboarding: Bool,
         authMode: String = "bypass",
-        resetAuth: Bool = false
+        resetAuth: Bool = false,
+        bypassIdentifier: String = "ui-tests@memo.local",
+        accessibilityTextSize: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
+        if accessibilityTextSize {
+            app.launchArguments += [
+                "-UIPreferredContentSizeCategoryName",
+                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+            ]
+        }
         app.launchEnvironment["KNOWLEDGE_SCREEN"] = screenID
         app.launchEnvironment["KNOWLEDGE_RESET_ON_LAUNCH"] = reset ? "1" : "0"
         app.launchEnvironment["KNOWLEDGE_SKIP_ONBOARDING"] =
             skipOnboarding ? "1" : "0"
         app.launchEnvironment["KNOWLEDGE_AUTH_MODE"] = authMode
+        app.launchEnvironment["KNOWLEDGE_BYPASS_IDENTIFIER"] = bypassIdentifier
         app.launchEnvironment["KNOWLEDGE_RESET_AUTH_ON_LAUNCH"] =
             resetAuth ? "1" : "0"
         app.launch()

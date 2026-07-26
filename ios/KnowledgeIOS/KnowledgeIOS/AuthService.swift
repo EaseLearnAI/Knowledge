@@ -52,18 +52,24 @@ actor AuthStore {
     private let credentials = KeychainCredentialStore()
     private let client: BackendAPIClient
     private let mode: AuthMode
+    private let bypassSession: AuthSession
     private var session: AuthSession?
 
     init() {
         let environment = ProcessInfo.processInfo.environment
         mode = AuthMode(rawValue: environment["KNOWLEDGE_AUTH_MODE"] ?? "live") ?? .live
         client = BackendAPIClient(environment: environment)
+        bypassSession = Self.mockSession(
+            identifier: environment["KNOWLEDGE_BYPASS_IDENTIFIER"]
+                ?? "ui-tests@memo.local",
+            nickname: "UI 测试"
+        )
         session = try? credentials.load()
     }
 
     func restoreSession() async -> AuthSnapshot {
         if mode == .bypass {
-            return Self.testSession.snapshot
+            return bypassSession.snapshot
         }
         guard var current = session else {
             return AuthSnapshot(isAuthenticated: false, user: nil)
@@ -143,6 +149,69 @@ actor AuthStore {
         try? await client.logout(refreshToken: refreshToken)
     }
 
+    func currentSnapshot() -> AuthSnapshot {
+        if mode == .bypass {
+            return bypassSession.snapshot
+        }
+        return session?.snapshot
+            ?? AuthSnapshot(isAuthenticated: false, user: nil)
+    }
+
+    func changePassword(
+        currentPassword: String,
+        newPassword: String
+    ) async throws -> AuthSnapshot {
+        guard !currentPassword.isEmpty else {
+            throw AuthValidationError.emptyPassword
+        }
+        try Self.validate(password: newPassword)
+        guard currentPassword != newPassword else {
+            throw AuthValidationError.unchangedPassword
+        }
+
+        let newSession: AuthSession
+        if mode == .mock || mode == .bypass {
+            let current = mode == .bypass ? bypassSession : session
+            guard let current else {
+                throw AuthValidationError.authenticationRequired
+            }
+            newSession = AuthSession(
+                user: current.user,
+                accessToken: "mock-access-token-\(UUID().uuidString)",
+                refreshToken: String(repeating: "n", count: 48),
+                tokenType: "Bearer"
+            )
+        } else {
+            guard let current = session else {
+                throw AuthValidationError.authenticationRequired
+            }
+            newSession = try await client.changePassword(
+                accessToken: current.accessToken,
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            )
+        }
+        try credentials.save(newSession)
+        session = newSession
+        return newSession.snapshot
+    }
+
+    func deleteAccount(currentPassword: String) async throws {
+        guard !currentPassword.isEmpty else {
+            throw AuthValidationError.emptyPassword
+        }
+        if mode == .live {
+            guard let current = session else {
+                throw AuthValidationError.authenticationRequired
+            }
+            try await client.deleteAccount(
+                accessToken: current.accessToken,
+                currentPassword: currentPassword
+            )
+        }
+        clearSession()
+    }
+
     func resetSession() {
         clearSession()
     }
@@ -218,7 +287,7 @@ actor AuthStore {
         let isEmail = identifier.contains("@")
         return AuthSession(
             user: AuthUser(
-                id: UUID().uuidString,
+                id: "mock:\(identifier.lowercased())",
                 email: isEmail ? identifier : nil,
                 phone: isEmail ? nil : identifier,
                 nickname: nickname
@@ -234,10 +303,6 @@ actor AuthStore {
         )
     }
 
-    private static let testSession = mockSession(
-        identifier: "ui-tests@memo.local",
-        nickname: "UI 测试"
-    )
 }
 
 private struct BackendAPIClient: Sendable {
@@ -290,6 +355,35 @@ private struct BackendAPIClient: Sendable {
         )
     }
 
+    func changePassword(
+        accessToken: String,
+        currentPassword: String,
+        newPassword: String
+    ) async throws -> AuthSession {
+        try await sendJSON(
+            method: "PATCH",
+            path: "auth/me/password",
+            body: ChangePasswordBody(
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            ),
+            accessToken: accessToken
+        )
+    }
+
+    func deleteAccount(
+        accessToken: String,
+        currentPassword: String
+    ) async throws {
+        let _: EmptyResponse = try await sendJSON(
+            method: "DELETE",
+            path: "auth/me",
+            body: DeleteAccountBody(currentPassword: currentPassword),
+            accessToken: accessToken,
+            allowsEmptyResponse: true
+        )
+    }
+
     func currentUser(accessToken: String) async throws -> AuthUser {
         var request = URLRequest(url: url(path: "auth/me"))
         request.httpMethod = "GET"
@@ -305,6 +399,21 @@ private struct BackendAPIClient: Sendable {
         var request = URLRequest(url: url(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+        return try await send(request, allowsEmptyResponse: allowsEmptyResponse)
+    }
+
+    private func sendJSON<Body: Encodable, Response: Decodable>(
+        method: String,
+        path: String,
+        body: Body,
+        accessToken: String,
+        allowsEmptyResponse: Bool = false
+    ) async throws -> Response {
+        var request = URLRequest(url: url(path: path))
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
         return try await send(request, allowsEmptyResponse: allowsEmptyResponse)
     }
@@ -362,6 +471,15 @@ private struct LoginBody: Encodable {
 
 private struct RefreshBody: Encodable {
     let refreshToken: String
+}
+
+private struct ChangePasswordBody: Encodable {
+    let currentPassword: String
+    let newPassword: String
+}
+
+private struct DeleteAccountBody: Encodable {
+    let currentPassword: String
 }
 
 private struct EmptyResponse: Codable {
@@ -446,6 +564,7 @@ private enum AuthValidationError: LocalizedError {
     case invalidIdentifier
     case emptyPassword
     case weakPassword
+    case unchangedPassword
     case secureStorageFailed
     case authenticationRequired
 
@@ -457,6 +576,8 @@ private enum AuthValidationError: LocalizedError {
             "请输入密码"
         case .weakPassword:
             "密码至少 8 位，且必须同时包含字母和数字"
+        case .unchangedPassword:
+            "新密码不能与当前密码相同"
         case .secureStorageFailed:
             "无法安全保存登录状态"
         case .authenticationRequired:
