@@ -206,7 +206,7 @@ describe("ArkVideoProcessor", () => {
     const processor = new ArkVideoProcessor(config, { client, preparer });
     const result = await processor.process(
       {
-        source: "https://www.bilibili.com/video/BVtest",
+        source: "https://www.youtube.com/watch?v=test",
         quality: "balanced",
         language: "zh",
       },
@@ -306,5 +306,48 @@ describe("ArkCopywriter", () => {
     expect(result.oneSentenceSummary).toBe("视频解释了最小上线方案。");
     expect(result.provider).toBe("volcengine-ark-responses");
     expect(result.model).toBe(config.arkSummaryModel);
+  });
+
+  it("总结网络失败时自动重试", async () => {
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(
+          new AppError(502, "ARK_NETWORK_ERROR", "fetch failed"),
+        )
+        .mockResolvedValueOnce(
+          responseResult(
+            JSON.stringify({
+              oneSentenceSummary: "重试后成功。",
+              whyWorthWatching: "验证了网络重试。",
+              keyPoints: ["保留原始逐字稿。"],
+              chapters: [],
+              actionItems: [],
+              tags: ["测试"],
+              markdown: "# 重试后成功",
+            }),
+          ),
+        ),
+    };
+    const events: string[] = [];
+    const result = await new ArkCopywriter(config, client).generate(
+      {
+        title: "网络重试",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      (event) => {
+        events.push(event);
+      },
+    );
+
+    expect(result.oneSentenceSummary).toBe("重试后成功。");
+    expect(client.create).toHaveBeenCalledTimes(2);
+    expect(events).toContain("copywriting.ark.retrying");
   });
 });

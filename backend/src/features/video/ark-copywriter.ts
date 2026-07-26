@@ -43,6 +43,34 @@ function extractJson(value: string): unknown {
   );
 }
 
+function timedTranscriptForSummary(transcript: TranscriptResult): string {
+  if (transcript.segments.length === 0) return transcript.text;
+  const windowMs = 5 * 60 * 1_000;
+  const windows = new Map<
+    number,
+    { startMs: number; endMs: number; texts: string[] }
+  >();
+  for (const segment of transcript.segments) {
+    const key = Math.floor(segment.startMs / windowMs);
+    const existing = windows.get(key) ?? {
+      startMs: segment.startMs,
+      endMs: segment.endMs,
+      texts: [],
+    };
+    existing.startMs = Math.min(existing.startMs, segment.startMs);
+    existing.endMs = Math.max(existing.endMs, segment.endMs);
+    existing.texts.push(segment.text);
+    windows.set(key, existing);
+  }
+  return [...windows.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(
+      ([, window]) =>
+        `[${Math.round(window.startMs)}-${Math.round(window.endMs)}] ${window.texts.join(" ")}`,
+    )
+    .join("\n");
+}
+
 export class ArkCopywriter implements Copywriter {
   private readonly client: ArkClient;
 
@@ -57,22 +85,16 @@ export class ArkCopywriter implements Copywriter {
     transcript: TranscriptResult,
     report: ProgressReporter,
   ): Promise<CopywritingResult> {
-    const timedTranscript =
-      transcript.segments.length > 0
-        ? transcript.segments
-            .map(
-              (segment) =>
-                `[${Math.round(segment.startMs)}-${Math.round(segment.endMs)}] ${segment.text}`,
-            )
-            .join("\n")
-        : transcript.text;
+    const timedTranscript = timedTranscriptForSummary(transcript);
 
     await report("copywriting.ark.started", "已向火山方舟发起总结请求", {
       model: this.config.arkSummaryModel,
       characters: transcript.text.length,
+      promptCharacters: timedTranscript.length,
     });
-    const response = await this.client.create({
+    const request = {
       model: this.config.arkSummaryModel,
+      max_output_tokens: 8_192,
       instructions:
         "你是内容总结编辑。只能根据用户提供的转录生成结果，不得编造。只输出一个合法 JSON 对象，不要代码围栏、思考过程或额外说明。",
       input: [
@@ -92,7 +114,35 @@ export class ArkCopywriter implements Copywriter {
           ],
         },
       ],
-    });
+    };
+    let response: Awaited<ReturnType<ArkClient["create"]>> | undefined;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        response = await this.client.create(request);
+        break;
+      } catch (error: unknown) {
+        const retryable =
+          error instanceof AppError && error.code === "ARK_NETWORK_ERROR";
+        if (!retryable || attempt === 3) throw error;
+        await report(
+          "copywriting.ark.retrying",
+          "火山方舟总结连接失败，正在自动重试",
+          { attempt, nextAttempt: attempt + 1 },
+        );
+        if (this.config.nodeEnv !== "test") {
+          await new Promise((resolvePromise) =>
+            setTimeout(resolvePromise, attempt * 1_000),
+          );
+        }
+      }
+    }
+    if (!response) {
+      throw new AppError(
+        502,
+        "ARK_NETWORK_ERROR",
+        "火山方舟总结重试后仍未返回结果",
+      );
+    }
 
     let parsedJson: unknown;
     try {
