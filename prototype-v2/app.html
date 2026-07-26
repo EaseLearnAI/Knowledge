@@ -1095,6 +1095,200 @@
     font-size: 10px;
     line-height: 1.5;
   }
+.auth-screen .auth-back {
+    width: 44px;
+    height: 44px;
+    margin: -8px 0 18px -10px;
+    border-radius: 50%;
+    color: var(--ink-700);
+    background: var(--paper-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+/* ===== 15-auth-intro ===== */
+#s-15-auth-intro .intro-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 26px 28px calc(var(--home-bar) + 22px);
+    background:
+      radial-gradient(circle at 86% 12%, rgba(94, 207, 139, 0.14), transparent 28%),
+      var(--paper-50);
+  }
+#s-15-auth-intro .intro-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+#s-15-auth-intro .intro-brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+  }
+#s-15-auth-intro .intro-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 0 12px;
+  }
+#s-15-auth-intro .intro-visual {
+    width: 100%;
+    height: 238px;
+    position: relative;
+    margin-bottom: 20px;
+  }
+#s-15-auth-intro .intro-orbit {
+    position: absolute;
+    width: 208px;
+    height: 208px;
+    border: 1px solid var(--ink-100);
+    border-radius: 50%;
+    left: 50%;
+    top: 8px;
+    transform: translateX(-50%);
+  }
+#s-15-auth-intro .intro-orbit::before,
+#s-15-auth-intro .intro-orbit::after {
+    content: "";
+    position: absolute;
+    border: 1px dashed var(--ink-100);
+    border-radius: 50%;
+  }
+#s-15-auth-intro .intro-orbit::before { inset: 20px; }
+#s-15-auth-intro .intro-orbit::after { inset: 48px; }
+#s-15-auth-intro .intro-knowledge-card {
+    position: absolute;
+    left: 50%;
+    top: 52px;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 152px;
+    min-height: 126px;
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    box-shadow: 0 24px 45px rgba(15, 15, 14, 0.18);
+  }
+#s-15-auth-intro .intro-knowledge-card .label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(250, 250, 247, 0.55);
+    margin-bottom: 14px;
+  }
+#s-15-auth-intro .intro-knowledge-card strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 500;
+  }
+#s-15-auth-intro .intro-knowledge-card .lines {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+  }
+#s-15-auth-intro .intro-knowledge-card .lines span {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(250, 250, 247, 0.22);
+  }
+#s-15-auth-intro .intro-knowledge-card .lines span:last-child { width: 62%; }
+#s-15-auth-intro .intro-source {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: var(--paper-50);
+    border: 1px solid var(--ink-100);
+    box-shadow: var(--shadow-sm);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-700);
+  }
+#s-15-auth-intro .intro-source i { color: var(--accent-500); }
+#s-15-auth-intro .intro-source.source-b { left: 2px; top: 34px; transform: rotate(-5deg); }
+#s-15-auth-intro .intro-source.source-xhs { right: 0; top: 16px; transform: rotate(5deg); }
+#s-15-auth-intro .intro-source.source-dy { right: 8px; bottom: 18px; transform: rotate(-3deg); }
+#s-15-auth-intro .intro-eyebrow,
+#s-09-onboarding .onboard-eyebrow {
+    color: var(--accent-500);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+#s-15-auth-intro h1 {
+    font-family: var(--font-display);
+    font-size: 37px;
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -1.2px;
+    margin-bottom: 12px;
+  }
+#s-15-auth-intro .intro-subtitle {
+    max-width: 330px;
+    color: var(--ink-500);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+#s-15-auth-intro .intro-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+#s-15-auth-intro .intro-primary,
+#s-15-auth-intro .intro-secondary {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+  }
+#s-15-auth-intro .intro-primary {
+    background: var(--ink-900);
+    color: var(--paper-50);
+    box-shadow: 0 8px 24px rgba(15, 15, 14, 0.16);
+  }
+#s-15-auth-intro .intro-secondary {
+    border: 1px solid var(--ink-200);
+    background: var(--paper-50);
+    color: var(--ink-900);
+  }
+#s-15-auth-intro .intro-note {
+    margin-top: 10px;
+    color: var(--ink-400);
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.4;
+  }
 
 /* ===== 06-detail-article ===== */
 #s-06-detail-article .top-nav-bar {
@@ -1728,156 +1922,251 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 0 28px;
+    min-height: 0;
+    padding: 24px 28px 0;
     position: relative;
+    background:
+      radial-gradient(circle at 10% 18%, rgba(94, 207, 139, 0.10), transparent 25%),
+      var(--paper-50);
+  }
+#s-09-onboarding .onboard-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+#s-09-onboarding .onboard-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+#s-09-onboarding .onboard-brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
   }
 #s-09-onboarding .skip {
-    align-self: flex-end;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     font-size: 13px;
     color: var(--ink-500);
     font-weight: 500;
-    margin-top: 12px;
   }
 #s-09-onboarding .stage {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
-    text-align: center;
     position: relative;
+    padding: 12px 0 8px;
   }
-#s-09-onboarding .visual-1 {
-    width: 260px; height: 260px;
+#s-09-onboarding .onboard-art {
+    width: 100%;
+    height: 280px;
     position: relative;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
-#s-09-onboarding .visual-1 .ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 1.5px dashed var(--ink-100);
-    animation: spin 24s linear infinite;
-  }
-#s-09-onboarding .visual-1 .ring.r2 {
-    inset: 20px;
-    border-style: solid;
-    border-color: var(--ink-100);
-    border-width: 1px;
-    animation: spin 18s linear infinite reverse;
-  }
-#s-09-onboarding .visual-1 .ring.r3 {
-    inset: 50px;
-    border: 1px solid var(--ink-100);
-    animation: none;
-  }
-#s-09-onboarding .visual-1 .core {
+#s-09-onboarding .problem-art .archive {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    background: var(--ink-900);
-    color: var(--paper-50);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 10px 30px rgba(15,15,14,0.2);
+    left: 50%;
+    top: 24px;
+    width: 210px;
+    height: 204px;
+    transform: translateX(-50%);
   }
-#s-09-onboarding .visual-1 .floating {
+#s-09-onboarding .problem-art .saved-card {
     position: absolute;
-    width: 56px; height: 56px;
+    left: 50%;
+    width: 176px;
+    height: 96px;
+    padding: 16px;
     border-radius: 16px;
+    border: 1px solid var(--ink-100);
     background: var(--paper-50);
-    border: 1px solid var(--ink-100);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--ink-900);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
   }
-#s-09-onboarding .visual-1 .floating.f1 { top: 10px; left: 30px; animation: float 3s ease-in-out infinite; }
-#s-09-onboarding .visual-1 .floating.f2 { top: 60px; right: 0; animation: float 3s ease-in-out 0.5s infinite; }
-#s-09-onboarding .visual-1 .floating.f3 { bottom: 30px; left: 0; animation: float 3s ease-in-out 1s infinite; }
-#s-09-onboarding .visual-1 .floating.f4 { bottom: 0; right: 40px; animation: float 3s ease-in-out 1.5s infinite; }
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+#s-09-onboarding .problem-art .saved-card:nth-child(1) {
+    top: 0;
+    transform: translateX(-50%) rotate(-7deg);
+    opacity: 0.42;
   }
-@keyframes spin { to { transform: rotate(360deg); } }
-#s-09-onboarding .visual-2 {
-    width: 280px; height: 200px;
-    position: relative;
-    margin-bottom: 32px;
+#s-09-onboarding .problem-art .saved-card:nth-child(2) {
+    top: 46px;
+    transform: translateX(-50%) rotate(5deg);
+    opacity: 0.68;
   }
-#s-09-onboarding .visual-2 .icon {
-    position: absolute;
-    width: 56px; height: 56px;
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 18px;
-    box-shadow: var(--shadow-md);
-  }
-#s-09-onboarding .visual-2 .icon.i1 { top: 0; left: 30px; background: #FF0050; animation: slide 1.2s ease-out; }
-#s-09-onboarding .visual-2 .icon.i2 { top: 30px; left: 110px; background: #FF0000; animation: slide 1.2s ease-out 0.2s backwards; }
-#s-09-onboarding .visual-2 .icon.i3 { top: 60px; left: 190px; background: #000; animation: slide 1.2s ease-out 0.4s backwards; }
-#s-09-onboarding .visual-2 .icon.i4 { top: 120px; left: 70px; background: #2A2A28; animation: slide 1.2s ease-out 0.6s backwards; }
-#s-09-onboarding .visual-2 .icon.i5 { top: 120px; left: 150px; background: #4A6B8A; animation: slide 1.2s ease-out 0.8s backwards; }
-@keyframes slide {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-#s-09-onboarding .visual-3 {
-    width: 280px; height: 220px;
-    position: relative;
-    margin-bottom: 32px;
-  }
-#s-09-onboarding .visual-3 .bubble {
-    position: absolute;
-    background: var(--paper-100);
-    border-radius: 14px;
-    padding: 10px 14px;
-    font-size: 12px;
-    line-height: 1.4;
-    max-width: 180px;
-    border: 1px solid var(--ink-100);
-  }
-#s-09-onboarding .visual-3 .bubble.b1 {
-    top: 10px; left: 0;
-    animation: pop 0.6s ease-out;
-  }
-#s-09-onboarding .visual-3 .bubble.b2 {
-    top: 70px; right: 0;
+#s-09-onboarding .problem-art .saved-card:nth-child(3) {
+    top: 92px;
+    transform: translateX(-50%) rotate(-1deg);
     background: var(--ink-900);
     color: var(--paper-50);
     border-color: var(--ink-900);
-    animation: pop 0.6s ease-out 0.3s backwards;
+    box-shadow: 0 18px 38px rgba(15, 15, 14, 0.18);
   }
-#s-09-onboarding .visual-3 .bubble.b3 {
-    top: 130px; left: 20px;
-    animation: pop 0.6s ease-out 0.6s backwards;
+#s-09-onboarding .problem-art .saved-source {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    opacity: 0.55;
+    margin-bottom: 12px;
   }
-@keyframes pop {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+#s-09-onboarding .problem-art .saved-line {
+    height: 5px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.16;
+    margin-bottom: 7px;
+  }
+#s-09-onboarding .problem-art .saved-line.short { width: 62%; }
+#s-09-onboarding .problem-art .dust-label {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: var(--paper-100);
+    color: var(--ink-500);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+  }
+#s-09-onboarding .method-art {
+    display: none;
+  }
+#s-09-onboarding[data-step="1"] .problem-art { display: none; }
+#s-09-onboarding[data-step="1"] .method-art { display: block; }
+#s-09-onboarding .method-art .link-card {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 18px;
+    min-height: 68px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--paper-100);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+#s-09-onboarding .method-art .link-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+#s-09-onboarding .method-art .link-copy {
+    min-width: 0;
+    flex: 1;
+  }
+#s-09-onboarding .method-art .link-copy strong {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+#s-09-onboarding .method-art .link-copy span {
+    display: block;
+    font-family: var(--font-mono);
+    color: var(--ink-400);
+    font-size: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+#s-09-onboarding .method-art .flow-line {
+    position: absolute;
+    left: 50%;
+    top: 90px;
+    width: 1px;
+    height: 34px;
+    background: var(--ink-200);
+  }
+#s-09-onboarding .method-art .flow-line::after {
+    content: "";
+    position: absolute;
+    left: -3px;
+    bottom: 0;
+    width: 7px;
+    height: 7px;
+    border-right: 1px solid var(--ink-300);
+    border-bottom: 1px solid var(--ink-300);
+    transform: rotate(45deg);
+  }
+#s-09-onboarding .method-art .result-card {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 126px;
+    min-height: 132px;
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    box-shadow: 0 18px 38px rgba(15, 15, 14, 0.18);
+  }
+#s-09-onboarding .method-art .result-meta {
+    font-family: var(--font-mono);
+    color: rgba(250, 250, 247, 0.52);
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+#s-09-onboarding .method-art .result-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.35;
+    margin-bottom: 14px;
+  }
+#s-09-onboarding .method-art .result-tags {
+    display: flex;
+    gap: 6px;
+  }
+#s-09-onboarding .method-art .result-tags span {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(250, 250, 247, 0.12);
+    font-size: 9px;
+    color: rgba(250, 250, 247, 0.82);
   }
 #s-09-onboarding .onboard h2 {
     font-family: var(--font-display);
-    font-size: 28px;
+    font-size: 35px;
     font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: -0.6px;
+    line-height: 1.1;
+    letter-spacing: -1px;
     margin-bottom: 12px;
   }
 #s-09-onboarding .onboard .desc {
     color: var(--ink-500);
-    font-size: 15px;
-    line-height: 1.55;
-    max-width: 320px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 330px;
   }
 #s-09-onboarding .onboard .desc strong {
     color: var(--ink-900);
     font-weight: 600;
   }
 #s-09-onboarding .footer {
-    padding: 12px 0 calc(var(--home-bar) + 12px);
+    padding: 8px 0 calc(var(--home-bar) + 12px);
   }
 #s-09-onboarding .dots {
     display: flex; gap: 6px;
@@ -3535,44 +3824,66 @@
       </div>
 
       <div class="onboard">
-        <a class="skip">跳过</a>
+        <div class="onboard-top">
+          <div class="onboard-brand">
+            <div class="onboard-brand-mark">M</div>
+            <span>Memo</span>
+          </div>
+          <button class="skip" type="button">跳过</button>
+        </div>
 
         <div class="stage">
-
-          <!-- 步骤 1：扔进来 -->
-          <div class="visual-1" id="v1">
-            <div class="ring"></div>
-            <div class="ring r2"></div>
-            <div class="ring r3"></div>
-            <div class="core">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-            </div>
-            <div class="floating f1">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#FF0050;"><path d="M5 4h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"/></svg>
-            </div>
-            <div class="floating f2">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#FF0000;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-            </div>
-            <div class="floating f3">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#000;"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>
-            </div>
-            <div class="floating f4">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#4A6B8A;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          <div class="onboard-art problem-art" aria-hidden="true">
+            <div class="archive">
+              <div class="saved-card">
+                <div class="saved-source">BILIBILI · SAVED</div>
+                <div class="saved-line"></div>
+                <div class="saved-line short"></div>
+              </div>
+              <div class="saved-card">
+                <div class="saved-source">XIAOHONGSHU · SAVED</div>
+                <div class="saved-line"></div>
+                <div class="saved-line short"></div>
+              </div>
+              <div class="saved-card">
+                <div class="saved-source">DOUYIN · SAVED</div>
+                <div class="saved-line"></div>
+                <div class="saved-line short"></div>
+              </div>
+              <div class="dust-label"><i class="fa-regular fa-clock"></i> 收藏之后，再也没打开</div>
             </div>
           </div>
 
-          <h2>扔进来，<br>先别整理</h2>
-          <p class="desc">粘贴一个链接或上传一段音频，AI 会自动提取内容、生成摘要和标签。</p>
+          <div class="onboard-art method-art" aria-hidden="true">
+            <div class="link-card">
+              <div class="link-icon"><i class="fa-solid fa-link"></i></div>
+              <div class="link-copy">
+                <strong>粘贴一个视频链接</strong>
+                <span>https://www.bilibili.com/video/...</span>
+              </div>
+              <i class="fa-solid fa-check" style="color:var(--accent-500);font-size:13px;"></i>
+            </div>
+            <div class="flow-line"></div>
+            <div class="result-card">
+              <div class="result-meta">MEMO · 自动整理完成</div>
+              <div class="result-title">这段视频最值得记住的 3 个观点</div>
+              <div class="result-tags">
+                <span>一句话摘要</span>
+                <span>关键观点</span>
+                <span>标签</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="onboard-eyebrow">为什么需要 Memo</div>
+          <h2>别再让<br>收藏夹吃灰</h2>
+          <p class="desc">收藏不是终点。Memo 把你想留住的视频，变成看得懂、找得到的知识。</p>
 
         </div>
 
         <div class="footer">
           <div class="dots">
             <span class="active"></span>
-            <span></span>
             <span></span>
           </div>
           <button class="btn-primary">
@@ -3905,12 +4216,54 @@
   </div>
 </section>
 
+<section class="screen" id="s-15-auth-intro" data-id="15-auth-intro">
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+    <div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="right"></div></div>
+      <main class="intro-shell">
+        <div class="intro-brand">
+          <div class="intro-brand-mark">M</div>
+          <span>Memo</span>
+        </div>
+
+        <div class="intro-main">
+          <div class="intro-visual" aria-hidden="true">
+            <div class="intro-orbit"></div>
+            <div class="intro-source source-b"><i class="fa-solid fa-bookmark"></i>B 站</div>
+            <div class="intro-source source-xhs"><i class="fa-solid fa-bookmark"></i>小红书</div>
+            <div class="intro-source source-dy"><i class="fa-solid fa-bookmark"></i>抖音</div>
+            <div class="intro-knowledge-card">
+              <div class="label">MY KNOWLEDGE</div>
+              <strong>值得记住的<br>不再只躺在收藏夹</strong>
+              <div class="lines"><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="intro-eyebrow">个人视频知识库</div>
+          <h1>把值得看的，<br>变成记得住的。</h1>
+          <p class="intro-subtitle">收藏 B 站、小红书、抖音视频，Memo 自动提取音频、总结重点，沉淀成你的知识库。</p>
+        </div>
+
+        <div class="intro-actions">
+          <button class="intro-primary" type="button" data-auth-route="register">创建账号</button>
+          <button class="intro-secondary" type="button" data-auth-route="login">登录</button>
+        </div>
+        <div class="intro-note">账号仅用于保存登录状态，收藏内容仍默认保存在设备上。</div>
+      </main>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</section>
+
 <section class="screen auth-screen" id="s-13-auth-login" data-id="13-auth-login">
   <div class="phone-frame">
     <div class="dynamic-island"></div>
     <div class="phone-screen">
       <div class="status-bar"><span>9:41</span><div class="right"></div></div>
       <main class="auth-shell">
+        <button class="auth-back" type="button" data-auth-route="intro" aria-label="返回产品介绍">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
         <div class="auth-brand">
           <div class="auth-mark">M</div>
           <div class="auth-brand-name">Memo</div>
@@ -3931,7 +4284,7 @@
           <button class="auth-submit" type="submit">登录</button>
         </form>
         <div class="auth-switch">还没有账号？<button type="button" data-auth-route="register">立即注册</button></div>
-        <div class="auth-service-note">账号仅用于身份验证，收藏与对话仍保存在你的设备上。</div>
+        <div class="auth-service-note">账号仅用于身份验证，收藏内容仍默认保存在你的设备上。</div>
       </main>
       <div class="home-indicator"></div>
     </div>
@@ -3944,6 +4297,9 @@
     <div class="phone-screen">
       <div class="status-bar"><span>9:41</span><div class="right"></div></div>
       <main class="auth-shell">
+        <button class="auth-back" type="button" data-auth-route="intro" aria-label="返回产品介绍">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
         <div class="auth-brand">
           <div class="auth-mark">M</div>
           <div class="auth-brand-name">Memo</div>
@@ -3989,6 +4345,7 @@
     { id: '09-onboarding', title: '引导' },
     { id: '10-unsupported', title: '不支持类型' },
     { id: '11-edit-tags', title: '编辑 Tag' },
+    { id: '15-auth-intro', title: '产品介绍' },
     { id: '13-auth-login', title: '登录' },
     { id: '14-auth-register', title: '注册' },
   ];

@@ -17,6 +17,7 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
         "09-onboarding",
         "10-unsupported",
         "11-edit-tags",
+        "15-auth-intro",
         "13-auth-login",
         "14-auth-register",
     ]

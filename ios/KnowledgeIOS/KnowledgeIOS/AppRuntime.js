@@ -2,6 +2,11 @@
   "use strict";
 
   const PHASE_TWO_AI_SCREENS = new Set(["05-ai-chat", "12-ai-empty"]);
+  const AUTH_SCREENS = new Set([
+    "15-auth-intro",
+    "13-auth-login",
+    "14-auth-register",
+  ]);
 
   const state = {
     items: [],
@@ -52,14 +57,20 @@
     if (PHASE_TWO_AI_SCREENS.has(id)) {
       id = state.items.length ? "01-home" : "02-home-empty";
     }
-    if (!state.preferences.hasCompletedOnboarding && id !== "09-onboarding") {
+    if (!state.auth.isAuthenticated && !AUTH_SCREENS.has(id)) {
+      id = "15-auth-intro";
+    } else if (
+      state.auth.isAuthenticated &&
+      !state.preferences.hasCompletedOnboarding &&
+      id !== "09-onboarding"
+    ) {
       id = "09-onboarding";
     } else if (
+      state.auth.isAuthenticated &&
       state.preferences.hasCompletedOnboarding &&
-      !state.auth.isAuthenticated &&
-      !["13-auth-login", "14-auth-register"].includes(id)
+      AUTH_SCREENS.has(id)
     ) {
-      id = "13-auth-login";
+      id = state.items.length ? "01-home" : "02-home-empty";
     }
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -756,21 +767,44 @@
     const screen = root("09-onboarding");
     const title = screen?.querySelector(".stage h2");
     const description = screen?.querySelector(".stage .desc");
+    const eyebrow = screen?.querySelector(".stage .onboard-eyebrow");
     const button = screen?.querySelector(".footer .btn-primary");
     const steps = [
-      ["扔进来，<br>先别整理", "粘贴一个链接，AI 会自动提取正文、生成摘要和标签。"],
-      ["读完之后，<br>自动归档", "所有内容保存在你的设备上，随时全文搜索和重新编辑 Tag。"],
-      ["收藏越多，<br>问得越准", "回答只基于你的收藏并附上来源；支持时使用 Apple 端侧模型。"],
+      {
+        eyebrow: "为什么需要 Memo",
+        title: "别再让<br>收藏夹吃灰",
+        description:
+          "收藏不是终点。Memo 把你想留住的视频，变成看得懂、找得到的知识。",
+      },
+      {
+        eyebrow: "只需要一步",
+        title: "发一个链接，<br>自动变成知识",
+        description:
+          "把 B 站、小红书、抖音视频链接发到 Memo，自动提取音频，生成摘要、关键观点和标签。",
+      },
     ];
-    if (title) title.innerHTML = steps[state.onboardingStep][0];
-    if (description) description.textContent = steps[state.onboardingStep][1];
+    state.onboardingStep = Math.min(state.onboardingStep, steps.length - 1);
+    const step = steps[state.onboardingStep];
+    if (screen) screen.dataset.step = String(state.onboardingStep);
+    if (eyebrow) eyebrow.textContent = step.eyebrow;
+    if (title) title.innerHTML = step.title;
+    if (description) description.textContent = step.description;
     screen?.querySelectorAll(".dots span").forEach((dot, index) => {
       dot.classList.toggle("active", index === state.onboardingStep);
     });
     if (button) {
       button.childNodes[0].textContent =
-        state.onboardingStep === 2 ? "开始使用 " : "下一步 ";
+        state.onboardingStep === steps.length - 1 ? "开始使用 " : "下一步 ";
     }
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      const phoneScreen = screen?.querySelector(".phone-screen");
+      if (phoneScreen) phoneScreen.scrollTop = 0;
+      const onboard = screen?.querySelector(".onboard");
+      if (onboard) onboard.scrollTop = 0;
+    });
     const accountStatus = screen?.querySelector("[data-auth-account-status]");
     if (accountStatus) {
       const identifier = state.auth.user?.email || state.auth.user?.phone;
@@ -919,11 +953,13 @@
       const authRoute = target.closest("[data-auth-route]");
       if (authRoute) {
         intercept(event);
-        route(
+        const destination =
           authRoute.dataset.authRoute === "register"
             ? "14-auth-register"
-            : "13-auth-login",
-        );
+            : authRoute.dataset.authRoute === "intro"
+              ? "15-auth-intro"
+              : "13-auth-login";
+        route(destination);
         return;
       }
 
@@ -1148,7 +1184,7 @@
       }
       if (target.closest("#s-09-onboarding .btn-primary")) {
         intercept(event);
-        if (state.onboardingStep < 2) {
+        if (state.onboardingStep < 1) {
           state.onboardingStep += 1;
           updateOnboarding();
         } else {
@@ -1284,7 +1320,7 @@
         renderHome();
         renderSearch();
         renderAssistantHome();
-        route("13-auth-login");
+        route("15-auth-intro");
         return;
       }
       if (event.payload?.id) replaceItem(event.payload);
@@ -1321,13 +1357,13 @@
       hydrateSnapshot(snapshot);
       installInputHandlers();
 
-      if (!state.preferences.hasCompletedOnboarding) {
-        route("09-onboarding");
+      if (!state.auth.isAuthenticated) {
+        route("15-auth-intro");
         return;
       }
 
-      if (!state.auth.isAuthenticated) {
-        route("13-auth-login");
+      if (!state.preferences.hasCompletedOnboarding) {
+        route("09-onboarding");
         return;
       }
 

@@ -15,19 +15,19 @@ final class KnowledgeIOSUITests: XCTestCase {
 
         let nextButton = webView.buttons["下一步"]
         XCTAssertTrue(nextButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            webView.staticTexts.containing(
+                NSPredicate(format: "label CONTAINS %@", "收藏夹吃灰")
+            ).firstMatch.waitForExistence(timeout: 3)
+        )
+        addScreenshot(named: "onboarding-problem", from: app)
         nextButton.tap()
         XCTAssertTrue(
             webView.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "读完之后")
+                NSPredicate(format: "label CONTAINS %@", "发一个链接")
             ).firstMatch.waitForExistence(timeout: 3)
         )
-
-        webView.buttons["下一步"].tap()
-        XCTAssertTrue(
-            webView.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "收藏越多")
-            ).firstMatch.waitForExistence(timeout: 3)
-        )
+        addScreenshot(named: "onboarding-how-it-works", from: app)
 
         let startButton = webView.buttons["开始使用"]
         XCTAssertTrue(startButton.waitForExistence(timeout: 3))
@@ -137,12 +137,27 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         let webView = app.webViews["prototype-webview"]
         XCTAssertTrue(webView.waitForExistence(timeout: 8))
-        XCTAssertTrue(webView.buttons["下一步"].waitForExistence(timeout: 5))
-        XCTAssertFalse(webView.buttons["登录"].exists)
-        completeOnboarding(in: webView)
-        XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
-
-        webView.buttons["立即注册"].tap()
+        XCTAssertTrue(
+            webView.staticTexts.containing(
+                NSPredicate(format: "label CONTAINS %@", "把值得看的")
+            ).firstMatch.waitForExistence(timeout: 5)
+        )
+        let createAccountButton = webView.buttons["创建账号"]
+        let loginButton = webView.buttons["登录"]
+        XCTAssertTrue(createAccountButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(loginButton.waitForExistence(timeout: 5))
+        XCTAssertEqual(
+            createAccountButton.frame.minX,
+            loginButton.frame.minX,
+            accuracy: 1
+        )
+        XCTAssertEqual(
+            createAccountButton.frame.width,
+            loginButton.frame.width,
+            accuracy: 1
+        )
+        XCTAssertGreaterThan(loginButton.frame.minY, createAccountButton.frame.maxY)
+        createAccountButton.tap()
         let nickname = webView.textFields["昵称"]
         let email = webView.textFields["注册手机号或者邮箱"]
         XCTAssertTrue(nickname.waitForExistence(timeout: 3))
@@ -159,12 +174,14 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(registerDone.waitForExistence(timeout: 3))
         registerDone.tap()
 
+        completeOnboarding(in: webView)
         XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 5))
         webView.buttons["设置"].tap()
         XCTAssertTrue(app.sheets["Memo 设置"].waitForExistence(timeout: 5))
         app.buttons["退出登录"].tap()
 
         XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
+        webView.buttons["登录"].tap()
         let loginEmail = webView.textFields["登录手机号或者邮箱"]
         let loginPassword = webView.secureTextFields["登录密码"]
         loginEmail.tap()
@@ -194,10 +211,8 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         let webView = app.webViews["prototype-webview"]
         XCTAssertTrue(webView.waitForExistence(timeout: 8))
-        completeOnboarding(in: webView)
-        XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
-
-        webView.buttons["立即注册"].tap()
+        XCTAssertTrue(webView.buttons["创建账号"].waitForExistence(timeout: 5))
+        webView.buttons["创建账号"].tap()
         let nickname = webView.textFields["昵称"]
         let phone = webView.textFields["注册手机号或者邮箱"]
         nickname.tap()
@@ -212,12 +227,14 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.buttons["done"].waitForExistence(timeout: 3))
         app.keyboards.buttons["done"].tap()
 
+        completeOnboarding(in: webView)
         XCTAssertTrue(webView.buttons["添加第 1 条"].waitForExistence(timeout: 5))
         webView.buttons["设置"].tap()
         XCTAssertTrue(app.sheets["Memo 设置"].waitForExistence(timeout: 5))
         app.buttons["退出登录"].tap()
 
         XCTAssertTrue(webView.buttons["登录"].waitForExistence(timeout: 5))
+        webView.buttons["登录"].tap()
         let loginPhone = webView.textFields["登录手机号或者邮箱"]
         loginPhone.tap()
         loginPhone.typeText(phoneNumber)
@@ -293,10 +310,16 @@ final class KnowledgeIOSUITests: XCTestCase {
         let nextButton = webView.buttons["下一步"]
         XCTAssertTrue(nextButton.waitForExistence(timeout: 5))
         nextButton.tap()
-        webView.buttons["下一步"].tap()
         let startButton = webView.buttons["开始使用"]
         XCTAssertTrue(startButton.waitForExistence(timeout: 3))
         startButton.tap()
+    }
+
+    private func addScreenshot(named name: String, from app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func launchApp(

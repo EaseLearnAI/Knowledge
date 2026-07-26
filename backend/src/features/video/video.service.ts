@@ -12,7 +12,6 @@ function platformOf(url?: string): string {
   if (/bilibili|b23\.tv/.test(url)) return "B站";
   if (/douyin/.test(url)) return "抖音";
   if (/xiaohongshu|xhslink/.test(url)) return "小红书";
-  if (/ixigua/.test(url)) return "西瓜视频";
   return "其他";
 }
 

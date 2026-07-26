@@ -5,7 +5,7 @@
 ## 已实现
 
 - 注册、登录、访问令牌、刷新令牌轮换、退出和当前用户；
-- YouTube、B站、抖音、小红书、西瓜视频链接入队；
+- YouTube、B站、抖音、小红书链接入队；
 - 本地 MP4/MOV/WebM/MP3/M4A/WAV 上传；
 - 复用本机 `videosummarize`：下载、FFmpeg 抽音频、本地 Whisper 转录；
 - 串行视频任务队列，避免 Apple Silicon 多个 MLX 进程冲突；

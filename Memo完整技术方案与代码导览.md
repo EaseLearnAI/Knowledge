@@ -461,7 +461,7 @@ sequenceDiagram
 | 字段 | 作用 |
 |---|---|
 | `type` | 视频或音频 |
-| `platform` | YouTube、B站、抖音、小红书、西瓜视频、本地上传等 |
+| `platform` | YouTube、B站、抖音、小红书、本地上传等 |
 | `url` | 原始视频地址，可选 |
 | `title / status / tags` | 内容展示信息 |
 | `transcript` | 全文、时间戳分段、文件路径和 provider |
