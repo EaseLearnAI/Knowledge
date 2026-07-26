@@ -971,17 +971,6 @@
         return;
       }
 
-      const tab = target.closest(".tab-item");
-      if (tab) {
-        intercept(event);
-        if (tab.textContent.includes("AI")) {
-          route("12-ai-empty");
-        } else {
-          goToLibrary();
-        }
-        return;
-      }
-
       if (target.closest("#s-01-home .topbar-actions .icon-btn")) {
         intercept(event);
         state.searchQuery = "";
