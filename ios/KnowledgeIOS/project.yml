@@ -28,17 +28,12 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UILaunchScreen: {}
         UIRequiresFullScreen: true
-        UIStatusBarHidden: true
+        UIStatusBarHidden: false
         UIViewControllerBasedStatusBarAppearance: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     sources:
       - path: KnowledgeIOS
-      - path: ../../prototype-v2/app.html
-        buildPhase: resources
-      - path: ../../prototype-v2/styles
-        type: folder
-        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ai.easelearn.knowledge
