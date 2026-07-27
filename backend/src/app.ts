@@ -12,6 +12,7 @@ import { ArkVideoProcessor } from "./features/video/ark-video.processor.js";
 import { createBilibiliMediaProxyRouter } from "./features/video/bilibili-media-proxy.js";
 import { LocalCopywriter } from "./features/video/local-copywriter.js";
 import { MiniMaxCopywriter } from "./features/video/minimax-copywriter.js";
+import { HybridMultimodalVideoProcessor } from "./features/video/minimax-multimodal.processor.js";
 import { MockVideoProcessor } from "./features/video/mock-video.processor.js";
 import { VideoTaskRunner } from "./features/video/task-runner.js";
 import {
@@ -39,7 +40,7 @@ export type CreatedApp = {
 
 export function createApp(dependencies: AppDependencies): CreatedApp {
   const { config, logger } = dependencies;
-  const processor =
+  const fallbackProcessor =
     dependencies.videoProcessor ??
     (config.videoProcessor === "mock"
       ? new MockVideoProcessor()
@@ -48,6 +49,9 @@ export function createApp(dependencies: AppDependencies): CreatedApp {
       : config.videoProcessor === "volc_asr"
         ? new VolcAsrVideoProcessor(config)
       : new VideoSummarizeProcessor(config));
+  const processor = config.minimaxMultimodalEnabled
+    ? new HybridMultimodalVideoProcessor(config, fallbackProcessor)
+    : fallbackProcessor;
   const copywriter =
     dependencies.copywriter ??
     (config.copywriterProvider === "minimax"

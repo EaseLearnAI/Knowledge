@@ -94,6 +94,7 @@ export class MiniMaxCopywriter implements Copywriter {
         },
         body: JSON.stringify({
           model: this.config.minimaxModel,
+          thinking: { type: "disabled" },
           max_completion_tokens: 12_000,
           temperature: 0.2,
           reasoning_split: true,

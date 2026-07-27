@@ -1,5 +1,10 @@
 import { model, Schema, type Types } from "mongoose";
-import type { VideoLanguage, VideoQuality } from "./video.types.js";
+import type {
+  AnalysisMode,
+  ContentKind,
+  VideoLanguage,
+  VideoQuality,
+} from "./video.types.js";
 
 export type TaskStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -23,6 +28,8 @@ export type ProcessingTaskRecord = {
   status: TaskStatus;
   stage: string;
   progress: number;
+  contentKind?: ContentKind;
+  analysisMode?: AnalysisMode;
   attempts: number;
   leaseOwner?: string;
   leaseUntil?: Date;
@@ -75,6 +82,14 @@ const processingTaskSchema = new Schema<ProcessingTaskRecord>(
     },
     stage: { type: String, default: "queued" },
     progress: { type: Number, min: 0, max: 100, default: 0 },
+    contentKind: {
+      type: String,
+      enum: ["image_post", "short_video", "long_video"],
+    },
+    analysisMode: {
+      type: String,
+      enum: ["minimax_m3_multimodal", "asr_then_summary"],
+    },
     attempts: { type: Number, min: 0, default: 0 },
     leaseOwner: String,
     leaseUntil: Date,

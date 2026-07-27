@@ -13,6 +13,7 @@ import {
 } from "./tos-object-store.js";
 import type {
   ProgressReporter,
+  ResolvedContent,
   TranscriptResult,
   TranscriptSegment,
   VideoProcessInput,
@@ -35,6 +36,7 @@ const bilibiliViewSchema = z.object({
   data: z.object({
     cid: z.number().optional(),
     title: z.string().min(1),
+    desc: z.string().optional(),
     duration: z.number().nonnegative(),
     pages: z.array(z.object({ cid: z.number() })).optional(),
   }),
@@ -46,6 +48,15 @@ const bilibiliPlaySchema = z.object({
   data: z.object({
     dash: z.object({
       duration: z.number().nonnegative().optional(),
+      video: z
+        .array(
+          z.object({
+            bandwidth: z.number().int().nonnegative().optional(),
+            baseUrl: z.string().url().optional(),
+            base_url: z.string().url().optional(),
+          }),
+        )
+        .optional(),
       audio: z.array(
         z.object({
           bandwidth: z.number().int().nonnegative().optional(),
@@ -196,6 +207,108 @@ export async function resolvePublicBilibiliMedia(
       Referer: referer,
       "User-Agent": BILIBILI_USER_AGENT,
     },
+  };
+}
+
+export async function resolvePublicBilibiliContent(
+  source: string,
+): Promise<ResolvedContent> {
+  let bvid = BILIBILI_BVID_PATTERN.exec(source)?.[1];
+  if (!bvid && /b23\.tv/i.test(source)) {
+    try {
+      const response = await fetch(source, {
+        headers: { "User-Agent": BILIBILI_USER_AGENT },
+        redirect: "follow",
+        signal: AbortSignal.timeout(30_000),
+      });
+      bvid = BILIBILI_BVID_PATTERN.exec(response.url)?.[1];
+      await response.body?.cancel();
+    } catch {
+      // The validation error below is more useful than the redirect failure.
+    }
+  }
+  if (!bvid) {
+    throw new AppError(422, "BILIBILI_URL_INVALID", "无法从 B站链接中识别 BV 号");
+  }
+  const referer = `https://www.bilibili.com/video/${bvid}/`;
+  const viewUrl = new URL("https://api.bilibili.com/x/web-interface/view");
+  viewUrl.searchParams.set("bvid", bvid);
+  const view = bilibiliViewSchema.safeParse(
+    await fetchBilibiliJson(viewUrl, referer),
+  );
+  if (!view.success || view.data.code !== 0) {
+    throw new AppError(
+      502,
+      "BILIBILI_RESOLVE_FAILED",
+      view.success
+        ? `B站公开接口返回错误：${view.data.message ?? view.data.code}`
+        : "B站视频详情返回格式异常",
+    );
+  }
+  const cid = view.data.data.cid ?? view.data.data.pages?.[0]?.cid;
+  if (!cid) {
+    throw new AppError(502, "BILIBILI_RESOLVE_FAILED", "B站视频详情缺少 cid");
+  }
+  const playUrl = new URL("https://api.bilibili.com/x/player/playurl");
+  playUrl.searchParams.set("bvid", bvid);
+  playUrl.searchParams.set("cid", String(cid));
+  playUrl.searchParams.set("fnval", "16");
+  playUrl.searchParams.set("qn", "16");
+  const play = bilibiliPlaySchema.safeParse(
+    await fetchBilibiliJson(playUrl, referer),
+  );
+  if (!play.success || play.data.code !== 0) {
+    throw new AppError(
+      502,
+      "BILIBILI_RESOLVE_FAILED",
+      play.success
+        ? `B站播放器接口返回错误：${play.data.message ?? play.data.code}`
+        : "B站播放器接口返回格式异常",
+    );
+  }
+  const pickLowestBandwidth = (
+    values:
+      | Array<{
+          bandwidth?: number | undefined;
+          baseUrl?: string | undefined;
+          base_url?: string | undefined;
+        }>
+      | undefined,
+  ) =>
+    values
+      ?.map((value) => ({
+        url: value.baseUrl ?? value.base_url,
+        bandwidth: value.bandwidth ?? Number.MAX_SAFE_INTEGER,
+      }))
+      .filter(
+        (value): value is { url: string; bandwidth: number } =>
+          typeof value.url === "string",
+      )
+      .sort((left, right) => left.bandwidth - right.bandwidth)[0]?.url;
+  const videoUrl = pickLowestBandwidth(play.data.data.dash.video);
+  const audioUrl = pickLowestBandwidth(play.data.data.dash.audio);
+  if (!videoUrl || !audioUrl) {
+    throw new AppError(
+      502,
+      "BILIBILI_RESOLVE_FAILED",
+      "B站公开视频没有可用的 DASH 音视频流",
+    );
+  }
+  const headers = {
+    Referer: referer,
+    "User-Agent": BILIBILI_USER_AGENT,
+  };
+  const durationSeconds = view.data.data.duration;
+  return {
+    kind: durationSeconds <= 180 ? "short_video" : "long_video",
+    platform: "bilibili",
+    title: view.data.data.title,
+    text: view.data.data.desc?.trim() ?? "",
+    durationSeconds,
+    assets: [
+      { kind: "video", url: videoUrl, format: "mp4", headers },
+      { kind: "audio", url: audioUrl, format: "m4a", headers },
+    ],
   };
 }
 

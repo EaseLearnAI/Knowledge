@@ -110,6 +110,21 @@ const envSchema = z.object({
   MINIMAX_API_KEY: z.string().optional(),
   MINIMAX_API_BASE: z.string().url().default("https://api.minimaxi.com"),
   MINIMAX_MODEL: z.string().min(1).default("MiniMax-M3"),
+  MINIMAX_MULTIMODAL_ENABLED: booleanString,
+  MINIMAX_SHORT_VIDEO_MAX_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(30)
+    .max(3_600)
+    .default(180),
+  MINIMAX_VIDEO_DETAIL: z.enum(["low", "default", "high"]).default("default"),
+  MINIMAX_VIDEO_FPS: z.coerce.number().min(0.2).max(5).default(1),
+  MINIMAX_MEDIA_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1_048_576)
+    .max(52_428_800)
+    .default(49_000_000),
   ENABLE_WEB_TERMINAL: booleanString,
   WEB_TERMINAL_TOKEN: z.string().min(16).default("dev-terminal-token-change-me"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
@@ -166,6 +181,11 @@ export type AppConfig = {
   minimaxApiKey?: string;
   minimaxApiBase: string;
   minimaxModel: string;
+  minimaxMultimodalEnabled: boolean;
+  minimaxShortVideoMaxSeconds: number;
+  minimaxVideoDetail: "low" | "default" | "high";
+  minimaxVideoFps: number;
+  minimaxMediaMaxBytes: number;
   enableWebTerminal: boolean;
   webTerminalToken: string;
   logLevel: string;
@@ -201,6 +221,24 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
   }
   if (
     env.NODE_ENV === "production" &&
+    env.MINIMAX_MULTIMODAL_ENABLED &&
+    !env.MINIMAX_API_KEY
+  ) {
+    throw new Error(
+      "生产环境启用 MiniMax M3 多模态解析时必须配置 MINIMAX_API_KEY",
+    );
+  }
+  if (
+    env.NODE_ENV === "production" &&
+    env.MINIMAX_MULTIMODAL_ENABLED &&
+    env.COPYWRITER_PROVIDER !== "minimax"
+  ) {
+    throw new Error(
+      "生产环境启用 MiniMax M3 多模态解析时必须使用 COPYWRITER_PROVIDER=minimax",
+    );
+  }
+  if (
+    env.NODE_ENV === "production" &&
     (!env.TOS_ENABLED ||
       !env.TOS_ACCESS_KEY ||
       !env.TOS_SECRET_KEY ||
@@ -220,7 +258,11 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
       "生产环境必须使用 VIDEO_PROCESSOR=volc_asr，禁止依赖本地 Whisper 或 Mock",
     );
   }
-  if (env.NODE_ENV === "production" && env.COPYWRITER_PROVIDER !== "ark") {
+  if (
+    env.NODE_ENV === "production" &&
+    !env.MINIMAX_MULTIMODAL_ENABLED &&
+    env.COPYWRITER_PROVIDER !== "ark"
+  ) {
     throw new Error(
       "生产环境必须使用 COPYWRITER_PROVIDER=ark，禁止回退到本地模拟总结",
     );
@@ -313,6 +355,11 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     ...(env.MINIMAX_API_KEY ? { minimaxApiKey: env.MINIMAX_API_KEY } : {}),
     minimaxApiBase: env.MINIMAX_API_BASE,
     minimaxModel: env.MINIMAX_MODEL,
+    minimaxMultimodalEnabled: env.MINIMAX_MULTIMODAL_ENABLED,
+    minimaxShortVideoMaxSeconds: env.MINIMAX_SHORT_VIDEO_MAX_SECONDS,
+    minimaxVideoDetail: env.MINIMAX_VIDEO_DETAIL,
+    minimaxVideoFps: env.MINIMAX_VIDEO_FPS,
+    minimaxMediaMaxBytes: env.MINIMAX_MEDIA_MAX_BYTES,
     enableWebTerminal: env.ENABLE_WEB_TERMINAL,
     webTerminalToken: env.WEB_TERMINAL_TOKEN,
     logLevel: env.LOG_LEVEL,

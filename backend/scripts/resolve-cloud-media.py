@@ -19,8 +19,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
-import yt_dlp
-
 DESKTOP_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0 Safari/537.36"
@@ -36,6 +34,7 @@ class MetaParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.meta: dict[str, str] = {}
+        self.meta_all: dict[str, list[str]] = {}
 
     def handle_starttag(
         self, tag: str, attrs: list[tuple[str, str | None]]
@@ -46,7 +45,10 @@ class MetaParser(HTMLParser):
         key = values.get("property") or values.get("name")
         content = values.get("content")
         if key and content:
-            self.meta[key.lower()] = html.unescape(content)
+            normalized_key = key.lower()
+            normalized_content = html.unescape(content)
+            self.meta[normalized_key] = normalized_content
+            self.meta_all.setdefault(normalized_key, []).append(normalized_content)
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,6 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", required=True)
     parser.add_argument("--cookies-browser")
     parser.add_argument("--cookies-file")
+    parser.add_argument("--content", action="store_true")
     return parser.parse_args()
 
 
@@ -87,35 +90,80 @@ def duration_from_clock(value: str) -> float:
 
 def resolve_xiaohongshu(source: str) -> dict[str, Any] | None:
     host = (urlparse(source).hostname or "").lower()
-    if not (host == "xiaohongshu.com" or host.endswith(".xiaohongshu.com")):
+    if not (
+        host == "xiaohongshu.com"
+        or host.endswith(".xiaohongshu.com")
+        or host == "xhslink.com"
+        or host.endswith(".xhslink.com")
+    ):
         return None
     page = fetch_html(source, DESKTOP_USER_AGENT)
     parser = MetaParser()
     parser.feed(page)
     media_url = parser.meta.get("og:video")
-    if not media_url or not media_url.startswith(("http://", "https://")):
-        raise RuntimeError("小红书公开页面没有可处理的视频地址")
-    title = parser.meta.get("og:title", "小红书视频").removesuffix(" - 小红书")
+    title = parser.meta.get("og:title", "小红书内容").removesuffix(" - 小红书")
+    description = (
+        parser.meta.get("og:description")
+        or parser.meta.get("description")
+        or ""
+    ).strip()
+    duration = duration_from_clock(parser.meta.get("og:videotime", ""))
+    if media_url and media_url.startswith(("http://", "https://")):
+        return {
+            "url": media_url,
+            "title": title,
+            "durationSeconds": duration,
+            "format": "mp4",
+            "headers": {
+                "Referer": source,
+                "User-Agent": DESKTOP_USER_AGENT,
+            },
+            "kind": "short_video" if duration <= 180 else "long_video",
+            "platform": "xiaohongshu",
+            "text": description,
+            "assets": [
+                {
+                    "kind": "video",
+                    "url": media_url,
+                    "format": "mp4",
+                    "headers": {
+                        "Referer": source,
+                        "User-Agent": DESKTOP_USER_AGENT,
+                    },
+                }
+            ],
+        }
+    images = []
+    for key in ("og:image", "twitter:image"):
+        for value in parser.meta_all.get(key, []):
+            if value.startswith(("http://", "https://")) and value not in images:
+                images.append(value)
+    if not images:
+        raise RuntimeError("小红书公开页面没有可处理的图片或视频地址")
     return {
-        "url": media_url,
         "title": title,
-        "durationSeconds": duration_from_clock(parser.meta.get("og:videotime", "")),
-        "format": "mp4",
-        "headers": {
-            "Referer": source,
-            "User-Agent": DESKTOP_USER_AGENT,
-        },
+        "durationSeconds": 0,
+        "kind": "image_post",
+        "platform": "xiaohongshu",
+        "text": description,
+        "assets": [
+            {
+                "kind": "image",
+                "url": value,
+                "format": "jpg",
+                "headers": {
+                    "Referer": source,
+                    "User-Agent": DESKTOP_USER_AGENT,
+                },
+            }
+            for value in images
+        ],
     }
 
 
 def find_douyin_item(value: Any, expected_id: str) -> dict[str, Any] | None:
     if isinstance(value, dict):
-        video = value.get("video")
-        if (
-            str(value.get("aweme_id") or "") == expected_id
-            and isinstance(video, dict)
-            and isinstance(video.get("play_addr"), dict)
-        ):
+        if str(value.get("aweme_id") or "") == expected_id:
             return value
         for child in value.values():
             result = find_douyin_item(child, expected_id)
@@ -159,33 +207,83 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
     state = json.loads(state_match.group(1))
     item = find_douyin_item(state, match_id)
     if not item:
-        raise RuntimeError("抖音公开页面没有找到对应视频")
-    video = item["video"]
-    urls = video.get("play_addr", {}).get("url_list", [])
-    media_url = next(
-        (
-            value
-            for value in urls
-            if isinstance(value, str) and value.startswith(("http://", "https://"))
-        ),
-        None,
-    )
-    if not media_url:
-        raise RuntimeError("抖音公开页面没有可处理的视频地址")
-    raw_duration = float(video.get("duration") or 0)
+        raise RuntimeError("抖音公开页面没有找到对应内容")
+    title = str(item.get("desc") or "抖音内容").strip()
+    headers = {
+        "Referer": public_page,
+        "User-Agent": MOBILE_USER_AGENT,
+    }
+    video = item.get("video")
+    if isinstance(video, dict):
+        urls = video.get("play_addr", {}).get("url_list", [])
+        media_url = next(
+            (
+                value
+                for value in urls
+                if isinstance(value, str)
+                and value.startswith(("http://", "https://"))
+            ),
+            None,
+        )
+        if media_url:
+            raw_duration = float(video.get("duration") or 0)
+            duration = raw_duration / 1000 if raw_duration > 18_000 else raw_duration
+            return {
+                "url": media_url,
+                "title": title,
+                "durationSeconds": duration,
+                "format": "mp4",
+                "headers": headers,
+                "kind": "short_video" if duration <= 180 else "long_video",
+                "platform": "douyin",
+                "text": title,
+                "assets": [
+                    {
+                        "kind": "video",
+                        "url": media_url,
+                        "format": "mp4",
+                        "headers": headers,
+                    }
+                ],
+            }
+    image_assets = []
+    for image in item.get("images") or []:
+        if not isinstance(image, dict):
+            continue
+        urls = image.get("url_list") or image.get("download_url_list") or []
+        image_url = next(
+            (
+                value
+                for value in urls
+                if isinstance(value, str)
+                and value.startswith(("http://", "https://"))
+            ),
+            None,
+        )
+        if image_url:
+            image_assets.append(
+                {
+                    "kind": "image",
+                    "url": image_url,
+                    "format": "jpg",
+                    "headers": headers,
+                }
+            )
+    if not image_assets:
+        raise RuntimeError("抖音公开页面没有可处理的图片或视频地址")
     return {
-        "url": media_url,
-        "title": str(item.get("desc") or "抖音视频").strip(),
-        "durationSeconds": raw_duration / 1000 if raw_duration > 18_000 else raw_duration,
-        "format": "mp4",
-        "headers": {
-            "Referer": public_page,
-            "User-Agent": MOBILE_USER_AGENT,
-        },
+        "title": title,
+        "durationSeconds": 0,
+        "kind": "image_post",
+        "platform": "douyin",
+        "text": title,
+        "assets": image_assets,
     }
 
 
 def resolve_with_ytdlp(args: argparse.Namespace) -> dict[str, Any]:
+    import yt_dlp
+
     options: dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
@@ -254,6 +352,27 @@ def main() -> None:
         or resolve_douyin(args.source)
         or resolve_with_ytdlp(args)
     )
+    if args.content:
+        if "kind" not in result:
+            duration = float(result.get("durationSeconds") or 0)
+            result = {
+                **result,
+                "kind": "short_video" if duration <= 180 else "long_video",
+                "platform": "douyin"
+                if "douyin" in args.source.lower()
+                else "xiaohongshu",
+                "text": str(result.get("title") or ""),
+                "assets": [
+                    {
+                        "kind": "video",
+                        "url": result["url"],
+                        "format": result.get("format") or "mp4",
+                        "headers": result.get("headers") or {},
+                    }
+                ],
+            }
+    elif "url" not in result:
+        raise RuntimeError("当前音频转写链路不支持图文内容")
     print(json.dumps(result, ensure_ascii=False))
 
 

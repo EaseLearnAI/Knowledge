@@ -96,4 +96,28 @@ describe("production config", () => {
       }),
     ).toThrow("ep-");
   });
+
+  it("M3 多模态生产链路要求 MiniMax Key 和对应总结器", () => {
+    expect(() =>
+      loadConfig({
+        ...productionBase,
+        MINIMAX_MULTIMODAL_ENABLED: "true",
+        COPYWRITER_PROVIDER: "minimax",
+        VOLC_ASR_APP_ID: "app-test",
+        VOLC_ASR_ACCESS_TOKEN: "token-test",
+      }),
+    ).toThrow("MINIMAX_API_KEY");
+
+    const config = loadConfig({
+      ...productionBase,
+      MINIMAX_MULTIMODAL_ENABLED: "true",
+      COPYWRITER_PROVIDER: "minimax",
+      MINIMAX_API_KEY: "minimax-test",
+      VOLC_ASR_APP_ID: "app-test",
+      VOLC_ASR_ACCESS_TOKEN: "token-test",
+    });
+    expect(config.minimaxMultimodalEnabled).toBe(true);
+    expect(config.minimaxShortVideoMaxSeconds).toBe(180);
+    expect(config.minimaxVideoFps).toBe(1);
+  });
 });

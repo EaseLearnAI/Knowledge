@@ -361,6 +361,8 @@ describe("视频解析和承接文案", () => {
       .set("Authorization", authorization);
     expect(item.status).toBe(200);
     expect(item.body.data.transcript.segments.length).toBe(5);
+    expect(item.body.data.content.text).toBe(item.body.data.transcript.text);
+    expect(item.body.data.analysis.mode).toBe("asr_then_summary");
     expect(item.body.data.copywriting.oneSentenceSummary).toBeTruthy();
     expect(item.body.data.copywriting.keyPoints.length).toBeGreaterThan(0);
     expect(item.body.data.copywriting.markdown).toContain("## 关键观点");
@@ -371,6 +373,7 @@ describe("视频解析和承接文案", () => {
     expect(list.status).toBe(200);
     expect(list.body.meta.total).toBe(1);
     expect(list.body.data[0].transcript).not.toHaveProperty("text");
+    expect(list.body.data[0].content).not.toHaveProperty("text");
 
     const removed = await api
       .delete(`/api/v1/items/${itemId}`)
