@@ -64,6 +64,10 @@ class PublicPlatformResolverTests(unittest.TestCase):
         self.assertEqual(result["durationSeconds"], 287.441)
         self.assertEqual(result["format"], "mp4")
         self.assertEqual(
+            result["url"],
+            "https://aweme.example/play/video-id",
+        )
+        self.assertEqual(
             fetch.call_args.args[0],
             "https://www.iesdouyin.com/share/video/7658152723547753771/",
         )

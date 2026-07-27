@@ -15,19 +15,46 @@ import type {
 const resultSchema = z.object({
   oneSentenceSummary: z.string().min(1),
   whyWorthWatching: z.string().min(1),
-  keyPoints: z.array(z.string()).min(1).max(7),
-  chapters: z.array(
-    z.object({
-      title: z.string().min(1),
-      startMs: z.number().nonnegative(),
-      endMs: z.number().nonnegative(),
-      summary: z.string().min(1),
-    }),
-  ),
-  actionItems: z.array(z.string()).max(10),
-  tags: z.array(z.string()).min(1).max(3),
-  markdown: z.string().min(1),
+  keyPoints: z.array(z.string().min(1)).min(1).transform((items) => items.slice(0, 7)),
+  chapters: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        startMs: z.coerce.number().nonnegative(),
+        endMs: z.coerce.number().nonnegative(),
+        summary: z.string().min(1),
+      }),
+    )
+    .default([])
+    .transform((items) => items.slice(0, 12)),
+  actionItems: z
+    .array(z.string().min(1))
+    .default([])
+    .transform((items) => items.slice(0, 6)),
+  tags: z.array(z.string().min(1)).min(1).transform((items) => items.slice(0, 3)),
+  markdown: z.string().min(1).optional(),
 });
+
+type ParsedCopywriting = Omit<z.infer<typeof resultSchema>, "markdown"> & {
+  markdown: string;
+};
+
+function completeMarkdown(
+  value: z.infer<typeof resultSchema>,
+): ParsedCopywriting {
+  if (value.markdown?.trim()) {
+    return { ...value, markdown: value.markdown.trim() };
+  }
+  const markdown = [
+    `# ${value.oneSentenceSummary}`,
+    "",
+    value.whyWorthWatching,
+    "",
+    "## 核心要点",
+    ...value.keyPoints.map((item) => `- ${item}`),
+  ].join("\n");
+  return { ...value, markdown };
+}
 
 const MAP_THRESHOLD_CHARACTERS = 45_000;
 const MAP_CHUNK_CHARACTERS = 18_000;
@@ -352,7 +379,7 @@ export class ArkCopywriter implements Copywriter {
   private parseResult(
     value: string,
   ):
-    | { success: true; data: z.infer<typeof resultSchema> }
+    | { success: true; data: ParsedCopywriting }
     | { success: false; reason: "json" | "schema"; details?: unknown } {
     let parsedJson: unknown;
     try {
@@ -368,6 +395,6 @@ export class ArkCopywriter implements Copywriter {
         details: parsed.error.issues,
       };
     }
-    return { success: true, data: parsed.data };
+    return { success: true, data: completeMarkdown(parsed.data) };
   }
 }

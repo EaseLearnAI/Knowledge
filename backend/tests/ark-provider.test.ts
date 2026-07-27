@@ -569,4 +569,48 @@ describe("ArkCopywriter", () => {
     expect(client.create).toHaveBeenCalledTimes(2);
     expect(events).toContain("copywriting.ark.repairing");
   });
+
+  it("容忍模型返回字符串时间戳、超量数组和缺失 markdown", async () => {
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create: vi.fn().mockResolvedValue(
+        responseResult(
+          JSON.stringify({
+            oneSentenceSummary: "结构可自动归一化。",
+            whyWorthWatching: "不会因为非关键格式漂移丢失真实总结。",
+            keyPoints: Array.from({ length: 9 }, (_, index) => `要点${index + 1}`),
+            chapters: [
+              {
+                title: "开场",
+                startMs: "0",
+                endMs: "5000",
+                summary: "介绍主题。",
+              },
+            ],
+            tags: ["一", "二", "三", "四"],
+          }),
+        ),
+      ),
+    };
+
+    const result = await new ArkCopywriter(config, client).generate(
+      {
+        title: "格式归一化",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      () => undefined,
+    );
+
+    expect(result.keyPoints).toHaveLength(7);
+    expect(result.tags).toEqual(["一", "二", "三"]);
+    expect(result.chapters[0]).toMatchObject({ startMs: 0, endMs: 5_000 });
+    expect(result.actionItems).toEqual([]);
+    expect(result.markdown).toContain("# 结构可自动归一化。");
+    expect(client.create).toHaveBeenCalledTimes(1);
+  });
 });

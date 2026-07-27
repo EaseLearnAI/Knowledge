@@ -13,6 +13,7 @@ import { createBilibiliMediaProxyRouter } from "./features/video/bilibili-media-
 import { LocalCopywriter } from "./features/video/local-copywriter.js";
 import { MiniMaxCopywriter } from "./features/video/minimax-copywriter.js";
 import { MockVideoProcessor } from "./features/video/mock-video.processor.js";
+import { PlatformVideoProcessor } from "./features/video/platform-video.processor.js";
 import { VideoTaskRunner } from "./features/video/task-runner.js";
 import {
   resolvePublicBilibiliMedia,
@@ -46,7 +47,10 @@ export function createApp(dependencies: AppDependencies): CreatedApp {
       : config.videoProcessor === "ark"
         ? new ArkVideoProcessor(config)
       : config.videoProcessor === "volc_asr"
-        ? new VolcAsrVideoProcessor(config)
+        ? new PlatformVideoProcessor(
+            new VolcAsrVideoProcessor(config),
+            new ArkVideoProcessor(config),
+          )
       : new VideoSummarizeProcessor(config));
   const copywriter =
     dependencies.copywriter ??

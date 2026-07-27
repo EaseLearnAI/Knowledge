@@ -172,6 +172,11 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
     )
     if not media_url:
         raise RuntimeError("抖音公开页面没有可处理的视频地址")
+    # The public share payload currently exposes a `playwm` endpoint that
+    # redirects to a plain-HTTP ixigua CDN URL. Volc BigASR cannot fetch that
+    # redirect reliably. The equivalent `play` endpoint redirects to a signed
+    # HTTPS douyinvod URL and remains publicly downloadable.
+    media_url = media_url.replace("/playwm/", "/play/")
     raw_duration = float(video.get("duration") or 0)
     return {
         "url": media_url,
