@@ -152,21 +152,36 @@ MINIMAX_SHORT_VIDEO_MAX_SECONDS=180
 MINIMAX_VIDEO_DETAIL=default
 MINIMAX_VIDEO_FPS=1
 MINIMAX_MEDIA_MAX_BYTES=49000000
+# 本地运行无需 TOS；生产环境再配置为 true。
+TOS_ENABLED=false
 ```
 
 处理策略：
 
 ```text
-小红书/抖音图文 → 解析正文和图片 → 临时 TOS 签名 URL → MiniMax-M3
-三平台 ≤ 180 秒视频 → 下载并压缩/合并为临时 MP4 → MiniMax-M3
+本地：图文/短视频 → 下载与转码 → Base64 Data URL → MiniMax-M3
+生产：图文/短视频 → 下载与转码 → 临时 TOS 签名 URL → MiniMax-M3
 三平台 > 180 秒视频 → 现有音频解析与 ASR → MiniMax-M3 文本总结
 M3 媒体、网络或结构错误 → 短视频自动回退现有 ASR
 ```
 
 M3 的 URL/Base64 视频上限为 50 MB，因此短视频会压缩到
-`MINIMAX_MEDIA_MAX_BYTES` 以下。临时本地文件和 TOS 对象在模型请求结束后删除。
+`MINIMAX_MEDIA_MAX_BYTES` 以下。本地 `TOS_ENABLED=false` 时直接内嵌 Data URL，
+不需要对象存储或公网回调；生产环境才使用 TOS，避免超大请求长期占用 Worker
+内存。临时本地文件和 TOS 对象都会在模型请求结束后删除。
 图文不回退音频链路；平台没有返回公开图片时会给出明确错误。生产服务器不运行
 浏览器，平台登录态仍通过受控 `VIDEO_COOKIE_FILE` 挂载。
+
+真实 M3 测试集合：
+
+```bash
+npm run benchmark:m3
+# 也可以只跑指定 Case
+M3_BENCHMARK_CASES=REAL-04 npm run benchmark:m3
+```
+
+测试标准和本次实测结果见
+[M3 本地多模态 Benchmark 结果](./docs/M3本地多模态Benchmark结果.md)。
 
 请不要把 `.env` 提交到 Git。
 

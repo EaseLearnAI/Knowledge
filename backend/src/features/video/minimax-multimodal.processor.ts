@@ -7,7 +7,7 @@ import {
   type PlatformContentResolver,
 } from "./platform-content-resolver.js";
 import {
-  TosModelMediaStager,
+  DefaultModelMediaStager,
   type ModelMediaStager,
   type StagedModelMedia,
 } from "./model-media-stager.js";
@@ -270,7 +270,7 @@ export class HybridMultimodalVideoProcessor implements VideoProcessor {
   ) {
     this.resolver =
       dependencies.resolver ?? new DefaultPlatformContentResolver(config);
-    this.stager = dependencies.stager ?? new TosModelMediaStager(config);
+    this.stager = dependencies.stager ?? new DefaultModelMediaStager(config);
     this.analyzer =
       dependencies.analyzer ?? new MiniMaxMultimodalAnalyzer(config);
   }

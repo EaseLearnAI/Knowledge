@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../src/config.js";
-import { TosModelMediaStager } from "../src/features/video/model-media-stager.js";
+import { DefaultModelMediaStager } from "../src/features/video/model-media-stager.js";
 import type { TemporaryObjectStore } from "../src/features/video/tos-object-store.js";
 
 const workspaces: string[] = [];
@@ -14,7 +14,51 @@ afterEach(async () => {
   );
 });
 
-describe("TosModelMediaStager", () => {
+describe("DefaultModelMediaStager", () => {
+  it("未配置 TOS 时直接生成本地 Data URL", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "memo-m3-media-"));
+    workspaces.push(workspace);
+    const stager = new DefaultModelMediaStager(
+      {
+        ...loadConfig({ NODE_ENV: "test", TOS_ENABLED: "false" }),
+        tempAudioDir: workspace,
+      },
+      {
+        lookup: vi.fn(async () => [{ address: "203.0.113.10", family: 4 }]),
+        fetch: vi.fn(
+          async () =>
+            new Response(new Uint8Array([1, 2, 3]), {
+              status: 200,
+              headers: { "Content-Type": "image/jpeg", "Content-Length": "3" },
+            }),
+        ),
+      },
+    );
+
+    const staged = await stager.stage(
+      "task-local-image",
+      {
+        kind: "image_post",
+        platform: "xiaohongshu",
+        title: "本地图文",
+        text: "",
+        durationSeconds: 0,
+        assets: [
+          {
+            kind: "image",
+            url: "https://img.example/post.jpg",
+            format: "jpg",
+          },
+        ],
+      },
+      () => undefined,
+    );
+
+    expect(staged.transport).toBe("data_url");
+    expect(staged.imageUrls).toEqual(["data:image/jpeg;base64,AQID"]);
+    await staged.cleanup();
+  });
+
   it("下载图文图片、上传签名并在完成后清理对象", async () => {
     const workspace = await mkdtemp(join(tmpdir(), "memo-m3-media-"));
     workspaces.push(workspace);
@@ -26,7 +70,7 @@ describe("TosModelMediaStager", () => {
       uploadAndSign,
       delete: deleteObject,
     } satisfies TemporaryObjectStore;
-    const stager = new TosModelMediaStager(
+    const stager = new DefaultModelMediaStager(
       {
         ...loadConfig({ NODE_ENV: "test" }),
         tempAudioDir: workspace,
@@ -78,7 +122,7 @@ describe("TosModelMediaStager", () => {
       uploadAndSign: vi.fn(async () => "https://tos.example/object"),
       delete: vi.fn(async () => undefined),
     } satisfies TemporaryObjectStore;
-    const stager = new TosModelMediaStager(
+    const stager = new DefaultModelMediaStager(
       {
         ...loadConfig({ NODE_ENV: "test" }),
         tempAudioDir: workspace,
@@ -128,7 +172,7 @@ describe("TosModelMediaStager", () => {
         await writeFile(output, new Uint8Array([1, 2, 3, 4]));
       },
     );
-    const stager = new TosModelMediaStager(
+    const stager = new DefaultModelMediaStager(
       {
         ...loadConfig({ NODE_ENV: "test" }),
         tempAudioDir: workspace,
@@ -176,6 +220,53 @@ describe("TosModelMediaStager", () => {
     );
     expect(transcode).toHaveBeenCalledOnce();
     expect(uploadAndSign).toHaveBeenCalledOnce();
+    await staged.cleanup();
+  });
+
+  it("未配置 TOS 时将转码视频编码成 Data URL", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "memo-m3-media-"));
+    workspaces.push(workspace);
+    const stager = new DefaultModelMediaStager(
+      {
+        ...loadConfig({ NODE_ENV: "test", TOS_ENABLED: "false" }),
+        tempAudioDir: workspace,
+      },
+      {
+        lookup: vi.fn(async () => [{ address: "203.0.113.10", family: 4 }]),
+        fetch: vi.fn(
+          async () =>
+            new Response(new Uint8Array([1, 2, 3]), {
+              status: 200,
+              headers: { "Content-Length": "3" },
+            }),
+        ),
+        transcode: vi.fn(async (_video, _audio, output) => {
+          await writeFile(output, new Uint8Array([1, 2, 3, 4]));
+        }),
+      },
+    );
+
+    const staged = await stager.stage(
+      "task-local-video",
+      {
+        kind: "short_video",
+        platform: "douyin",
+        title: "本地短视频",
+        text: "",
+        durationSeconds: 30,
+        assets: [
+          {
+            kind: "video",
+            url: "https://video.example/source.mp4",
+            format: "mp4",
+          },
+        ],
+      },
+      () => undefined,
+    );
+
+    expect(staged.transport).toBe("data_url");
+    expect(staged.videoUrl).toBe("data:video/mp4;base64,AQIDBA==");
     await staged.cleanup();
   });
 });

@@ -13,6 +13,7 @@ import type {
   ResolvedContent,
   ResolvedContentAsset,
 } from "./video.types.js";
+import { LocalDataUrlObjectStore } from "./local-data-url-object-store.js";
 import {
   TosTemporaryObjectStore,
   type TemporaryObjectStore,
@@ -21,6 +22,7 @@ import {
 export type StagedModelMedia = {
   imageUrls: string[];
   videoUrl?: string;
+  transport?: "data_url" | "signed_url";
   cleanup(): Promise<void>;
 };
 
@@ -36,8 +38,9 @@ type PublicLookup = (
   hostname: string,
 ) => Promise<Array<{ address: string; family: number }>>;
 
-export class TosModelMediaStager implements ModelMediaStager {
+export class DefaultModelMediaStager implements ModelMediaStager {
   private readonly objectStore: TemporaryObjectStore;
+  private readonly transport: "data_url" | "signed_url";
 
   constructor(
     private readonly config: AppConfig,
@@ -53,7 +56,12 @@ export class TosModelMediaStager implements ModelMediaStager {
     } = {},
   ) {
     this.objectStore =
-      dependencies.objectStore ?? new TosTemporaryObjectStore(config);
+      dependencies.objectStore ??
+      (config.tosEnabled
+        ? new TosTemporaryObjectStore(config)
+        : new LocalDataUrlObjectStore());
+    this.transport =
+      dependencies.objectStore || config.tosEnabled ? "signed_url" : "data_url";
   }
 
   async stage(
@@ -74,6 +82,7 @@ export class TosModelMediaStager implements ModelMediaStager {
       await report("analysis.media.stage.started", "开始准备 M3 多模态媒体", {
         contentKind: content.kind,
         assets: content.assets.length,
+        transport: this.transport,
       });
       const imageUrls: string[] = [];
       const imageAssets = content.assets.filter((asset) => asset.kind === "image");
@@ -123,8 +132,14 @@ export class TosModelMediaStager implements ModelMediaStager {
       await report("analysis.media.stage.completed", "M3 多模态媒体准备完成", {
         images: imageUrls.length,
         hasVideo: Boolean(videoUrl),
+        transport: this.transport,
       });
-      return { imageUrls, ...(videoUrl ? { videoUrl } : {}), cleanup };
+      return {
+        imageUrls,
+        ...(videoUrl ? { videoUrl } : {}),
+        transport: this.transport,
+        cleanup,
+      };
     } catch (error) {
       await cleanup();
       throw error;

@@ -288,4 +288,52 @@ describe("HybridMultimodalVideoProcessor", () => {
     expect(fallback.process).toHaveBeenCalledOnce();
     expect(staged.cleanup).toHaveBeenCalledOnce();
   });
+
+  it("图文 M3 失败时清理媒体并返回明确错误，不错误回退 ASR", async () => {
+    const content: ResolvedContent = {
+      kind: "image_post",
+      platform: "xiaohongshu",
+      title: "图文",
+      text: "",
+      durationSeconds: 0,
+      assets: [
+        {
+          kind: "image",
+          url: "https://img.example/post.jpg",
+          format: "jpg",
+        },
+      ],
+    };
+    const fallback = fallbackProcessor();
+    const staged = stagerFor({
+      imageUrls: ["data:image/jpeg;base64,AQID"],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: { message: "model unavailable" } }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      ),
+    );
+    const processor = new HybridMultimodalVideoProcessor(
+      config,
+      fallback.processor,
+      {
+        resolver: resolverFor(content),
+        stager: staged.stager,
+        analyzer: new MiniMaxMultimodalAnalyzer(config),
+      },
+    );
+
+    await expect(processor.process(input, () => undefined)).rejects.toMatchObject(
+      { code: "MINIMAX_REQUEST_FAILED" },
+    );
+    expect(fallback.process).not.toHaveBeenCalled();
+    expect(staged.cleanup).toHaveBeenCalledOnce();
+  });
 });
