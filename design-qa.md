@@ -7,7 +7,7 @@
 - Onboarding source:
   `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-329046c8-46a7-4c59-ba2f-4bdb8c38dbf4.png`
 - Product-introduction implementation:
-  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_ac8a283b-8f17-420c-9115-2590a79eac8c.jpg`
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_b0d9b5a6-b956-4a7a-a4a7-fbaabcfcacff.jpg`
 - Problem-page implementation:
   `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_39ce35e3-2b20-479c-9f72-e4bf432dc3db.jpg`
 - How-it-works implementation:
@@ -48,7 +48,9 @@ the final capture.
   body copy, and one burnt-orange interaction accent remain consistent.
 - Image quality and asset fidelity: three project-owned raster illustrations are
   sharp, share one paper-like editorial direction, and replace the earlier
-  system-symbol placeholders.
+  system-symbol placeholders. The introduction illustration uses recognizable
+  Bilibili, Xiaohongshu, and Douyin source cards flowing into one knowledge
+  entry, so the supported capture flow is legible without extra copy.
 - Copy and content: the introduction promises that learning intent can be kept;
   page 1 frames the loss of forgotten saves; page 2 promises continued personal
   accumulation without claiming that the user's ability has already improved.
