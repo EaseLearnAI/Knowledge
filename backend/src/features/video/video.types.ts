@@ -1,5 +1,7 @@
 export type VideoQuality = "fast" | "balanced" | "accurate";
 export type VideoLanguage = "zh" | "en" | "ja" | "auto";
+export type ContentKind = "image_post" | "short_video" | "long_video";
+export type AnalysisMode = "minimax_m3_multimodal" | "asr_then_summary";
 
 export type TranscriptSegment = {
   startMs: number;
@@ -14,6 +16,25 @@ export type TranscriptResult = {
   text: string;
   segments: TranscriptSegment[];
   provider: string;
+  contentKind?: ContentKind;
+  analysisMode?: AnalysisMode;
+  copywriting?: CopywritingResult;
+};
+
+export type ResolvedContentAsset = {
+  kind: "image" | "video" | "audio";
+  url: string;
+  format: string;
+  headers?: Record<string, string>;
+};
+
+export type ResolvedContent = {
+  kind: ContentKind;
+  platform: "bilibili" | "douyin" | "xiaohongshu";
+  title: string;
+  text: string;
+  durationSeconds: number;
+  assets: ResolvedContentAsset[];
 };
 
 export type Chapter = {

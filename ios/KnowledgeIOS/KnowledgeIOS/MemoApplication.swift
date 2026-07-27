@@ -189,6 +189,9 @@ final class MemoApplication {
     }
 
     func remove(itemID: UUID) async throws {
+        if let remoteSourceItemID = await store.item(id: itemID)?.remoteSourceItemID {
+            try await processor.deleteRemoteItem(id: remoteSourceItemID)
+        }
         try await store.remove(itemID: itemID)
         await refreshItems()
     }
@@ -274,7 +277,7 @@ final class MemoApplication {
                             await self.receiveProcessingUpdate(item)
                         }
                     },
-                    onProgress: { stage in
+                    onProgress: { stage, backendProgress in
                         let update: (
                             KnowledgeItemStatus,
                             Double,
@@ -288,10 +291,13 @@ final class MemoApplication {
                         case .enriching:
                             update = (.enriching, 0.76, "生成摘要和 Tag")
                         }
+                        let progress = backendProgress.map {
+                            min(max($0 / 100, 0), 0.99)
+                        } ?? update.1
                         if let item = try? await store.updateProgress(
                             itemID: itemID,
                             status: update.0,
-                            progress: update.1,
+                            progress: progress,
                             statusText: update.2
                         ) {
                             await self.receiveProcessingUpdate(item)

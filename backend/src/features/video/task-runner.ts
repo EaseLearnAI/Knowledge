@@ -213,22 +213,44 @@ export class VideoTaskRunner {
         },
         report,
       );
+      if (transcript.contentKind) task.contentKind = transcript.contentKind;
+      if (transcript.analysisMode) task.analysisMode = transcript.analysisMode;
       task.stage = "copywriting";
       task.progress = 75;
       await task.save();
 
-      const copywriting = await this.copywriter.generate(transcript, report);
+      const copywriting =
+        transcript.copywriting ??
+        (await this.copywriter.generate(transcript, report));
       await SourceItemModel.updateOne(
         { _id: task.sourceItemId },
         {
           $set: {
             title: copywriting.displayTitle?.trim() || transcript.title,
+            ...(transcript.contentKind
+              ? {
+                  type:
+                    transcript.contentKind === "image_post"
+                      ? "image_post"
+                      : "video",
+                }
+              : {}),
             status: "completed",
             transcript: {
               text: transcript.text,
               segments: transcript.segments,
               path: transcript.transcriptPath,
               provider: transcript.provider,
+            },
+            content: {
+              text: transcript.text,
+              kind: transcript.contentKind ?? "long_video",
+              provider: transcript.provider,
+            },
+            analysis: {
+              mode: transcript.analysisMode ?? "asr_then_summary",
+              provider: copywriting.provider,
+              ...(copywriting.model ? { model: copywriting.model } : {}),
             },
             copywriting,
             tags: copywriting.tags,

@@ -4,6 +4,7 @@ enum KnowledgeItemKind: String, Codable, Sendable {
     case article
     case podcast
     case video
+    case imagePost = "image_post"
     case note
 }
 

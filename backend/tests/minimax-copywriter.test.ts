@@ -60,6 +60,7 @@ describe("MiniMaxCopywriter", () => {
             {
               message: {
                 content: JSON.stringify({
+                  displayTitle: "用环境变量切换模型",
                   oneSentenceSummary: "模型可以通过配置切换。",
                   whyWorthWatching: "理解模型与业务解耦方式。",
                   keyPoints: ["模型名来自环境变量。"],
@@ -100,12 +101,14 @@ describe("MiniMaxCopywriter", () => {
 
     expect(result.model).toBe("MiniMax-M3");
     expect(result.provider).toBe("minimax-openai-compatible");
+    expect(result.displayTitle).toBe("用环境变量切换模型");
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://api.minimaxi.com/v1/chat/completions");
     expect(request.headers).toMatchObject({ Authorization: "Bearer test-api-key" });
     const body = JSON.parse(String(request.body));
     expect(body.model).toBe("MiniMax-M3");
+    expect(body.thinking).toEqual({ type: "disabled" });
     expect(body.reasoning_split).toBe(true);
     expect(body.messages[1].content).toContain("[0-5000]");
     expect(events.at(-1)?.data).toMatchObject({ totalTokens: 180 });
@@ -136,5 +139,6 @@ describe("MiniMaxCopywriter", () => {
       () => undefined,
     );
     expect(result.oneSentenceSummary).toBe("已提取 JSON。");
+    expect(result.displayTitle).toBe("已提取 JSON");
   });
 });

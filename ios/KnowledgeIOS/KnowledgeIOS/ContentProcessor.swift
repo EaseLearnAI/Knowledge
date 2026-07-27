@@ -24,7 +24,7 @@ actor ContentProcessor {
         idempotencyKey: String,
         remoteTaskID: String?,
         onRemoteTaskCreated: @Sendable (String, String) async -> Void,
-        onProgress: @Sendable (ProcessingStage) async -> Void
+        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
     ) async throws -> ProcessedContent {
         guard let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme) else {
@@ -48,10 +48,10 @@ actor ContentProcessor {
         idempotencyKey: String,
         remoteTaskID: String?,
         onRemoteTaskCreated: @Sendable (String, String) async -> Void,
-        onProgress: @Sendable (ProcessingStage) async -> Void
+        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
     ) async throws -> ProcessedContent {
         let accessToken = try await authStore.accessToken()
-        await onProgress(.fetching)
+        await onProgress(.fetching, nil)
         let task: RemoteVideoTask
         if let remoteTaskID {
             task = try await videoClient.task(
@@ -71,11 +71,11 @@ actor ContentProcessor {
             accessToken: { [authStore] in
                 try await authStore.accessToken()
             },
-            onStage: { stage in
-                if stage == "copywriting" {
-                    await onProgress(.enriching)
+            onTask: { task in
+                if task.stage == "copywriting" {
+                    await onProgress(.enriching, task.progress)
                 } else {
-                    await onProgress(.extracting)
+                    await onProgress(.extracting, task.progress)
                 }
             }
         )
@@ -84,15 +84,17 @@ actor ContentProcessor {
             id: completed.sourceItemId,
             accessToken: completedAccessToken
         )
-        guard let transcript = item.transcript,
-              let copywriting = item.copywriting else {
+        guard let copywriting = item.copywriting,
+              let contentText = item.content?.text ?? item.transcript?.text else {
             throw ContentProcessingError.invalidBackendResult
         }
         return ProcessedContent(
-            kind: .video,
-            sourceName: item.platform,
+            kind: item.content?.kind == "image_post" || item.type == "image_post"
+                ? .imagePost
+                : .video,
+            sourceName: Self.displayName(for: item.platform),
             title: item.title,
-            content: transcript.text,
+            content: contentText,
             enrichment: ContentEnrichment(
                 summary: copywriting.oneSentenceSummary,
                 whyWorthWatching: copywriting.whyWorthWatching,
@@ -100,6 +102,24 @@ actor ContentProcessor {
                 tags: item.tags.isEmpty ? copywriting.tags : item.tags
             )
         )
+    }
+
+    func deleteRemoteItem(id: String) async throws {
+        let accessToken = try await authStore.accessToken()
+        try await videoClient.deleteItem(id: id, accessToken: accessToken)
+    }
+
+    private static func displayName(for platform: String) -> String {
+        switch platform.lowercased() {
+        case "xiaohongshu":
+            return "小红书"
+        case "douyin":
+            return "抖音"
+        case "bilibili":
+            return "B 站"
+        default:
+            return platform
+        }
     }
 
     private func fetch(url: URL) async throws -> (html: String, finalURL: URL) {
@@ -367,7 +387,7 @@ private struct VideoBackendClient: Sendable {
     func waitForTask(
         _ initialTask: RemoteVideoTask,
         accessToken: @Sendable () async throws -> String,
-        onStage: @Sendable (String) async -> Void
+        onTask: @Sendable (RemoteVideoTask) async -> Void
     ) async throws -> RemoteVideoTask {
         var task = initialTask
         let deadline = Date().addingTimeInterval(3 * 60 * 60 + 10 * 60)
@@ -380,7 +400,7 @@ private struct VideoBackendClient: Sendable {
             guard Date() < deadline else {
                 throw VideoBackendError.taskTimedOut
             }
-            await onStage(task.stage)
+            await onTask(task)
             try await Task.sleep(for: .seconds(2))
             let request = authorizedRequest(
                 path: "tasks/\(task.id)",
@@ -395,6 +415,15 @@ private struct VideoBackendClient: Sendable {
         try await send(
             authorizedRequest(path: "items/\(id)", accessToken: accessToken)
         )
+    }
+
+    func deleteItem(id: String, accessToken: String) async throws {
+        var request = authorizedRequest(
+            path: "items/\(id)",
+            accessToken: accessToken
+        )
+        request.httpMethod = "DELETE"
+        try await sendWithoutResponse(request)
     }
 
     private func authorizedRequest(path: String, accessToken: String) -> URLRequest {
@@ -427,6 +456,23 @@ private struct VideoBackendClient: Sendable {
         }
         return value
     }
+
+    private func sendWithoutResponse(_ request: URLRequest) async throws {
+        let response: URLResponse
+        do {
+            (_, response) = try await session.data(for: request)
+        } catch {
+            throw VideoBackendError.connectionFailed
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw VideoBackendError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw VideoBackendError.server(
+                "后端删除失败（HTTP \(http.statusCode)）"
+            )
+        }
+    }
 }
 
 private struct CaptureBody: Encodable {
@@ -449,6 +495,9 @@ private struct RemoteVideoTask: Decodable {
     let sourceItemId: String
     let status: String
     let stage: String
+    let progress: Double?
+    let contentKind: String?
+    let analysisMode: String?
     let error: VideoTaskProblem?
 
     private enum CodingKeys: String, CodingKey {
@@ -456,6 +505,9 @@ private struct RemoteVideoTask: Decodable {
         case sourceItemId
         case status
         case stage
+        case progress
+        case contentKind
+        case analysisMode
         case error
     }
 }
@@ -465,15 +517,22 @@ private struct VideoTaskProblem: Decodable {
 }
 
 private struct RemoteVideoItem: Decodable {
+    let type: String?
     let title: String
     let platform: String
     let tags: [String]
     let transcript: RemoteTranscript?
+    let content: RemoteContent?
     let copywriting: RemoteCopywriting?
 }
 
 private struct RemoteTranscript: Decodable {
     let text: String
+}
+
+private struct RemoteContent: Decodable {
+    let text: String
+    let kind: String
 }
 
 private struct RemoteCopywriting: Decodable {
