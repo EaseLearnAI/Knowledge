@@ -217,7 +217,21 @@ final class PrototypeViewController: UIViewController, WKNavigationDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
         loadPrototype()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func applicationDidBecomeActive() {
+        Task { await nativeBridge.resumePendingProcessing() }
     }
 
     override func viewSafeAreaInsetsDidChange() {

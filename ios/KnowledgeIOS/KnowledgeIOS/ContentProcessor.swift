@@ -24,6 +24,9 @@ actor ContentProcessor {
 
     func process(
         url: URL,
+        idempotencyKey: String,
+        remoteTaskID: String?,
+        onRemoteTaskCreated: @Sendable (String, String) async -> Void,
         onProgress: @Sendable (ProcessingStage) async -> Void
     ) async throws -> ProcessedContent {
         guard let scheme = url.scheme?.lowercased(),
@@ -32,7 +35,13 @@ actor ContentProcessor {
         }
 
         if Self.isSupportedVideo(url) {
-            return try await processVideo(url: url, onProgress: onProgress)
+            return try await processVideo(
+                url: url,
+                idempotencyKey: idempotencyKey,
+                remoteTaskID: remoteTaskID,
+                onRemoteTaskCreated: onRemoteTaskCreated,
+                onProgress: onProgress
+            )
         }
 
         await onProgress(.fetching)
@@ -70,17 +79,32 @@ actor ContentProcessor {
 
     private func processVideo(
         url: URL,
+        idempotencyKey: String,
+        remoteTaskID: String?,
+        onRemoteTaskCreated: @Sendable (String, String) async -> Void,
         onProgress: @Sendable (ProcessingStage) async -> Void
     ) async throws -> ProcessedContent {
         let accessToken = try await authStore.accessToken()
         await onProgress(.fetching)
-        let task = try await videoClient.createCapture(
-            url: url,
-            accessToken: accessToken
-        )
+        let task: RemoteVideoTask
+        if let remoteTaskID {
+            task = try await videoClient.task(
+                id: remoteTaskID,
+                accessToken: accessToken
+            )
+        } else {
+            task = try await videoClient.createCapture(
+                url: url,
+                idempotencyKey: idempotencyKey,
+                accessToken: accessToken
+            )
+            await onRemoteTaskCreated(task.id, task.sourceItemId)
+        }
         let completed = try await videoClient.waitForTask(
             task,
-            accessToken: accessToken,
+            accessToken: { [authStore] in
+                try await authStore.accessToken()
+            },
             onStage: { stage in
                 if stage == "copywriting" {
                     await onProgress(.enriching)
@@ -89,9 +113,10 @@ actor ContentProcessor {
                 }
             }
         )
+        let completedAccessToken = try await authStore.accessToken()
         let item = try await videoClient.item(
             id: completed.sourceItemId,
-            accessToken: accessToken
+            accessToken: completedAccessToken
         )
         guard let transcript = item.transcript,
               let copywriting = item.copywriting else {
@@ -352,24 +377,34 @@ private struct VideoBackendClient: Sendable {
         session = URLSession(configuration: configuration)
     }
 
-    func createCapture(url: URL, accessToken: String) async throws -> RemoteVideoTask {
+    func createCapture(
+        url: URL,
+        idempotencyKey: String,
+        accessToken: String
+    ) async throws -> RemoteVideoTask {
         var request = authorizedRequest(path: "captures", accessToken: accessToken)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(UUID().uuidString, forHTTPHeaderField: "Idempotency-Key")
+        request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
         request.httpBody = try JSONEncoder().encode(
             CaptureBody(url: url.absoluteString, quality: "balanced", language: "auto")
         )
         return try await send(request)
     }
 
+    func task(id: String, accessToken: String) async throws -> RemoteVideoTask {
+        try await send(
+            authorizedRequest(path: "tasks/\(id)", accessToken: accessToken)
+        )
+    }
+
     func waitForTask(
         _ initialTask: RemoteVideoTask,
-        accessToken: String,
+        accessToken: @Sendable () async throws -> String,
         onStage: @Sendable (String) async -> Void
     ) async throws -> RemoteVideoTask {
         var task = initialTask
-        let deadline = Date().addingTimeInterval(15 * 60)
+        let deadline = Date().addingTimeInterval(3 * 60 * 60 + 10 * 60)
         while task.status != "completed" {
             if task.status == "failed" {
                 throw VideoBackendError.taskFailed(
@@ -383,7 +418,7 @@ private struct VideoBackendClient: Sendable {
             try await Task.sleep(for: .seconds(2))
             let request = authorizedRequest(
                 path: "tasks/\(task.id)",
-                accessToken: accessToken
+                accessToken: try await accessToken()
             )
             task = try await send(request)
         }
@@ -481,7 +516,7 @@ private struct RemoteCopywriting: Decodable {
     let tags: [String]
 }
 
-private enum VideoBackendError: LocalizedError {
+enum VideoBackendError: LocalizedError, Equatable {
     case connectionFailed
     case invalidResponse
     case server(String)
@@ -497,7 +532,7 @@ private enum VideoBackendError: LocalizedError {
         case .server(let message), .taskFailed(let message):
             message
         case .taskTimedOut:
-            "视频解析超过 15 分钟，请稍后重试"
+            "视频解析超过 3 小时 10 分钟，请稍后重试"
         }
     }
 }

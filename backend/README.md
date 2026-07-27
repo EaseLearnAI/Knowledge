@@ -8,11 +8,11 @@
 - 基于 `installationId` 的无感游客会话，首屏不强制登录；
 - YouTube、B站、抖音、小红书链接入队；
 - 本地 MP4/MOV/WebM/MP3/M4A/WAV 上传；
-- 复用本机 `videosummarize`：下载、FFmpeg 抽音频、本地 Whisper 转录；
-- 火山方舟音频理解：48kbps MP3、长音频按 4 分钟切片、Files API 临时上传、语音转写后主动删除；
-- 火山录音文件识别适配器：支持 `volc.bigasr.auc` 的 submit/query 轮询和句级时间戳；
-- 火山方舟结构化总结，可与音频转写共用一把 `ARK_API_KEY`；
-- 串行视频任务队列，避免 Apple Silicon 多个 MLX 进程冲突；
+- B站公开播放器 API 解析：不依赖 Chrome、Cookie 或开发者电脑；
+- 火山大模型录音文件识别：`volc.bigasr.auc` submit/query、句级时间戳、瞬时故障重试；
+- 火山方舟结构化总结；
+- 长逐字稿 Map-Reduce 总结、JSON 自动修复与模型额度自动降级；
+- 串行视频任务队列和服务重启后的任务恢复；
 - 一句话摘要、观看价值、关键观点、章节、行动项、Tag 和 Markdown 文案；
 - MiniMax OpenAI 兼容文案适配器，默认模型 `MiniMax-M3`；
 - MongoDB 任务和内容持久化、幂等键、软删除；
@@ -58,47 +58,62 @@ npm run smoke
 npm run build
 ```
 
-常规测试使用临时 MongoDB 和 Mock 视频源，速度快且可重复；真实测试会调用本机 FFmpeg 与 Whisper。
+常规测试使用临时 MongoDB 和 Mock 视频源，速度快且可重复；`real-local-video`
+只保留为开发诊断，不属于生产链路。
 
-## 火山方舟转写与总结
+## 生产转写与总结
 
 当前最小上线配置：
 
 ```dotenv
-VIDEO_PROCESSOR=ark
+VIDEO_PROCESSOR=volc_asr
 COPYWRITER_PROVIDER=ark
+PUBLIC_BASE_URL=https://你的后端域名
+MEDIA_PROXY_TTL_SECONDS=14400
+VOLC_ASR_APP_ID=从运行环境注入，不要提交
+VOLC_ASR_ACCESS_TOKEN=从运行环境注入，不要提交
+VOLC_ASR_RESOURCE_ID=volc.bigasr.auc
+VOLC_ASR_TIMEOUT_MS=10800000
+VOLC_ASR_MAX_ATTEMPTS=3
 ARK_API_KEY=从运行环境注入，不要提交
-ARK_AUDIO_MODEL=doubao-seed-2-0-lite-260428
-ARK_SUMMARY_MODEL=doubao-seed-2-0-lite-260428
+ARK_SUMMARY_MODEL=doubao-seed-2-0-mini-260428
+ARK_SUMMARY_FALLBACK_MODELS=doubao-seed-2-0-lite-260428
 ```
+
+生产模式会强制要求 `volc_asr + ark`，如果误配为本地 Whisper、Mock 或本地模拟
+总结，服务会在启动阶段直接报错，不允许带着开发配置上线。
 
 处理流程：
 
 ```text
 视频链接
-→ videosummarize 下载器
-→ FFmpeg 生成 16kHz 单声道 48kbps MP3
-→ 每 4 分钟切片并逐段上传方舟 Files API
-→ Responses API 逐段转写并合并
-→ Responses API 结构化总结
-→ 删除方舟临时文件与本地工作目录
+→ B站公开 player API / 其他平台 yt-dlp 解析器
+→ B站生成 HMAC 限时代理 URL
+→ 云服务器代理音频流，不落盘
+→ 火山服务端拉取音频
+→ volc.bigasr.auc 云端长音频转写
+→ 句级时间戳和完整逐字稿
+→ 方舟 Responses API 结构化总结
+→ MongoDB 保存结果
 ```
 
-`ark-...` 格式的方舟 Key 适用于该路径。专用豆包语音 ASR 使用语音控制台的
-APP ID 与 Access Token，不是同一种密钥；可切换为：
+方舟 Key 与豆包语音 APP ID / Access Token 是两套凭据。B站公开内容由后端直接
+调用公开播放器 API，再经带 HMAC 和过期时间的代理流交给火山，不使用浏览器
+Cookie；小红书、抖音触发平台登录风控时，
+生产服务器只能通过 `VIDEO_COOKIE_FILE` 挂载受控 Cookie 密钥。生产模式会拒绝
+`VIDEO_COOKIE_BROWSER=chrome`，避免上线后误依赖开发者电脑。
 
-```dotenv
-VIDEO_PROCESSOR=volc_asr
-VOLC_ASR_APP_ID=从运行环境注入
-VOLC_ASR_ACCESS_TOKEN=从运行环境注入
-VOLC_ASR_RESOURCE_ID=volc.bigasr.auc
-```
+火山标准版支持 5 小时以内、512 MB 以内的录音文件。代码使用 3 小时超时窗口，
+并对网络抖动、限流和服务繁忙执行指数退避重试。火山 request ID 会写入 MongoDB
+任务日志；服务重启后继续查询原任务，不会重复提交和计费。
 
-专用 ASR 由火山服务端主动拉取音频 URL。社交平台的临时 CDN 链接可能限制服务端
-拉取，因此云服务器上线前应配合对象存储生成短期公开 URL；未配置对象存储时，
-默认的 `ark` 分段上传路径更稳。
-首次调用前，需要在火山方舟控制台开通
-`doubao-seed-2-0-lite-260428` 模型。
+`PUBLIC_BASE_URL` 在生产环境必须是公网 HTTPS 地址。它只暴露有时效签名的 B站
+音频代理，不暴露任意 URL 抓取能力；代理会重新解析最新 CDN 地址并透传 Range，
+因此不依赖短期 CDN URL 在整个任务周期内持续有效。
+
+4 小时 37 分 52 秒的真实 B站公开视频已完成端到端验收：云 ASR 返回 75,673 字、
+3,102 个句级时间段；5 段 Map-Reduce 总结全部成功，最终得到 6 条关键观点和 7 个
+章节。该验收复用了已完成的火山 request ID，证明后端重启后不会重复提交 ASR。
 
 游客会话：
 

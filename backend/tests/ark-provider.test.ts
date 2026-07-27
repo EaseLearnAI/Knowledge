@@ -26,6 +26,7 @@ const config: AppConfig = {
   accessTokenTtl: "15m",
   refreshTokenTtlDays: 30,
   corsOrigins: [],
+  mediaProxyTtlSeconds: 14_400,
   videoSummarizeBin: "/tmp/videosummarize",
   videoWorkspace: "/tmp/memo-ark-test",
   videoProcessor: "ark",
@@ -34,6 +35,7 @@ const config: AppConfig = {
   volcAsrResourceId: "volc.bigasr.auc",
   volcAsrPollIntervalMs: 1_000,
   volcAsrTimeoutMs: 300_000,
+  volcAsrMaxAttempts: 3,
   arkApiKey: "test-ark-api-key",
   arkApiBase: "https://ark.example.com/api/v3",
   arkAudioModel: "doubao-seed-2-0-lite-260428",
@@ -349,5 +351,147 @@ describe("ArkCopywriter", () => {
     expect(result.oneSentenceSummary).toBe("重试后成功。");
     expect(client.create).toHaveBeenCalledTimes(2);
     expect(events).toContain("copywriting.ark.retrying");
+  });
+
+  it("主模型额度暂停时自动切换备用模型", async () => {
+    const fallbackConfig: AppConfig = {
+      ...config,
+      arkSummaryModel: "primary-paused",
+      arkSummaryFallbackModels: ["fallback-ready"],
+    };
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new AppError(
+          502,
+          "ARK_REQUEST_FAILED",
+          "Model service has been paused after reaching inference limit",
+        ),
+      )
+      .mockResolvedValueOnce(
+        responseResult(
+          JSON.stringify({
+            oneSentenceSummary: "备用模型总结成功。",
+            whyWorthWatching: "主模型暂停不会中断任务。",
+            keyPoints: ["自动降级。"],
+            chapters: [],
+            actionItems: [],
+            tags: ["稳定性"],
+            markdown: "# 备用模型总结成功",
+          }),
+        ),
+      );
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create,
+    };
+    const events: string[] = [];
+
+    const result = await new ArkCopywriter(fallbackConfig, client).generate(
+      {
+        title: "模型降级",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      (event) => {
+        events.push(event);
+      },
+    );
+
+    expect(result.model).toBe("fallback-ready");
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ model: "primary-paused" });
+    expect(create.mock.calls[1]?.[0]).toMatchObject({ model: "fallback-ready" });
+    expect(events).toContain("copywriting.ark.model_fallback");
+  });
+
+  it("长逐字稿先分段提炼再做最终汇总", async () => {
+    const validResult = JSON.stringify({
+      oneSentenceSummary: "长访谈总结完成。",
+      whyWorthWatching: "保留了全程核心论据。",
+      keyPoints: ["观点一。", "观点二。", "观点三。"],
+      chapters: [],
+      actionItems: [],
+      tags: ["访谈"],
+      markdown: "# 长访谈总结",
+    });
+    const create = vi.fn().mockImplementation(
+      async (request: { instructions?: string }) =>
+        request.instructions?.includes("逐字稿编辑")
+          ? responseResult("- [0-300000] 分段忠实笔记")
+          : responseResult(validResult),
+    );
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create,
+    };
+    const events: string[] = [];
+    const segments = Array.from({ length: 600 }, (_, index) => ({
+      startMs: index * 10_000,
+      endMs: index * 10_000 + 9_000,
+      text: `第${index}段内容：${"关于芯片架构和产业历史的详细讨论。".repeat(8)}`,
+    }));
+
+    const result = await new ArkCopywriter(config, client).generate(
+      {
+        title: "长访谈",
+        source: "https://example.com/long-video",
+        transcriptPath: "volc-asr://long",
+        text: segments.map((segment) => segment.text).join(""),
+        segments,
+        provider: "volcengine-bigasr",
+      },
+      (event) => {
+        events.push(event);
+      },
+    );
+
+    expect(result.oneSentenceSummary).toBe("长访谈总结完成。");
+    expect(create.mock.calls.length).toBeGreaterThan(2);
+    expect(events).toContain("copywriting.ark.map.started");
+    expect(events).toContain("copywriting.ark.map.completed");
+  });
+
+  it("最终 JSON 不完整时自动发起一次结构修复", async () => {
+    const repaired = JSON.stringify({
+      oneSentenceSummary: "修复成功。",
+      whyWorthWatching: "输出结构恢复完整。",
+      keyPoints: ["保留事实。"],
+      chapters: [],
+      actionItems: [],
+      tags: ["修复"],
+      markdown: "# 修复成功",
+    });
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create: vi
+        .fn()
+        .mockResolvedValueOnce(responseResult('{"oneSentenceSummary":"截断'))
+        .mockResolvedValueOnce(responseResult(repaired)),
+    };
+    const events: string[] = [];
+
+    const result = await new ArkCopywriter(config, client).generate(
+      {
+        title: "JSON 修复",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      (event) => {
+        events.push(event);
+      },
+    );
+
+    expect(result.oneSentenceSummary).toBe("修复成功。");
+    expect(client.create).toHaveBeenCalledTimes(2);
+    expect(events).toContain("copywriting.ark.repairing");
   });
 });

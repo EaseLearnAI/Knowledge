@@ -31,6 +31,9 @@ struct KnowledgeItem: Codable, Identifiable, Sendable {
     var progress: Double
     var statusText: String
     var errorMessage: String?
+    var remoteTaskID: String?
+    var remoteSourceItemID: String?
+    var remoteIdempotencyKey: String?
     let createdAt: Date
     var updatedAt: Date
 

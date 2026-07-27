@@ -100,10 +100,29 @@ export class VideoTaskRunner {
     await report("task.started", "视频解析任务开始执行");
 
     try {
+      const providerTaskId = [...task.logs]
+        .reverse()
+        .find(
+          (log) =>
+            log.event === "transcription.volc.submitted" &&
+            typeof log.data?.requestId === "string",
+        )?.data?.requestId;
+      const resolvedTitle = [...task.logs]
+        .reverse()
+        .find(
+          (log) =>
+            log.event === "media.resolve.completed" &&
+            typeof log.data?.title === "string",
+        )?.data?.title;
       const transcript = await this.processor.process(
         {
           source: task.source,
-          ...(task.originalFilename ? { titleHint: task.originalFilename } : {}),
+          ...(task.originalFilename
+            ? { titleHint: task.originalFilename }
+            : typeof resolvedTitle === "string"
+              ? { titleHint: resolvedTitle }
+              : {}),
+          ...(typeof providerTaskId === "string" ? { providerTaskId } : {}),
           quality: task.quality,
           language: task.language,
         },

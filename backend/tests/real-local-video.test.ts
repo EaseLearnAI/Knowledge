@@ -28,6 +28,7 @@ describe.skipIf(!enabled)("真实本地音视频转录", () => {
       accessTokenTtl: "15m",
       refreshTokenTtlDays: 30,
       corsOrigins: [],
+      mediaProxyTtlSeconds: 14_400,
       videoSummarizeBin:
         "/Users/mac/Desktop/03_学习与研究/study/视频解析学习/skill方案/cliskill/.venv/bin/videosummarize",
       videoWorkspace: workspace,
@@ -37,6 +38,7 @@ describe.skipIf(!enabled)("真实本地音视频转录", () => {
       volcAsrResourceId: "volc.bigasr.auc",
       volcAsrPollIntervalMs: 1_000,
       volcAsrTimeoutMs: 300_000,
+      volcAsrMaxAttempts: 3,
       arkApiBase: "https://ark.cn-beijing.volces.com/api/v3",
       arkAudioModel: "doubao-seed-2-0-lite-260428",
       arkSummaryModel: "doubao-seed-2-0-lite-260428",

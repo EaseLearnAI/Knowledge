@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Resolve a public social-video URL to a short-lived direct audio URL."""
+"""Resolve a non-Bilibili social-video URL to a direct audio URL.
+
+Bilibili is resolved in the Node provider through its public player API so this
+yt-dlp helper never needs a developer's Chrome profile for that platform.
+"""
 
 from __future__ import annotations
 
@@ -9,12 +13,16 @@ from pathlib import Path
 
 import yt_dlp
 
-
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+)
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", required=True)
+    parser.add_argument("--cookies-browser")
+    parser.add_argument("--cookies-file")
     return parser.parse_args()
-
 
 def main() -> None:
     args = parse_args()
@@ -28,7 +36,14 @@ def main() -> None:
         "skip_download": True,
         "format": "bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best",
         "noplaylist": True,
+        "retries": 3,
+        "socket_timeout": 30,
+        "http_headers": {"User-Agent": USER_AGENT},
     }
+    if args.cookies_browser:
+        options["cookiesfrombrowser"] = (args.cookies_browser,)
+    if args.cookies_file:
+        options["cookiefile"] = args.cookies_file
     with yt_dlp.YoutubeDL(options) as downloader:
         info = downloader.extract_info(args.source, download=False)
 

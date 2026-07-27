@@ -9,11 +9,15 @@ import { createHealthRouter } from "./features/health/health.routes.js";
 import { createTerminalRouter } from "./features/terminal/terminal.routes.js";
 import { ArkCopywriter } from "./features/video/ark-copywriter.js";
 import { ArkVideoProcessor } from "./features/video/ark-video.processor.js";
+import { createBilibiliMediaProxyRouter } from "./features/video/bilibili-media-proxy.js";
 import { LocalCopywriter } from "./features/video/local-copywriter.js";
 import { MiniMaxCopywriter } from "./features/video/minimax-copywriter.js";
 import { MockVideoProcessor } from "./features/video/mock-video.processor.js";
 import { VideoTaskRunner } from "./features/video/task-runner.js";
-import { VolcAsrVideoProcessor } from "./features/video/volc-asr-video.processor.js";
+import {
+  resolvePublicBilibiliMedia,
+  VolcAsrVideoProcessor,
+} from "./features/video/volc-asr-video.processor.js";
 import { createVideoRouter } from "./features/video/video.routes.js";
 import type { Copywriter, VideoProcessor } from "./features/video/video.types.js";
 import { VideoSummarizeProcessor } from "./features/video/videosummarize.processor.js";
@@ -80,6 +84,10 @@ export function createApp(dependencies: AppDependencies): CreatedApp {
   );
 
   app.use(createHealthRouter());
+  app.use(
+    "/api/v1/internal",
+    createBilibiliMediaProxyRouter(config, resolvePublicBilibiliMedia),
+  );
   app.use("/api/v1/auth", createAuthRouter(config));
   app.use("/api/v1", createTerminalRouter(config));
   app.use("/api/v1", createVideoRouter(config, runner));

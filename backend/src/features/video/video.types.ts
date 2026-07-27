@@ -38,6 +38,7 @@ export type CopywritingResult = {
 export type VideoProcessInput = {
   source: string;
   titleHint?: string;
+  providerTaskId?: string;
   quality: VideoQuality;
   language: VideoLanguage;
 };

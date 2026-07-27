@@ -300,7 +300,7 @@ data: {"event":"video.cli.stdout","message":"transcribe: model=small",...}
     "segments": [
       { "startMs": 0, "endMs": 12000, "text": "带时间戳证据" }
     ],
-    "provider": "videosummarize-local-whisper"
+    "provider": "volcengine-bigasr"
   },
   "copywriting": {
     "oneSentenceSummary": "一句话总结",

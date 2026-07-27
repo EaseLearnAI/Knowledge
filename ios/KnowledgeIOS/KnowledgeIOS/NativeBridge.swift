@@ -10,6 +10,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let aiService: AIService
     private let authStore: AuthStore
     private var didApplyLaunchSetup = false
+    private var processingItemIDs: Set<UUID> = []
 
     init(
         owner: PrototypeViewController,
@@ -81,6 +82,7 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             let auth = await authStore.restoreSession()
             let snapshot = await store.snapshot(modelStatus: status, auth: auth)
             if auth.isAuthenticated {
+                resumePendingProcessing(items: snapshot.items)
                 return try jsonObject(snapshot)
             }
             return try jsonObject(
@@ -209,10 +211,29 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private func startProcessing(item: KnowledgeItem) {
         let itemID = item.id
         let url = item.sourceURL
+        guard processingItemIDs.insert(itemID).inserted else { return }
         Task {
+            defer { processingItemIDs.remove(itemID) }
             do {
                 let content = try await processor.process(
                     url: url,
+                    idempotencyKey:
+                        item.remoteIdempotencyKey ?? item.id.uuidString,
+                    remoteTaskID: item.remoteTaskID,
+                    onRemoteTaskCreated: { [store] taskID, sourceItemID in
+                        if let updated = try? await store.attachRemoteTask(
+                            itemID: itemID,
+                            taskID: taskID,
+                            sourceItemID: sourceItemID
+                        ) {
+                            await MainActor.run {
+                                self.emit(
+                                    name: "processingUpdated",
+                                    value: updated
+                                )
+                            }
+                        }
+                    },
                     onProgress: { [store] stage in
                         let update: (
                             KnowledgeItemStatus,
@@ -245,6 +266,19 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
                 )
                 emit(name: "processingCompleted", value: completed)
             } catch {
+                if let backendError = error as? VideoBackendError,
+                   backendError == .connectionFailed ||
+                    backendError == .taskTimedOut {
+                    if let pending = try? await store.updateProgress(
+                        itemID: itemID,
+                        status: .extracting,
+                        progress: 0.48,
+                        statusText: "后台继续处理，稍后自动同步"
+                    ) {
+                        emit(name: "processingUpdated", value: pending)
+                    }
+                    return
+                }
                 let failed = try? await store.fail(
                     itemID: itemID,
                     message: error.localizedDescription
@@ -253,6 +287,24 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
                     emit(name: "processingFailed", value: failed)
                 }
             }
+        }
+    }
+
+    func resumePendingProcessing() async {
+        let auth = await authStore.restoreSession()
+        guard auth.isAuthenticated else { return }
+        let items = await store.items()
+        resumePendingProcessing(items: items)
+    }
+
+    private func resumePendingProcessing(items: [KnowledgeItem]) {
+        for item in items where [
+            KnowledgeItemStatus.queued,
+            .fetching,
+            .extracting,
+            .enriching,
+        ].contains(item.status) {
+            startProcessing(item: item)
         }
     }
 

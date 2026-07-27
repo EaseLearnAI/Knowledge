@@ -68,6 +68,9 @@ actor LibraryStore {
             progress: 0,
             statusText: "等待处理",
             errorMessage: nil,
+            remoteTaskID: nil,
+            remoteSourceItemID: nil,
+            remoteIdempotencyKey: UUID().uuidString,
             createdAt: now,
             updatedAt: now
         )
@@ -93,6 +96,21 @@ actor LibraryStore {
         return state.items[index]
     }
 
+    func attachRemoteTask(
+        itemID: UUID,
+        taskID: String,
+        sourceItemID: String
+    ) throws -> KnowledgeItem {
+        guard let index = state.items.firstIndex(where: { $0.id == itemID }) else {
+            throw StoreError.itemNotFound
+        }
+        state.items[index].remoteTaskID = taskID
+        state.items[index].remoteSourceItemID = sourceItemID
+        state.items[index].updatedAt = Date()
+        try persist()
+        return state.items[index]
+    }
+
     func complete(itemID: UUID, content: ProcessedContent) throws -> KnowledgeItem {
         guard let index = state.items.firstIndex(where: { $0.id == itemID }) else {
             throw StoreError.itemNotFound
@@ -108,6 +126,9 @@ actor LibraryStore {
         state.items[index].progress = 1
         state.items[index].statusText = "处理完成"
         state.items[index].errorMessage = nil
+        state.items[index].remoteTaskID = nil
+        state.items[index].remoteSourceItemID = nil
+        state.items[index].remoteIdempotencyKey = UUID().uuidString
         state.items[index].updatedAt = Date()
         try persist()
         return state.items[index]
@@ -184,6 +205,9 @@ actor LibraryStore {
         state.items[index].progress = 0
         state.items[index].statusText = "等待重试"
         state.items[index].errorMessage = nil
+        state.items[index].remoteTaskID = nil
+        state.items[index].remoteSourceItemID = nil
+        state.items[index].remoteIdempotencyKey = UUID().uuidString
         state.items[index].updatedAt = Date()
         try persist()
         return state.items[index]

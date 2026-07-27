@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
@@ -23,17 +23,6 @@ const preparedAudioSchema = z.object({
   title: z.string().min(1),
   durationSeconds: z.number().nonnegative(),
   sizeBytes: z.number().int().nonnegative(),
-});
-
-const localTranscriptSchema = z.object({
-  text: z.string().min(1),
-  segments: z.array(
-    z.object({
-      start: z.number().nonnegative(),
-      end: z.number().nonnegative(),
-      text: z.string().min(1),
-    }),
-  ),
 });
 
 type PreparedAudio = z.infer<typeof preparedAudioSchema>;
@@ -240,14 +229,6 @@ export class ArkVideoProcessor implements VideoProcessor {
     const fileIds: string[] = [];
     try {
       const prepared = await this.preparer.prepare(input, workspace, report);
-      if (/(?:bilibili\.com|b23\.tv)/i.test(input.source)) {
-        return await this.transcribeBilibiliLocally(
-          input,
-          prepared,
-          workspace,
-          report,
-        );
-      }
       const audioPaths = await this.splitAudio(
         prepared.audioPath,
         prepared.durationSeconds,
@@ -369,146 +350,6 @@ export class ArkVideoProcessor implements VideoProcessor {
       await Promise.all(fileIds.map((fileId) => this.client.deleteFile(fileId)));
       await rm(workspace, { recursive: true, force: true });
     }
-  }
-
-  private async transcribeBilibiliLocally(
-    input: VideoProcessInput,
-    prepared: PreparedAudio,
-    workspace: string,
-    report: ProgressReporter,
-  ): Promise<TranscriptResult> {
-    const binDirectory = dirname(this.config.videoSummarizeBin);
-    const python = [
-      join(binDirectory, "python3.12"),
-      join(binDirectory, "python3"),
-      join(binDirectory, "python"),
-    ].find(existsSync);
-    if (!python) {
-      throw new AppError(
-        503,
-        "LOCAL_WHISPER_UNAVAILABLE",
-        "找不到本地 Whisper 虚拟环境中的 Python",
-      );
-    }
-    const outputPath = join(workspace, "local-transcript.json");
-    const model =
-      input.quality === "accurate"
-        ? "large-v3"
-        : input.quality === "fast"
-          ? "base"
-          : "small";
-    await report(
-      "transcription.local.started",
-      "B站音频开始使用本地 Whisper 转写",
-      {
-        model,
-        durationSeconds: Math.round(prepared.durationSeconds),
-        chunkSeconds: 600,
-        overlapSeconds: 15,
-      },
-    );
-    await this.runLocalTranscriber(
-      python,
-      [
-        resolve("scripts/transcribe-prepared-audio.py"),
-        "--input",
-        prepared.audioPath,
-        "--output",
-        outputPath,
-        "--model",
-        model,
-        "--language",
-        input.language,
-      ],
-      report,
-    );
-    const parsed = localTranscriptSchema.safeParse(
-      JSON.parse(await readFile(outputPath, "utf8")),
-    );
-    if (!parsed.success) {
-      throw new AppError(
-        502,
-        "LOCAL_WHISPER_OUTPUT_INVALID",
-        "本地 Whisper 返回结果不符合契约",
-        parsed.error.issues,
-      );
-    }
-    await report("transcription.local.completed", "本地 Whisper 转写完成", {
-      model,
-      characters: parsed.data.text.length,
-      segments: parsed.data.segments.length,
-    });
-    return {
-      title: prepared.title,
-      source: input.source,
-      transcriptPath: "local-whisper://bilibili",
-      text: parsed.data.text,
-      segments: parsed.data.segments.map((segment) => ({
-        startMs: Math.round(segment.start * 1_000),
-        endMs: Math.round(segment.end * 1_000),
-        text: segment.text,
-      })),
-      provider: "videosummarize-local-whisper",
-    };
-  }
-
-  private runLocalTranscriber(
-    command: string,
-    args: string[],
-    report: ProgressReporter,
-  ): Promise<void> {
-    return new Promise((resolvePromise, reject) => {
-      const child = spawn(command, args, {
-        cwd: process.cwd(),
-        env: { ...process.env, PYTHONUNBUFFERED: "1" },
-        shell: false,
-      });
-      let stdoutBuffer = "";
-      let stderr = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        stdoutBuffer += chunk.toString("utf8");
-        const lines = stdoutBuffer.split(/\r?\n/);
-        stdoutBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          try {
-            const progress = JSON.parse(line) as {
-              event?: string;
-              done?: number;
-              total?: number;
-            };
-            if (progress.event === "transcription.local.chunk.completed") {
-              void report(
-                progress.event,
-                "本地 Whisper 音频分段转写完成",
-                { done: progress.done, total: progress.total },
-              );
-            }
-          } catch {
-            // MLX and model download progress are diagnostic-only output.
-          }
-        }
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString("utf8");
-      });
-      child.on("error", (error) => {
-        reject(new AppError(503, "LOCAL_WHISPER_UNAVAILABLE", error.message));
-      });
-      child.on("close", (code) => {
-        if (code === 0) {
-          resolvePromise();
-          return;
-        }
-        const message =
-          stderr
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .at(-1)
-            ?.slice(0, 600) ?? `本地 Whisper 退出码 ${code}`;
-        reject(new AppError(502, "LOCAL_WHISPER_FAILED", message));
-      });
-    });
   }
 
   private async splitAudio(

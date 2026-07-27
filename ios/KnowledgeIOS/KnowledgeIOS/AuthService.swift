@@ -172,8 +172,20 @@ actor AuthStore {
         if session == nil {
             _ = await restoreSession()
         }
-        guard let current = session else {
+        guard var current = session else {
             throw AuthValidationError.authenticationRequired
+        }
+        if mode == .live,
+           let expiration = Self.expiration(of: current.accessToken),
+           expiration.timeIntervalSinceNow <= 60 {
+            do {
+                current = try await client.refresh(token: current.refreshToken)
+                try credentials.save(current)
+                session = current
+            } catch {
+                clearSession()
+                throw error
+            }
         }
         return current.accessToken
     }
@@ -249,6 +261,22 @@ actor AuthStore {
         let id = UUID()
         UserDefaults.standard.set(id.uuidString, forKey: key)
         return id
+    }
+
+    private static func expiration(of token: String) -> Date? {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var encoded = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+        guard let data = Data(base64Encoded: encoded),
+              let payload = try? JSONSerialization.jsonObject(with: data)
+                as? [String: Any],
+              let expiration = payload["exp"] as? TimeInterval else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: expiration)
     }
 
     private static func mockSession(identifier: String, nickname: String?) -> AuthSession {
