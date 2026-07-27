@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { VideoSummarizeProcessor } from "../src/features/video/videosummarize.processor.js";
 
 const config: AppConfig = {
+  ...loadConfig({ NODE_ENV: "test" }),
   nodeEnv: "test",
   port: 0,
   host: "127.0.0.1",

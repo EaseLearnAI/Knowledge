@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import {
   resolvePublicBilibiliMedia,
   VolcAsrClient,
@@ -9,6 +9,7 @@ import {
 } from "../src/features/video/volc-asr-video.processor.js";
 
 const config: AppConfig = {
+  ...loadConfig({ NODE_ENV: "test" }),
   nodeEnv: "test",
   port: 0,
   host: "127.0.0.1",
@@ -233,6 +234,10 @@ describe("resolvePublicBilibiliMedia", () => {
       title: "公开 B站视频",
       durationSeconds: 3_600,
       format: "m4a",
+      headers: {
+        Referer: "https://www.bilibili.com/video/BV1nB3u6tERu/",
+        "User-Agent": expect.stringContaining("Mozilla/5.0"),
+      },
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const [, firstRequest] = fetchMock.mock.calls[0] as [URL, RequestInit];
@@ -340,7 +345,7 @@ describe("VolcAsrVideoProcessor", () => {
       client,
     }).process(
       {
-        source: "https://www.youtube.com/watch?v=test",
+        source: "https://www.xiaohongshu.com/explore/test",
         quality: "balanced",
         language: "auto",
       },

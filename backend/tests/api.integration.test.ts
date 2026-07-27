@@ -3,7 +3,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { RefreshTokenModel } from "../src/features/auth/refresh-token.model.js";
 import { UserModel } from "../src/features/auth/user.model.js";
 import { MockVideoProcessor } from "../src/features/video/mock-video.processor.js";
@@ -20,6 +20,7 @@ let runner: ReturnType<typeof createApp>["runner"];
 beforeAll(async () => {
   mongo = await MongoMemoryServer.create();
   config = {
+    ...loadConfig({ NODE_ENV: "test" }),
     nodeEnv: "test",
     port: 0,
     host: "127.0.0.1",
@@ -326,7 +327,7 @@ describe("视频解析和承接文案", () => {
       .set("Authorization", authorization)
       .set("Idempotency-Key", idempotencyKey)
       .send({
-        url: "https://www.youtube.com/watch?v=test-video",
+        url: "https://www.bilibili.com/video/BV1nB3u6tERu/",
         quality: "balanced",
         language: "zh",
       });
@@ -339,7 +340,7 @@ describe("视频解析和承接文案", () => {
       .set("Authorization", authorization)
       .set("Idempotency-Key", idempotencyKey)
       .send({
-        url: "https://www.youtube.com/watch?v=test-video",
+        url: "https://www.bilibili.com/video/BV1nB3u6tERu/",
         quality: "balanced",
         language: "zh",
       });
@@ -383,7 +384,7 @@ describe("视频解析和承接文案", () => {
 
   it("拒绝未登录、非法平台和错误 ID", async () => {
     const unauthorized = await api.post("/api/v1/captures").send({
-      url: "https://www.youtube.com/watch?v=x",
+      url: "https://www.bilibili.com/video/BV1nB3u6tERu/",
     });
     expect(unauthorized.status).toBe(401);
 

@@ -33,7 +33,7 @@ final class AddContentViewController: UIViewController {
             for: .systemFont(ofSize: 32, weight: .bold)
         )
         let body = MemoStyle.label(
-            text: "支持 B 站、小红书、抖音、YouTube 和网页链接。",
+            text: "支持 B 站、小红书和抖音公开视频链接。",
             style: .body,
             color: .secondaryLabel
         )

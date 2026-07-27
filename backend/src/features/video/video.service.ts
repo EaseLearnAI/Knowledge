@@ -8,7 +8,6 @@ import type { VideoTaskRunner } from "./task-runner.js";
 
 function platformOf(url?: string): string {
   if (!url) return "本地上传";
-  if (/youtu/.test(url)) return "YouTube";
   if (/bilibili|b23\.tv/.test(url)) return "B站";
   if (/douyin/.test(url)) return "抖音";
   if (/xiaohongshu|xhslink/.test(url)) return "小红书";

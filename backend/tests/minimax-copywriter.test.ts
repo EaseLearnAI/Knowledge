@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { MiniMaxCopywriter } from "../src/features/video/minimax-copywriter.js";
 import type { TranscriptResult } from "../src/features/video/video.types.js";
 
 const config: AppConfig = {
+  ...loadConfig({ NODE_ENV: "test" }),
   nodeEnv: "test",
   port: 0,
   host: "127.0.0.1",

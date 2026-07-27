@@ -36,9 +36,11 @@ export type CopywritingResult = {
 };
 
 export type VideoProcessInput = {
+  taskId?: string;
   source: string;
   titleHint?: string;
   providerTaskId?: string;
+  stagedObjectKey?: string;
   quality: VideoQuality;
   language: VideoLanguage;
 };

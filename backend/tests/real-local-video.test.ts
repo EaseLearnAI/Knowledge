@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { VideoSummarizeProcessor } from "../src/features/video/videosummarize.processor.js";
 
 const enabled = process.env.RUN_REAL_VIDEO_TEST === "1";
@@ -20,6 +20,7 @@ describe.skipIf(!enabled)("真实本地音视频转录", () => {
     expect(say.status, say.stderr).toBe(0);
 
     const config: AppConfig = {
+      ...loadConfig({ NODE_ENV: "test" }),
       nodeEnv: "test",
       port: 0,
       host: "127.0.0.1",

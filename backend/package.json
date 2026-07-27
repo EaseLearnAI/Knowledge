@@ -9,13 +9,17 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "worker": "tsx watch src/worker.ts",
     "start": "node dist/src/server.js",
+    "start:worker": "node dist/src/worker.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:python": ".venv/bin/python -m unittest discover tests -p 'test_*.py'",
     "test:watch": "vitest",
     "test:real-cli": "vitest run tests/videosummarize-cli.test.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:real-cloud": "tsx scripts/real-cloud-smoke.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

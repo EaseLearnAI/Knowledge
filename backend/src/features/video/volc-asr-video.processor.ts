@@ -1,11 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { z } from "zod";
 import type { AppConfig } from "../../config.js";
 import { AppError } from "../../shared/errors/app-error.js";
 import { buildSignedBilibiliMediaUrl } from "./bilibili-media-proxy.js";
+import { MediaMaterializer } from "./media-materializer.js";
+import {
+  TosTemporaryObjectStore,
+  type TemporaryObjectStore,
+} from "./tos-object-store.js";
 import type {
   ProgressReporter,
   TranscriptResult,
@@ -19,9 +24,10 @@ const resolvedMediaSchema = z.object({
   title: z.string().min(1),
   durationSeconds: z.number().nonnegative(),
   format: z.string().min(1),
+  headers: z.record(z.string(), z.string()).optional(),
 });
 
-type ResolvedMedia = z.infer<typeof resolvedMediaSchema>;
+export type ResolvedMedia = z.infer<typeof resolvedMediaSchema>;
 
 const bilibiliViewSchema = z.object({
   code: z.number(),
@@ -186,6 +192,10 @@ export async function resolvePublicBilibiliMedia(
     title: view.data.data.title,
     durationSeconds: view.data.data.duration,
     format: "m4a",
+    headers: {
+      Referer: referer,
+      "User-Agent": BILIBILI_USER_AGENT,
+    },
   };
 }
 
@@ -464,7 +474,9 @@ export class PythonCloudMediaResolver implements CloudMediaResolver {
         "开始通过 B站公开播放器接口解析音频",
       );
       const media = await resolvePublicBilibiliMedia(input.source);
-      const proxyUrl = buildSignedBilibiliMediaUrl(this.config, input.source);
+      const proxyUrl = this.config.tosEnabled
+        ? undefined
+        : buildSignedBilibiliMediaUrl(this.config, input.source);
       const resolved = proxyUrl ? { ...media, url: proxyUrl } : media;
       await report("media.resolve.completed", "B站公开音频地址解析完成", {
         title: resolved.title,
@@ -475,22 +487,9 @@ export class PythonCloudMediaResolver implements CloudMediaResolver {
       });
       return resolved;
     }
-    const binDirectory = dirname(this.config.videoSummarizeBin);
-    const python = [
-      join(binDirectory, "python3.12"),
-      join(binDirectory, "python3"),
-      join(binDirectory, "python"),
-    ].find(existsSync);
-    if (!python) {
-      throw new AppError(
-        503,
-        "VIDEO_RESOLVER_UNAVAILABLE",
-        "找不到 videosummarize 虚拟环境中的 Python",
-      );
-    }
     await report("media.resolve.started", "开始解析社交平台音频地址");
     const output = await this.run(
-      python,
+      this.python(),
       [
         resolve("scripts/resolve-cloud-media.py"),
         "--source",
@@ -570,21 +569,41 @@ export class PythonCloudMediaResolver implements CloudMediaResolver {
       });
     });
   }
+
+  private python(): string {
+    const projectPython = resolve(".venv/bin/python");
+    if (
+      this.config.nodeEnv !== "production" &&
+      this.config.videoResolverPython === "python3" &&
+      existsSync(projectPython)
+    ) {
+      return projectPython;
+    }
+    return this.config.videoResolverPython;
+  }
 }
 
 export class VolcAsrVideoProcessor implements VideoProcessor {
   private readonly client: VolcAsrClientLike;
   private readonly resolver: CloudMediaResolver;
+  private readonly objectStore: TemporaryObjectStore | undefined;
+  private readonly materializer: MediaMaterializer;
 
   constructor(
     private readonly config: AppConfig,
     dependencies: {
       client?: VolcAsrClientLike;
       resolver?: CloudMediaResolver;
+      objectStore?: TemporaryObjectStore;
+      materializer?: MediaMaterializer;
     } = {},
   ) {
     this.client = dependencies.client ?? new VolcAsrClient(config);
     this.resolver = dependencies.resolver ?? new PythonCloudMediaResolver(config);
+    this.objectStore =
+      dependencies.objectStore ??
+      (config.tosEnabled ? new TosTemporaryObjectStore(config) : undefined);
+    this.materializer = dependencies.materializer ?? new MediaMaterializer(config);
   }
 
   async process(
@@ -592,18 +611,82 @@ export class VolcAsrVideoProcessor implements VideoProcessor {
     report: ProgressReporter,
   ): Promise<TranscriptResult> {
     let media: ResolvedMedia | undefined;
+    let stagedObjectKey = input.stagedObjectKey;
+    let providerSubmitted = Boolean(input.providerTaskId);
+    const trackedReport: ProgressReporter = async (event, message, data) => {
+      if (event === "transcription.volc.submitted") providerSubmitted = true;
+      await report(event, message, data);
+    };
     let result: VolcAsrResult;
     if (input.providerTaskId && this.client.resume) {
-      result = await this.client.resume(input.providerTaskId, report);
+      result = await this.client.resume(input.providerTaskId, trackedReport);
     } else {
       media = await this.resolver.resolve(input, report);
-      result = await this.client.transcribe(media, report);
+      if (this.objectStore) {
+        if (!input.taskId) {
+          throw new AppError(
+            500,
+            "TASK_ID_REQUIRED",
+            "服务端暂存音频时缺少任务 ID",
+          );
+        }
+        await report("media.download.started", "开始将平台音频下载到云服务器临时目录");
+        const staged = await this.materializer.download(input.taskId, media);
+        await report("media.download.completed", "平台音频已下载到临时目录", {
+          format: staged.format,
+        });
+        try {
+          const signedUrl = await this.objectStore.uploadAndSign(
+            staged.localPath,
+            staged.objectKey,
+          );
+          await report("media.tos.uploaded", "临时音频已进入私有 TOS", {
+            objectKey: staged.objectKey,
+          });
+          stagedObjectKey = staged.objectKey;
+          media = {
+            ...media,
+            url: signedUrl,
+            format: staged.format,
+            headers: undefined,
+          };
+        } finally {
+          await this.materializer.cleanup(staged.localPath);
+        }
+      }
+      try {
+        result = await this.client.transcribe(media, trackedReport);
+      } catch (error) {
+        if (stagedObjectKey && this.objectStore && !providerSubmitted) {
+          try {
+            await this.objectStore.delete(stagedObjectKey);
+            await report(
+              "media.tos.deleted",
+              "ASR 提交失败，TOS 临时音频已回收",
+              { objectKey: stagedObjectKey },
+            );
+          } catch {
+            await report(
+              "media.tos.cleanup_failed",
+              "ASR 提交失败，TOS 临时音频等待生命周期规则清理",
+              { objectKey: stagedObjectKey },
+            );
+          }
+        }
+        throw error;
+      }
     }
     await report("transcription.volc.completed", "火山录音识别转写完成", {
       requestId: result.requestId,
       characters: result.text.length,
       segments: result.segments.length,
     });
+    if (stagedObjectKey && this.objectStore) {
+      await this.objectStore.delete(stagedObjectKey);
+      await report("media.tos.deleted", "ASR 完成，TOS 临时音频已删除", {
+        objectKey: stagedObjectKey,
+      });
+    }
     return {
       title: input.titleHint?.trim() || media?.title || "视频内容",
       source: input.source,

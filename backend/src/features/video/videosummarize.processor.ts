@@ -25,7 +25,7 @@ function modelFor(quality: VideoProcessInput["quality"]): string {
 }
 
 function cookiesFor(source: string): string | undefined {
-  return /(youtube\.com|youtu\.be|xiaohongshu\.com|xhslink\.com)/i.test(source)
+  return /(xiaohongshu\.com|xhslink\.com)/i.test(source)
     ? "chrome"
     : undefined;
 }

@@ -59,13 +59,6 @@ export function mapAudioPreparationError(
   stderr: string,
   exitCode: number | null,
 ): AppError {
-  if (/video unavailable/i.test(stderr)) {
-    return new AppError(
-      422,
-      "MEDIA_NOT_FOUND",
-      "这个 YouTube 视频不存在或不可访问，请检查视频 ID（例如字母 O 和数字 0）以及公开视频权限",
-    );
-  }
   if (/HTTP Error 412|Precondition Failed/i.test(stderr)) {
     return new AppError(
       422,
