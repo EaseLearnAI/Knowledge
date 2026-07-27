@@ -15,7 +15,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:python": ".venv/bin/python -m unittest discover tests -p 'test_*.py'",
+    "test:python": "python3 -m unittest discover tests -p 'test_*.py'",
     "test:watch": "vitest",
     "test:real-cli": "vitest run tests/videosummarize-cli.test.ts",
     "smoke": "tsx scripts/smoke.ts",

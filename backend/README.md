@@ -15,6 +15,8 @@
 - 串行视频任务队列和服务重启后的任务恢复；
 - 一句话摘要、观看价值、关键观点、章节、行动项、Tag 和 Markdown 文案；
 - MiniMax OpenAI 兼容文案适配器，默认模型 `MiniMax-M3`；
+- MiniMax M3 图文/短视频多模态理解：小红书和抖音图文直接读正文与图片，
+  3 分钟内视频直接读完整画面，技术失败自动回退 ASR；
 - MongoDB 任务和内容持久化、幂等键、软删除；
 - JSON 日志、请求 ID、任务 SSE 和 `/terminal` Web 终端；
 - Zod 输入校验、统一成功/失败结构、限流、Helmet 和 CORS；
@@ -80,8 +82,9 @@ ARK_SUMMARY_MODEL=ep-replace-with-ark-endpoint-id
 ARK_SUMMARY_FALLBACK_MODELS=
 ```
 
-生产模式会强制要求 `volc_asr + ark`，如果误配为本地 Whisper、Mock 或本地模拟
-总结，服务会在启动阶段直接报错，不允许带着开发配置上线。
+未启用 M3 多模态时，生产模式会强制要求 `volc_asr + ark`；启用多模态时要求
+`volc_asr + minimax`，并校验 MiniMax Key。两种模式都禁止本地 Whisper、Mock 或
+本地模拟总结。
 
 处理流程：
 
@@ -138,6 +141,32 @@ MINIMAX_MODEL=MiniMax-M3
 ```
 
 `MINIMAX_MODEL` 是独立配置项。以后在 MiniMax 同一 OpenAI 兼容接口内更换模型时，只需修改该值并重启服务，不需要改任务队列、路由或文案业务代码。若要换成其他厂商，则新增一个实现 `Copywriter` 接口的 Provider，并在 `src/app.ts` 选择即可。
+
+### M3 图文与短视频分流
+
+```dotenv
+VIDEO_PROCESSOR=volc_asr
+COPYWRITER_PROVIDER=minimax
+MINIMAX_MULTIMODAL_ENABLED=true
+MINIMAX_SHORT_VIDEO_MAX_SECONDS=180
+MINIMAX_VIDEO_DETAIL=default
+MINIMAX_VIDEO_FPS=1
+MINIMAX_MEDIA_MAX_BYTES=49000000
+```
+
+处理策略：
+
+```text
+小红书/抖音图文 → 解析正文和图片 → 临时 TOS 签名 URL → MiniMax-M3
+三平台 ≤ 180 秒视频 → 下载并压缩/合并为临时 MP4 → MiniMax-M3
+三平台 > 180 秒视频 → 现有音频解析与 ASR → MiniMax-M3 文本总结
+M3 媒体、网络或结构错误 → 短视频自动回退现有 ASR
+```
+
+M3 的 URL/Base64 视频上限为 50 MB，因此短视频会压缩到
+`MINIMAX_MEDIA_MAX_BYTES` 以下。临时本地文件和 TOS 对象在模型请求结束后删除。
+图文不回退音频链路；平台没有返回公开图片时会给出明确错误。生产服务器不运行
+浏览器，平台登录态仍通过受控 `VIDEO_COOKIE_FILE` 挂载。
 
 请不要把 `.env` 提交到 Git。
 

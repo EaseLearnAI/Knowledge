@@ -106,7 +106,7 @@ export async function listItems(
       .sort({ createdAt: -1 })
       .skip((options.page - 1) * options.pageSize)
       .limit(options.pageSize)
-      .select("-transcript.text")
+      .select("-transcript.text -content.text")
       .lean(),
     SourceItemModel.countDocuments(filter),
   ]);

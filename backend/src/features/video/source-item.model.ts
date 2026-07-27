@@ -1,5 +1,7 @@
 import { model, Schema, type Types } from "mongoose";
 import type {
+  AnalysisMode,
+  ContentKind,
   CopywritingResult,
   TranscriptSegment,
 } from "./video.types.js";
@@ -7,7 +9,7 @@ import type {
 export type SourceItemRecord = {
   userId: Types.ObjectId;
   taskId?: Types.ObjectId;
-  type: "video" | "audio";
+  type: "video" | "audio" | "image_post";
   platform: string;
   url?: string;
   title: string;
@@ -17,6 +19,16 @@ export type SourceItemRecord = {
     segments: TranscriptSegment[];
     path: string;
     provider: string;
+  };
+  content?: {
+    text: string;
+    kind: ContentKind;
+    provider: string;
+  };
+  analysis?: {
+    mode: AnalysisMode;
+    provider: string;
+    model?: string;
   };
   copywriting?: CopywritingResult;
   tags: string[];
@@ -40,7 +52,11 @@ const sourceItemSchema = new Schema<SourceItemRecord>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     taskId: { type: Schema.Types.ObjectId, ref: "ProcessingTask", index: true },
-    type: { type: String, enum: ["video", "audio"], required: true },
+    type: {
+      type: String,
+      enum: ["video", "audio", "image_post"],
+      required: true,
+    },
     platform: { type: String, required: true },
     url: String,
     title: { type: String, required: true },
@@ -55,6 +71,22 @@ const sourceItemSchema = new Schema<SourceItemRecord>(
       segments: { type: [segmentSchema], default: undefined },
       path: String,
       provider: String,
+    },
+    content: {
+      text: String,
+      kind: {
+        type: String,
+        enum: ["image_post", "short_video", "long_video"],
+      },
+      provider: String,
+    },
+    analysis: {
+      mode: {
+        type: String,
+        enum: ["minimax_m3_multimodal", "asr_then_summary"],
+      },
+      provider: String,
+      model: String,
     },
     copywriting: { type: Schema.Types.Mixed },
     tags: { type: [String], default: [] },

@@ -469,6 +469,12 @@ components:
           type: number
           minimum: 0
           maximum: 100
+        contentKind:
+          type: string
+          enum: [image_post, short_video, long_video]
+        analysisMode:
+          type: string
+          enum: [minimax_m3_multimodal, asr_then_summary]
         error:
           type: object
           properties:

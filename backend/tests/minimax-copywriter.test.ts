@@ -106,6 +106,7 @@ describe("MiniMaxCopywriter", () => {
     expect(request.headers).toMatchObject({ Authorization: "Bearer test-api-key" });
     const body = JSON.parse(String(request.body));
     expect(body.model).toBe("MiniMax-M3");
+    expect(body.thinking).toEqual({ type: "disabled" });
     expect(body.reasoning_split).toBe(true);
     expect(body.messages[1].content).toContain("[0-5000]");
     expect(events.at(-1)?.data).toMatchObject({ totalTokens: 180 });
