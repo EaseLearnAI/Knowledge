@@ -181,7 +181,7 @@ final class LibraryViewController: UIViewController {
         )
 
         let body = MemoStyle.label(
-            text: "粘贴一个链接，Memo 自动提取内容、生成摘要和 Tag。",
+            text: "粘贴分享文案或链接，Memo 自动识别链接、提取内容并生成摘要和 Tag。",
             style: .body,
             color: .secondaryLabel,
             alignment: .center

@@ -26,14 +26,14 @@ final class AddContentViewController: UIViewController {
 
     private func configureContent() {
         let title = MemoStyle.label(
-            text: "粘贴内容链接",
+            text: "粘贴分享文案或链接",
             style: .largeTitle
         )
         title.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
             for: .systemFont(ofSize: 32, weight: .bold)
         )
         let body = MemoStyle.label(
-            text: "支持 B 站、小红书和抖音公开视频链接。",
+            text: "支持直接粘贴 B 站、小红书和抖音的分享文案，Memo 会自动识别其中的链接。",
             style: .body,
             color: .secondaryLabel
         )
@@ -50,7 +50,7 @@ final class AddContentViewController: UIViewController {
         )
         input.autocorrectionType = .no
         input.autocapitalizationType = .none
-        input.keyboardType = .URL
+        input.keyboardType = .default
         input.accessibilityLabel = "内容链接"
         input.accessibilityIdentifier = "内容链接"
         let toolbar = UIToolbar()

@@ -73,6 +73,29 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
     }
 
+    func testNativeAddExtractsVideoURLFromShareText() {
+        let app = launchApp(
+            screenID: "03-add",
+            reset: true,
+            skipOnboarding: true
+        )
+        let field = app.textViews["内容链接"]
+        XCTAssertTrue(field.waitForExistence(timeout: 8))
+        field.tap()
+        field.typeText(
+            "【地狱梗刷屏、学术打假、CEO发疯——2026上半年，社会在反抗什么？】 " +
+                "https://www.bilibili.com/video/BV1GWNQ6jE2x/?" +
+                "share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58"
+        )
+        if app.toolbars.buttons["完成"].waitForExistence(timeout: 2) {
+            app.toolbars.buttons["完成"].tap()
+        }
+        app.buttons["收藏到 Memo"].tap()
+
+        XCTAssertTrue(app.navigationBars["处理中"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.alerts["无法收藏"].exists)
+    }
+
     func testNativeSearchOpensSavedResult() {
         let app = launchAndIngestExample()
         app.navigationBars.buttons["Memo"].tapIfExists()

@@ -318,6 +318,42 @@ describe("注册、登录和令牌刷新", () => {
 });
 
 describe("视频解析和承接文案", () => {
+  it("从平台分享文案中提取链接后创建任务", async () => {
+    const session = await register();
+    const authorization = `Bearer ${session.accessToken}`;
+    const url =
+      "https://www.bilibili.com/video/BV1GWNQ6jE2x/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58";
+    const sharedText =
+      `【地狱梗刷屏、学术打假、CEO发疯——2026上半年，社会在反抗什么？】 ${url}`;
+
+    const capture = await api
+      .post("/api/v1/captures")
+      .set("Authorization", authorization)
+      .send({ url: sharedText });
+
+    expect(capture.status).toBe(202);
+    const task = await ProcessingTaskModel.findById(
+      capture.body.data._id,
+    ).lean();
+    const item = await SourceItemModel.findById(
+      capture.body.data.sourceItemId,
+    ).lean();
+    expect(task?.source).toBe(url);
+    expect(item?.url).toBe(url);
+    await runner.whenIdle();
+  });
+
+  it("对不含 URL 的分享文案返回校验错误而不是抛出异常", async () => {
+    const session = await register();
+    const response = await api
+      .post("/api/v1/captures")
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ url: "这是一段没有链接的分享文案" });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
   it("创建任务、完成转录文案、查询详情并幂等返回同一任务", async () => {
     const session = await register();
     const authorization = `Bearer ${session.accessToken}`;

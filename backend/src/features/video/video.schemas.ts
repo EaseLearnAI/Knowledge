@@ -1,19 +1,33 @@
 import { z } from "zod";
-
-const supportedHostPattern =
-  /(^|\.)(bilibili\.com|b23\.tv|douyin\.com|iesdouyin\.com|xiaohongshu\.com|xhslink\.com)$/i;
+import {
+  extractHttpUrls,
+  isSupportedVideoUrl,
+} from "./video-url.js";
 
 export const createCaptureSchema = z.object({
   url: z
     .string()
-    .url("请输入有效 URL")
-    .refine((value: string) => {
-      const parsed = new URL(value);
-      return (
-        ["http:", "https:"].includes(parsed.protocol) &&
-        supportedHostPattern.test(parsed.hostname)
-      );
-    }, "当前仅支持 B站、抖音和小红书链接"),
+    .trim()
+    .min(1, "请输入有效 URL")
+    .transform((value, context) => {
+      const urls = extractHttpUrls(value);
+      if (urls.length === 0) {
+        context.addIssue({
+          code: "custom",
+          message: "请输入包含有效 http 或 https 链接的分享内容",
+        });
+        return z.NEVER;
+      }
+      const supported = urls.find(isSupportedVideoUrl);
+      if (!supported) {
+        context.addIssue({
+          code: "custom",
+          message: "当前仅支持 B站、抖音和小红书链接",
+        });
+        return z.NEVER;
+      }
+      return supported.toString();
+    }),
   quality: z.enum(["fast", "balanced", "accurate"]).default("balanced"),
   language: z.enum(["zh", "en", "ja", "auto"]).default("zh"),
 });

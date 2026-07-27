@@ -1,5 +1,40 @@
 import Foundation
 
+enum SharedVideoURLParser {
+    private static let supportedHosts = [
+        "bilibili.com",
+        "b23.tv",
+        "douyin.com",
+        "iesdouyin.com",
+        "xiaohongshu.com",
+        "xhslink.com",
+    ]
+
+    static func extract(from rawValue: String) -> URL? {
+        guard let detector = try? NSDataDetector(
+            types: NSTextCheckingResult.CheckingType.link.rawValue
+        ) else {
+            return nil
+        }
+        let range = NSRange(rawValue.startIndex..., in: rawValue)
+        return detector
+            .matches(in: rawValue, options: [], range: range)
+            .compactMap(\.url)
+            .first(where: isSupported)
+    }
+
+    private static func isSupported(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme) else {
+            return false
+        }
+        let host = url.host()?.lowercased() ?? ""
+        return supportedHosts.contains {
+            host == $0 || host.hasSuffix(".\($0)")
+        }
+    }
+}
+
 @MainActor
 final class MemoApplication {
     enum Destination {
@@ -122,10 +157,7 @@ final class MemoApplication {
 
     func addURL(_ rawValue: String) async throws -> KnowledgeItem {
         try await authStore.requireAuthentication()
-        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmed),
-              let scheme = url.scheme?.lowercased(),
-              ["http", "https"].contains(scheme) else {
+        guard let url = SharedVideoURLParser.extract(from: rawValue) else {
             throw MemoApplicationError.invalidURL
         }
         let item = try await store.createPendingItem(url: url)
@@ -304,7 +336,7 @@ enum MemoApplicationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "请输入有效的 http 或 https 链接"
+            "请粘贴包含有效 B站、抖音或小红书链接的分享内容"
         case .authenticationRequired:
             "请先登录"
         }
