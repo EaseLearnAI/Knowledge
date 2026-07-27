@@ -68,7 +68,7 @@ const envSchema = z.object({
   ARK_AUDIO_MODEL: z.string().min(1).default("doubao-seed-2-0-lite-260428"),
   ARK_SUMMARY_MODEL: z.string().min(1).default("doubao-seed-2-0-mini-260428"),
   ARK_SUMMARY_FALLBACK_MODELS: z.string().default(
-    "doubao-seed-2-0-lite-260428",
+    "doubao-seed-1-8-251228",
   ),
   ARK_REQUEST_TIMEOUT_MS: z.coerce
     .number()

@@ -65,7 +65,7 @@ describe("production config", () => {
     expect(config.volcAsrTimeoutMs).toBe(10_800_000);
     expect(config.arkSummaryModel).toBe("doubao-seed-2-0-mini-260428");
     expect(config.arkSummaryFallbackModels).toEqual([
-      "doubao-seed-2-0-lite-260428",
+      "doubao-seed-1-8-251228",
     ]);
   });
 
