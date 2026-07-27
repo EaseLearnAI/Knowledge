@@ -40,37 +40,29 @@ final class AuthIntroViewController: UIViewController {
         )
 
         let title = MemoStyle.label(
-            text: "把值得看的，\n变成真正用得上的知识",
+            text: "把想学的，\n真正留下来",
             style: .largeTitle,
             alignment: .center
         )
         title.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
             for: .systemFont(ofSize: 36, weight: .bold)
         )
-        title.accessibilityIdentifier = "把值得看的"
+        title.accessibilityIdentifier = "把想学的"
 
         let hero = UIImageView(image: UIImage(named: "IntroKnowledgeFlow"))
         hero.contentMode = .scaleAspectFill
         hero.clipsToBounds = true
         hero.isAccessibilityElement = true
-        hero.accessibilityLabel = "视频、音频和网页被整理成知识卡片"
+        hero.accessibilityLabel = "有价值的视频被真正留下"
 
         let body = MemoStyle.label(
-            text: "把 B 站、小红书、抖音和网页链接发给 Memo，\n自动提取内容、生成摘要和 Tag。",
+            text: "看到有价值的视频，分享给 Memo。",
             style: .body,
             color: .secondaryLabel,
             alignment: .center
         )
         body.font = UIFontMetrics(forTextStyle: .body).scaledFont(
             for: .systemFont(ofSize: 17, weight: .regular)
-        )
-
-        let support = MemoStyle.label(
-            text: "B 站  ·  小红书  ·  抖音  ·  网页链接",
-            style: .caption1,
-            color: .tertiaryLabel,
-            alignment: .center,
-            lines: 1
         )
 
         let continueButton = MemoStyle.accentButton(title: "开始使用")
@@ -91,12 +83,9 @@ final class AuthIntroViewController: UIViewController {
         mainStack.setCustomSpacing(18, after: hero)
         mainStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let footerStack = UIStackView(
-            arrangedSubviews: [continueButton, support]
-        )
+        let footerStack = UIStackView(arrangedSubviews: [continueButton])
         footerStack.axis = .vertical
         footerStack.alignment = .fill
-        footerStack.spacing = 16
         footerStack.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(brand)

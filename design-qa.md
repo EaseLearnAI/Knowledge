@@ -7,11 +7,11 @@
 - Onboarding source:
   `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-329046c8-46a7-4c59-ba2f-4bdb8c38dbf4.png`
 - Product-introduction implementation:
-  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_dce19edd-6064-45ad-9f03-00d58454517f.jpg`
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_ac8a283b-8f17-420c-9115-2590a79eac8c.jpg`
 - Problem-page implementation:
-  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_07cb7214-8534-4b9b-ab82-83c77e71b089.jpg`
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_39ce35e3-2b20-479c-9f72-e4bf432dc3db.jpg`
 - How-it-works implementation:
-  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_0634e210-8dba-4c04-8917-c7460dddfb26.jpg`
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_8b89fb1f-390d-45bf-a62b-679da7870d44.jpg`
 - Full-view comparisons:
   `/Users/mac/.codex/visualizations/2026/07/27/memo-native-onboarding/auth-intro-comparison.jpg`,
   `/Users/mac/.codex/visualizations/2026/07/27/memo-native-onboarding/onboarding-problem-comparison.jpg`,
@@ -49,8 +49,9 @@ the final capture.
 - Image quality and asset fidelity: three project-owned raster illustrations are
   sharp, share one paper-like editorial direction, and replace the earlier
   system-symbol placeholders.
-- Copy and content: page 1 clearly states `别再让收藏夹吃灰`; page 2 explains
-  that sending a link automatically produces a personal knowledge entry.
+- Copy and content: the introduction promises that learning intent can be kept;
+  page 1 frames the loss of forgotten saves; page 2 promises continued personal
+  accumulation without claiming that the user's ability has already improved.
 
 ## Comparison history
 

@@ -22,14 +22,14 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(app.buttons["下一步"].waitForExistence(timeout: 8))
         XCTAssertTrue(
             app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "收藏夹吃灰")
+                NSPredicate(format: "label CONTAINS %@", "以后再学")
             ).firstMatch.exists
         )
         app.buttons["下一步"].tap()
         XCTAssertTrue(app.buttons["开始使用"].waitForExistence(timeout: 5))
         XCTAssertTrue(
             app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "一个链接")
+                NSPredicate(format: "label CONTAINS %@", "每一次收藏")
             ).firstMatch.exists
         )
         app.buttons["开始使用"].tap()
@@ -44,7 +44,7 @@ final class KnowledgeIOSUITests: XCTestCase {
             authMode: "mock",
             resetAuth: true
         )
-        XCTAssertTrue(app.staticTexts["把值得看的"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["把想学的"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["开始使用"].exists)
         XCTAssertFalse(app.buttons["创建账号"].exists)
         XCTAssertFalse(app.buttons["登录"].exists)
