@@ -2,6 +2,9 @@ node_modules/
 dist/
 coverage/
 .env
+.venv/
+__pycache__/
+*.pyc
 storage/uploads/*
 storage/workspaces/*
 storage/mongodb/*

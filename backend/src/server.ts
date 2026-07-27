@@ -9,9 +9,12 @@ const config = loadConfig();
 const logger = createLogger(config);
 
 async function main(): Promise<void> {
+  if (config.workerMode === "worker") {
+    throw new Error("WORKER_MODE=worker 必须使用 npm run worker 启动");
+  }
   await connectDatabase(config.mongodbUri, logger);
   const { app, runner } = createApp({ config, logger });
-  await runner.recoverPending();
+  if (config.workerMode === "embedded") await runner.recoverPending();
   const server = createServer(app);
 
   server.listen(config.port, config.host, () => {
@@ -33,6 +36,7 @@ async function main(): Promise<void> {
     shuttingDown = true;
     logger.info({ event: "server.shutdown", signal }, "开始优雅关闭");
     server.close();
+    runner.stopPolling();
     await runner.whenIdle();
     await disconnectDatabase(logger);
     process.exit(0);

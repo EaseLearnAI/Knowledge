@@ -76,8 +76,8 @@ VOLC_ASR_RESOURCE_ID=volc.bigasr.auc
 VOLC_ASR_TIMEOUT_MS=10800000
 VOLC_ASR_MAX_ATTEMPTS=3
 ARK_API_KEY=从运行环境注入，不要提交
-ARK_SUMMARY_MODEL=doubao-seed-2-0-mini-260428
-ARK_SUMMARY_FALLBACK_MODELS=doubao-seed-1-8-251228
+ARK_SUMMARY_MODEL=ep-replace-with-ark-endpoint-id
+ARK_SUMMARY_FALLBACK_MODELS=
 ```
 
 生产模式会强制要求 `volc_asr + ark`，如果误配为本地 Whisper、Mock 或本地模拟

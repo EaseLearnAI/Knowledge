@@ -55,7 +55,16 @@ export function createApp(dependencies: AppDependencies): CreatedApp {
       : config.copywriterProvider === "ark"
         ? new ArkCopywriter(config)
       : new LocalCopywriter());
-  const runner = new VideoTaskRunner(processor, copywriter, logger);
+  const runner = new VideoTaskRunner(
+    processor,
+    copywriter,
+    logger,
+    {
+      enabled: config.workerMode !== "api",
+      leaseSeconds: config.workerLeaseSeconds,
+      maxAttempts: config.workerMaxAttempts,
+    },
+  );
   const app = express();
 
   app.disable("x-powered-by");

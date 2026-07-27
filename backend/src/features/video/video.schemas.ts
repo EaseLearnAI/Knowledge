@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const supportedHostPattern =
-  /(^|\.)(youtube\.com|youtu\.be|bilibili\.com|b23\.tv|douyin\.com|iesdouyin\.com|xiaohongshu\.com|xhslink\.com)$/i;
+  /(^|\.)(bilibili\.com|b23\.tv|douyin\.com|iesdouyin\.com|xiaohongshu\.com|xhslink\.com)$/i;
 
 export const createCaptureSchema = z.object({
   url: z
@@ -13,7 +13,7 @@ export const createCaptureSchema = z.object({
         ["http:", "https:"].includes(parsed.protocol) &&
         supportedHostPattern.test(parsed.hostname)
       );
-    }, "当前仅支持 YouTube、B站、抖音和小红书链接"),
+    }, "当前仅支持 B站、抖音和小红书链接"),
   quality: z.enum(["fast", "balanced", "accurate"]).default("balanced"),
   language: z.enum(["zh", "en", "ja", "auto"]).default("zh"),
 });

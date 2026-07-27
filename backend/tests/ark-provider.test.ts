@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { AppError } from "../src/shared/errors/app-error.js";
 import { ArkCopywriter } from "../src/features/video/ark-copywriter.js";
 import {
@@ -18,6 +18,7 @@ import {
 import type { TranscriptResult } from "../src/features/video/video.types.js";
 
 const config: AppConfig = {
+  ...loadConfig({ NODE_ENV: "test" }),
   nodeEnv: "test",
   port: 0,
   host: "127.0.0.1",
@@ -208,7 +209,7 @@ describe("ArkVideoProcessor", () => {
     const processor = new ArkVideoProcessor(config, { client, preparer });
     const result = await processor.process(
       {
-        source: "https://www.youtube.com/watch?v=test",
+        source: "https://www.xiaohongshu.com/explore/test",
         quality: "balanced",
         language: "zh",
       },

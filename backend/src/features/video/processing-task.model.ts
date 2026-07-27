@@ -23,6 +23,9 @@ export type ProcessingTaskRecord = {
   status: TaskStatus;
   stage: string;
   progress: number;
+  attempts: number;
+  leaseOwner?: string;
+  leaseUntil?: Date;
   logs: TaskLog[];
   error?: {
     code: string;
@@ -72,6 +75,9 @@ const processingTaskSchema = new Schema<ProcessingTaskRecord>(
     },
     stage: { type: String, default: "queued" },
     progress: { type: Number, min: 0, max: 100, default: 0 },
+    attempts: { type: Number, min: 0, default: 0 },
+    leaseOwner: String,
+    leaseUntil: Date,
     logs: { type: [taskLogSchema], default: [] },
     error: {
       code: String,
@@ -84,6 +90,7 @@ const processingTaskSchema = new Schema<ProcessingTaskRecord>(
 );
 
 processingTaskSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });
+processingTaskSchema.index({ status: 1, leaseUntil: 1, createdAt: 1 });
 
 export const ProcessingTaskModel = model<ProcessingTaskRecord>(
   "ProcessingTask",

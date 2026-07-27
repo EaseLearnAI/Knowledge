@@ -1,16 +1,13 @@
 import Foundation
 
 actor ContentProcessor {
-    private let aiService: AIService
     private let authStore: AuthStore
     private let videoClient: VideoBackendClient
     private let session: URLSession
 
     init(
-        aiService: AIService = .shared,
         authStore: AuthStore = .shared
     ) {
-        self.aiService = aiService
         self.authStore = authStore
         videoClient = VideoBackendClient(
             environment: ProcessInfo.processInfo.environment
@@ -34,46 +31,15 @@ actor ContentProcessor {
             throw ContentProcessingError.invalidURL
         }
 
-        if Self.isSupportedVideo(url) {
-            return try await processVideo(
-                url: url,
-                idempotencyKey: idempotencyKey,
-                remoteTaskID: remoteTaskID,
-                onRemoteTaskCreated: onRemoteTaskCreated,
-                onProgress: onProgress
-            )
+        guard Self.isSupportedVideo(url) else {
+            throw ContentProcessingError.unsupportedPlatform
         }
-
-        await onProgress(.fetching)
-        let fetched = try await fetch(url: url)
-        await onProgress(.extracting)
-        let metadata = HTMLMetadata(html: fetched.html, url: fetched.finalURL)
-        let title = metadata.title ?? fetched.finalURL.host() ?? url.absoluteString
-        let content = metadata.readableText
-
-        guard content.count >= 40 || metadata.description?.isEmpty == false else {
-            throw ContentProcessingError.noReadableContent
-        }
-
-        let combinedContent = [
-            metadata.description,
-            content,
-        ]
-        .compactMap { $0 }
-        .joined(separator: "\n\n")
-        .truncated(to: 18_000)
-
-        await onProgress(.enriching)
-        let enrichment = await aiService.enrich(
-            title: title,
-            content: combinedContent
-        )
-        return ProcessedContent(
-            kind: Self.kind(for: fetched.finalURL),
-            sourceName: Self.sourceName(for: fetched.finalURL),
-            title: title,
-            content: combinedContent,
-            enrichment: enrichment
+        return try await processVideo(
+            url: url,
+            idempotencyKey: idempotencyKey,
+            remoteTaskID: remoteTaskID,
+            onRemoteTaskCreated: onRemoteTaskCreated,
+            onProgress: onProgress
         )
     }
 
@@ -177,8 +143,8 @@ actor ContentProcessor {
 
     private static func kind(for url: URL) -> KnowledgeItemKind {
         let host = url.host()?.lowercased() ?? ""
-        if host.contains("youtube") || host.contains("youtu.be") ||
-            host.contains("bilibili") {
+        if host.contains("bilibili") || host.contains("douyin") ||
+            host.contains("xiaohongshu") || host.contains("xhslink") {
             return .video
         }
         if host.contains("podcast") || host.contains("xiaoyuzhou") ||
@@ -191,8 +157,6 @@ actor ContentProcessor {
     private static func isSupportedVideo(_ url: URL) -> Bool {
         let host = url.host()?.lowercased() ?? ""
         return [
-            "youtube.com",
-            "youtu.be",
             "bilibili.com",
             "b23.tv",
             "douyin.com",
@@ -204,11 +168,9 @@ actor ContentProcessor {
 
     private static func sourceName(for url: URL) -> String {
         let host = url.host()?.lowercased() ?? ""
-        if host.contains("youtube") || host.contains("youtu.be") {
-            return "YouTube"
-        }
         if host.contains("bilibili") { return "B 站" }
         if host.contains("xiaohongshu") { return "小红书" }
+        if host.contains("douyin") { return "抖音" }
         if host.contains("xiaoyuzhou") { return "小宇宙" }
         if host.contains("spotify") { return "Spotify" }
         return url.host() ?? "网页"
@@ -333,6 +295,7 @@ private struct HTMLMetadata {
 
 enum ContentProcessingError: LocalizedError {
     case invalidURL
+    case unsupportedPlatform
     case invalidResponse
     case httpStatus(Int)
     case contentTooLarge
@@ -344,6 +307,8 @@ enum ContentProcessingError: LocalizedError {
         switch self {
         case .invalidURL:
             "请输入有效的 http 或 https 链接"
+        case .unsupportedPlatform:
+            "当前仅支持 B 站、小红书和抖音公开视频链接"
         case .invalidResponse:
             "网站没有返回有效内容"
         case .httpStatus(let status):

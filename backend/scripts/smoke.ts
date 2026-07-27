@@ -1,13 +1,14 @@
 import { createServer } from "node:http";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { createApp } from "../src/app.js";
-import type { AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/config.js";
 import { MockVideoProcessor } from "../src/features/video/mock-video.processor.js";
 import { connectDatabase, disconnectDatabase } from "../src/shared/db/mongoose.js";
 import { createLogger } from "../src/shared/logger/logger.js";
 
 const mongo = await MongoMemoryServer.create();
 const config: AppConfig = {
+  ...loadConfig({ NODE_ENV: "test" }),
   nodeEnv: "test",
   port: 0,
   host: "127.0.0.1",
@@ -88,7 +89,7 @@ try {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: `smoke-${Date.now()}@example.com`,
+      identifier: `smoke-${Date.now()}@example.com`,
       password: "Password123",
       nickname: "接口冒烟测试",
     }),
@@ -102,7 +103,7 @@ try {
       "Idempotency-Key": "smoke-video-001",
     },
     body: JSON.stringify({
-      url: "https://www.youtube.com/watch?v=smoke",
+      url: "https://www.bilibili.com/video/BV1nB3u6tERu/",
       quality: "balanced",
       language: "zh",
     }),

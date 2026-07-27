@@ -7,6 +7,12 @@ const productionBase = {
   VIDEO_PROCESSOR: "volc_asr",
   COPYWRITER_PROVIDER: "ark",
   PUBLIC_BASE_URL: "https://api.example.com",
+  WORKER_MODE: "api",
+  TOS_ENABLED: "true",
+  TOS_ACCESS_KEY: "tos-ak-test",
+  TOS_SECRET_KEY: "tos-sk-test",
+  TOS_TEMP_BUCKET: "memo-asr-temp-test",
+  ARK_SUMMARY_MODEL: "ep-summary-test",
 };
 
 describe("production config", () => {
@@ -63,21 +69,31 @@ describe("production config", () => {
     expect(config.videoProcessor).toBe("volc_asr");
     expect(config.volcAsrMaxAttempts).toBe(3);
     expect(config.volcAsrTimeoutMs).toBe(10_800_000);
-    expect(config.arkSummaryModel).toBe("doubao-seed-2-0-mini-260428");
-    expect(config.arkSummaryFallbackModels).toEqual([
-      "doubao-seed-1-8-251228",
-    ]);
+    expect(config.arkSummaryModel).toBe("ep-summary-test");
+    expect(config.arkSummaryFallbackModels).toEqual([]);
   });
 
-  it("生产音频代理只接受公网 HTTPS 基础地址", () => {
+  it("生产环境拒绝 API 内嵌执行长任务", () => {
     expect(() =>
       loadConfig({
         ...productionBase,
-        PUBLIC_BASE_URL: "http://127.0.0.1:3100",
+        WORKER_MODE: "embedded",
         VOLC_ASR_APP_ID: "app-test",
         VOLC_ASR_ACCESS_TOKEN: "token-test",
         ARK_API_KEY: "ark-test",
       }),
-    ).toThrow("公网 HTTPS");
+    ).toThrow("禁止 API 进程执行长任务");
+  });
+
+  it("生产环境拒绝把模型目录 ID 当作推理接入点", () => {
+    expect(() =>
+      loadConfig({
+        ...productionBase,
+        ARK_SUMMARY_MODEL: "doubao-seed-1-6-flash-250828",
+        VOLC_ASR_APP_ID: "app-test",
+        VOLC_ASR_ACCESS_TOKEN: "token-test",
+        ARK_API_KEY: "ark-test",
+      }),
+    ).toThrow("ep-");
   });
 });
