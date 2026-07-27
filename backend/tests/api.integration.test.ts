@@ -98,32 +98,6 @@ describe("健康检查", () => {
 });
 
 describe("注册、登录和令牌刷新", () => {
-  it("同一 installationId 可无感获取同一个游客账号", async () => {
-    const installationId = "67ee89ba-7050-4c04-a3d7-ac61a63499b3";
-    const first = await api.post("/api/v1/auth/guest").send({ installationId });
-    expect(first.status).toBe(201);
-    expect(first.body.data.user.accountType).toBe("guest");
-    expect(first.body.data.user.email).toBeNull();
-    expect(first.body.data.accessToken).toBeTypeOf("string");
-
-    const second = await api.post("/api/v1/auth/guest").send({ installationId });
-    expect(second.status).toBe(201);
-    expect(second.body.data.user.id).toBe(first.body.data.user.id);
-
-    const me = await api
-      .get("/api/v1/auth/me")
-      .set("Authorization", `Bearer ${second.body.data.accessToken}`);
-    expect(me.status).toBe(200);
-    expect(me.body.data.accountType).toBe("guest");
-  });
-
-  it("拒绝非法 installationId", async () => {
-    const response = await api
-      .post("/api/v1/auth/guest")
-      .send({ installationId: "not-a-uuid" });
-    expect(response.status).toBe(422);
-  });
-
   it("完整走通注册、当前用户、登录、刷新和退出", async () => {
     const registered = await register();
     expect(registered.accessToken).toBeTypeOf("string");

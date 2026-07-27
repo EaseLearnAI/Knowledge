@@ -221,6 +221,31 @@ actor AuthStore {
         guard session != nil else { throw AuthValidationError.authenticationRequired }
     }
 
+    func accessToken() async throws -> String {
+        if mode == .bypass {
+            return bypassSession.accessToken
+        }
+        if session == nil {
+            _ = await restoreSession()
+        }
+        guard var current = session else {
+            throw AuthValidationError.authenticationRequired
+        }
+        if mode == .live,
+           let expiration = Self.expiration(of: current.accessToken),
+           expiration.timeIntervalSinceNow <= 60 {
+            do {
+                current = try await client.refresh(token: current.refreshToken)
+                try credentials.save(current)
+                session = current
+            } catch {
+                clearSession()
+                throw error
+            }
+        }
+        return current.accessToken
+    }
+
     private func validate(_ current: AuthSession) async throws -> AuthSession {
         let user = try await client.currentUser(accessToken: current.accessToken)
         return AuthSession(
@@ -234,6 +259,22 @@ actor AuthStore {
     private func clearSession() {
         session = nil
         credentials.clear()
+    }
+
+    private static func expiration(of token: String) -> Date? {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var encoded = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+        guard let data = Data(base64Encoded: encoded),
+              let payload = try? JSONSerialization.jsonObject(with: data)
+                as? [String: Any],
+              let expiresAt = payload["exp"] as? TimeInterval else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: expiresAt)
     }
 
     private static func validated(identifier: String) throws -> String {

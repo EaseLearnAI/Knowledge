@@ -3,9 +3,7 @@ import { model, Schema } from "mongoose";
 export type UserRecord = {
   email?: string;
   phone?: string;
-  installationId?: string;
-  accountType: "guest" | "registered";
-  passwordHash?: string;
+  passwordHash: string;
   nickname: string;
   createdAt: Date;
   updatedAt: Date;
@@ -28,21 +26,7 @@ const userSchema = new Schema<UserRecord>(
       sparse: true,
       index: true,
     },
-    installationId: {
-      type: String,
-      trim: true,
-      unique: true,
-      sparse: true,
-      index: true,
-      select: false,
-    },
-    accountType: {
-      type: String,
-      enum: ["guest", "registered"],
-      default: "registered",
-      required: true,
-    },
-    passwordHash: { type: String, select: false },
+    passwordHash: { type: String, required: true, select: false },
     nickname: { type: String, required: true, trim: true, maxlength: 40 },
   },
   { timestamps: true, collection: "users" },

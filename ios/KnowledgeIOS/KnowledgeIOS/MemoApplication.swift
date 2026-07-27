@@ -225,10 +225,23 @@ final class MemoApplication {
     private func startProcessing(_ item: KnowledgeItem) {
         let itemID = item.id
         let sourceURL = item.sourceURL
+        let idempotencyKey = item.remoteIdempotencyKey ?? UUID().uuidString
+        let remoteTaskID = item.remoteTaskID
         Task { [processor, store] in
             do {
                 let content = try await processor.process(
                     url: sourceURL,
+                    idempotencyKey: idempotencyKey,
+                    remoteTaskID: remoteTaskID,
+                    onRemoteTaskCreated: { taskID, sourceItemID in
+                        if let item = try? await store.attachRemoteTask(
+                            itemID: itemID,
+                            taskID: taskID,
+                            sourceItemID: sourceItemID
+                        ) {
+                            await self.receiveProcessingUpdate(item)
+                        }
+                    },
                     onProgress: { stage in
                         let update: (
                             KnowledgeItemStatus,
