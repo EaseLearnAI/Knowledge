@@ -181,6 +181,30 @@ describe("ArkResponseClient", () => {
     });
   });
 
+  it("把不存在或无权访问的 endpoint 映射成模型不可用", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "InvalidParameter",
+              message:
+                "The model or endpoint stale-model does not exist or you do not have access to it.",
+            },
+          }),
+          { status: 404, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    await expect(
+      new ArkResponseClient(config).create({ model: "stale-model" }),
+    ).rejects.toMatchObject({
+      code: "ARK_MODEL_NOT_OPEN",
+    });
+  });
+
   it("没有密钥时在发请求前失败", async () => {
     const withoutKey = { ...config };
     delete withoutKey.arkApiKey;
@@ -407,6 +431,56 @@ describe("ArkCopywriter", () => {
     expect(create.mock.calls[0]?.[0]).toMatchObject({ model: "primary-paused" });
     expect(create.mock.calls[1]?.[0]).toMatchObject({ model: "fallback-ready" });
     expect(events).toContain("copywriting.ark.model_fallback");
+  });
+
+  it("主 endpoint 不存在时自动切换备用模型", async () => {
+    const fallbackConfig: AppConfig = {
+      ...config,
+      arkSummaryModel: "stale-endpoint",
+      arkSummaryFallbackModels: ["fallback-ready"],
+    };
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new AppError(
+          502,
+          "ARK_MODEL_NOT_OPEN",
+          "The model or endpoint stale-endpoint does not exist or you do not have access to it.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        responseResult(
+          JSON.stringify({
+            oneSentenceSummary: "备用 endpoint 总结成功。",
+            whyWorthWatching: "配置过期不会中断任务。",
+            keyPoints: ["自动切换可用 endpoint。"],
+            chapters: [],
+            actionItems: [],
+            tags: ["稳定性"],
+            markdown: "# 备用 endpoint 总结成功",
+          }),
+        ),
+      );
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create,
+    };
+
+    const result = await new ArkCopywriter(fallbackConfig, client).generate(
+      {
+        title: "endpoint 降级",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      () => undefined,
+    );
+
+    expect(result.model).toBe("fallback-ready");
+    expect(create.mock.calls[1]?.[0]).toMatchObject({ model: "fallback-ready" });
   });
 
   it("长逐字稿先分段提炼再做最终汇总", async () => {

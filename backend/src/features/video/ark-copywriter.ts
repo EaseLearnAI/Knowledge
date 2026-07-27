@@ -42,7 +42,7 @@ function isModelUnavailable(error: unknown): boolean {
   if (error.code === "ARK_MODEL_NOT_OPEN") return true;
   return (
     error.code === "ARK_REQUEST_FAILED" &&
-    /(?:reached inference limit|service.*paused|服务暂停|免费额度|安心体验|Safe Experience Mode)/i.test(
+    /(?:reached inference limit|service.*paused|does not exist|do not have access|服务暂停|免费额度|安心体验|Safe Experience Mode)/i.test(
       error.message,
     )
   );
