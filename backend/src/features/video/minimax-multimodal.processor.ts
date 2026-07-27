@@ -24,7 +24,10 @@ const analysisSchema = z.object({
   contentText: z.string().min(1),
   oneSentenceSummary: z.string().min(1),
   whyWorthWatching: z.string().min(1),
-  keyPoints: z.array(z.string().min(1)).min(1).max(7),
+  keyPoints: z
+    .array(z.string().min(1))
+    .min(1)
+    .transform((items) => items.slice(0, 7)),
   chapters: z
     .array(
       z.object({
@@ -34,9 +37,14 @@ const analysisSchema = z.object({
         summary: z.string(),
       }),
     )
-    .max(12),
-  actionItems: z.array(z.string()).max(10),
-  tags: z.array(z.string().min(1)).min(1).max(3),
+    .transform((items) => items.slice(0, 12)),
+  actionItems: z
+    .array(z.string())
+    .transform((items) => items.slice(0, 10)),
+  tags: z
+    .array(z.string().min(1))
+    .min(1)
+    .transform((items) => items.slice(0, 3)),
   markdown: z.string().min(1),
 });
 

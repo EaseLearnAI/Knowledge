@@ -36,10 +36,13 @@ function modelPayload() {
             contentText: "正文与画面共同说明了如何整理知识。",
             oneSentenceSummary: "这是一个知识整理方法。",
             whyWorthWatching: "包含可以立即执行的步骤。",
-            keyPoints: ["先收集内容。", "再提炼重点。"],
+            keyPoints: Array.from(
+              { length: 8 },
+              (_, index) => `知识整理步骤 ${index + 1}`,
+            ),
             chapters: [],
             actionItems: ["整理一条收藏。"],
-            tags: ["知识管理"],
+            tags: ["知识管理", "效率", "笔记", "整理"],
             markdown: "# 知识整理",
           }),
         },
@@ -126,6 +129,8 @@ describe("HybridMultimodalVideoProcessor", () => {
     expect(result.contentKind).toBe("image_post");
     expect(result.analysisMode).toBe("minimax_m3_multimodal");
     expect(result.copywriting?.oneSentenceSummary).toContain("知识整理");
+    expect(result.copywriting?.keyPoints).toHaveLength(7);
+    expect(result.copywriting?.tags).toHaveLength(3);
     expect(fallback.process).not.toHaveBeenCalled();
     expect(staged.cleanup).toHaveBeenCalledOnce();
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
