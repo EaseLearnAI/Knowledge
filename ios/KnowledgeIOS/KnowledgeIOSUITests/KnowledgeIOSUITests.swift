@@ -29,12 +29,29 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(app.buttons["开始使用"].waitForExistence(timeout: 5))
         XCTAssertTrue(
             app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "发一个链接")
+                NSPredicate(format: "label CONTAINS %@", "一个链接")
             ).firstMatch.exists
         )
         app.buttons["开始使用"].tap()
         XCTAssertTrue(app.buttons["添加第 1 条"].waitForExistence(timeout: 5))
         assertNativeHeader(in: app)
+    }
+
+    func testProductIntroUsesOneClearPrimaryAction() {
+        let app = launchApp(
+            reset: true,
+            skipOnboarding: true,
+            authMode: "mock",
+            resetAuth: true
+        )
+        XCTAssertTrue(app.staticTexts["把值得看的"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["开始使用"].exists)
+        XCTAssertFalse(app.buttons["创建账号"].exists)
+        XCTAssertFalse(app.buttons["登录"].exists)
+
+        app.buttons["开始使用"].tap()
+        XCTAssertTrue(app.buttons["提交登录"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["切换到创建账号"].exists)
     }
 
     func testNativeAddProcessesURLAndPersistsAcrossRelaunch() {
@@ -131,7 +148,9 @@ final class KnowledgeIOSUITests: XCTestCase {
         app.secureTextFields["删除账号当前密码"].tap()
         app.secureTextFields["删除账号当前密码"].typeText("Password123")
         app.buttons["永久删除"].tap()
-        XCTAssertTrue(app.buttons["登录"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["开始使用"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["创建账号"].exists)
+        XCTAssertFalse(app.buttons["登录"].exists)
         XCTAssertFalse(app.webViews.firstMatch.exists)
     }
 
@@ -142,8 +161,14 @@ final class KnowledgeIOSUITests: XCTestCase {
             authMode: "mock",
             resetAuth: true
         )
-        XCTAssertTrue(app.buttons["创建账号"].waitForExistence(timeout: 8))
-        app.buttons["创建账号"].tap()
+        XCTAssertTrue(app.buttons["开始使用"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["创建账号"].exists)
+        XCTAssertFalse(app.buttons["登录"].exists)
+        app.buttons["开始使用"].tap()
+        XCTAssertTrue(
+            app.buttons["切换到创建账号"].waitForExistence(timeout: 5)
+        )
+        app.buttons["切换到创建账号"].tap()
 
         app.textFields["昵称"].tap()
         app.textFields["昵称"].typeText("Memo Tester")
@@ -167,8 +192,8 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(app.alerts["退出登录？"].waitForExistence(timeout: 3))
         app.buttons["确认退出"].tap()
 
-        XCTAssertTrue(app.buttons["登录"].waitForExistence(timeout: 5))
-        app.buttons["登录"].tap()
+        XCTAssertTrue(app.buttons["开始使用"].waitForExistence(timeout: 5))
+        app.buttons["开始使用"].tap()
         app.textFields["登录手机号或者邮箱"].tap()
         app.textFields["登录手机号或者邮箱"].typeText("memo.tester@example.com")
         app.secureTextFields["登录密码"].tap()

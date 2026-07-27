@@ -1,8 +1,7 @@
 import UIKit
 
 final class AuthIntroViewController: UIViewController {
-    var onCreateAccount: (() -> Void)?
-    var onLogin: (() -> Void)?
+    var onContinue: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -11,27 +10,34 @@ final class AuthIntroViewController: UIViewController {
         configureContent()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     private func configureContent() {
-        let mark = MemoStyle.label(
-            text: "MEMO",
-            style: .caption1,
+        let brand = UILabel()
+        brand.text = "Memo"
+        brand.font = .systemFont(ofSize: 13, weight: .semibold)
+        brand.textColor = MemoStyle.orange
+        brand.textAlignment = .center
+        brand.backgroundColor = MemoStyle.orange.withAlphaComponent(0.1)
+        brand.layer.cornerRadius = 13
+        brand.layer.masksToBounds = true
+        brand.translatesAutoresizingMaskIntoConstraints = false
+
+        let eyebrow = MemoStyle.label(
+            text: "你的个人内容知识库",
+            style: .subheadline,
             color: .secondaryLabel,
             alignment: .center,
             lines: 1
         )
-
-        let symbol = UIImageView(
-            image: UIImage(
-                systemName: "books.vertical.fill",
-                withConfiguration: UIImage.SymbolConfiguration(
-                    pointSize: 68,
-                    weight: .medium
-                )
-            )
-        )
-        symbol.tintColor = MemoStyle.orange
-        symbol.contentMode = .scaleAspectFit
-        symbol.accessibilityLabel = "知识收藏"
 
         let title = MemoStyle.label(
             text: "把值得看的，\n变成真正用得上的知识",
@@ -39,61 +45,111 @@ final class AuthIntroViewController: UIViewController {
             alignment: .center
         )
         title.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
-            for: .systemFont(ofSize: 34, weight: .bold)
+            for: .systemFont(ofSize: 36, weight: .bold)
         )
         title.accessibilityIdentifier = "把值得看的"
 
+        let hero = UIImageView(image: UIImage(named: "IntroKnowledgeFlow"))
+        hero.contentMode = .scaleAspectFill
+        hero.clipsToBounds = true
+        hero.isAccessibilityElement = true
+        hero.accessibilityLabel = "视频、音频和网页被整理成知识卡片"
+
         let body = MemoStyle.label(
-            text: "收藏 B 站、小红书、抖音和网页链接。\nMemo 自动提取内容、生成摘要，让收藏不再吃灰。",
+            text: "把 B 站、小红书、抖音和网页链接发给 Memo，\n自动提取内容、生成摘要和 Tag。",
             style: .body,
             color: .secondaryLabel,
             alignment: .center
         )
-
-        let create = MemoStyle.primaryButton(title: "创建账号")
-        create.addTarget(self, action: #selector(createTapped), for: .touchUpInside)
-        let login = MemoStyle.secondaryButton(title: "登录")
-        login.addTarget(self, action: #selector(loginTapped), for: .touchUpInside)
-
-        let actions = UIStackView(arrangedSubviews: [create, login])
-        actions.axis = .vertical
-        actions.spacing = 12
-
-        let content = UIStackView(
-            arrangedSubviews: [mark, symbol, title, body, actions]
+        body.font = UIFontMetrics(forTextStyle: .body).scaledFont(
+            for: .systemFont(ofSize: 17, weight: .regular)
         )
-        content.axis = .vertical
-        content.alignment = .fill
-        content.spacing = 24
-        content.setCustomSpacing(12, after: mark)
-        content.setCustomSpacing(32, after: symbol)
-        content.setCustomSpacing(16, after: title)
-        content.setCustomSpacing(36, after: body)
-        content.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(content)
+
+        let support = MemoStyle.label(
+            text: "B 站  ·  小红书  ·  抖音  ·  网页链接",
+            style: .caption1,
+            color: .tertiaryLabel,
+            alignment: .center,
+            lines: 1
+        )
+
+        let continueButton = MemoStyle.accentButton(title: "开始使用")
+        continueButton.addTarget(
+            self,
+            action: #selector(continueTapped),
+            for: .touchUpInside
+        )
+
+        let mainStack = UIStackView(
+            arrangedSubviews: [eyebrow, title, hero, body]
+        )
+        mainStack.axis = .vertical
+        mainStack.alignment = .fill
+        mainStack.spacing = 0
+        mainStack.setCustomSpacing(12, after: eyebrow)
+        mainStack.setCustomSpacing(26, after: title)
+        mainStack.setCustomSpacing(18, after: hero)
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let footerStack = UIStackView(
+            arrangedSubviews: [continueButton, support]
+        )
+        footerStack.axis = .vertical
+        footerStack.alignment = .fill
+        footerStack.spacing = 16
+        footerStack.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(brand)
+        view.addSubview(mainStack)
+        view.addSubview(footerStack)
 
         NSLayoutConstraint.activate([
-            content.leadingAnchor.constraint(
+            brand.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor,
+                constant: 12
+            ),
+            brand.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            brand.widthAnchor.constraint(greaterThanOrEqualToConstant: 64),
+            brand.heightAnchor.constraint(equalToConstant: 26),
+
+            mainStack.topAnchor.constraint(
+                equalTo: brand.bottomAnchor,
+                constant: 34
+            ),
+            mainStack.leadingAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.leadingAnchor,
-                constant: 28
+                constant: 24
             ),
-            content.trailingAnchor.constraint(
+            mainStack.trailingAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.trailingAnchor,
-                constant: -28
+                constant: -24
             ),
-            content.centerYAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.centerYAnchor
+            hero.heightAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.heightAnchor,
+                multiplier: 0.29
             ),
-            symbol.heightAnchor.constraint(equalToConstant: 88),
+
+            footerStack.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+                constant: 24
+            ),
+            footerStack.trailingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+                constant: -24
+            ),
+            footerStack.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -22
+            ),
+            mainStack.bottomAnchor.constraint(
+                lessThanOrEqualTo: footerStack.topAnchor,
+                constant: -20
+            ),
         ])
     }
 
-    @objc private func createTapped() {
-        onCreateAccount?()
-    }
-
-    @objc private func loginTapped() {
-        onLogin?()
+    @objc private func continueTapped() {
+        onContinue?()
     }
 }
 
@@ -111,6 +167,7 @@ final class AuthFormViewController: UIViewController {
     }
 
     var onSubmit: ((String, String, String?) async throws -> Void)?
+    var onSwitchMode: ((Mode) -> Void)?
 
     private let mode: Mode
     private let nicknameField = UITextField()
@@ -249,10 +306,34 @@ final class AuthFormViewController: UIViewController {
 
         let description = MemoStyle.label(
             text: mode == .login
-                ? "登录后继续查看你的收藏。"
-                : "只需一个账号，收藏会按账号安全隔离。",
+                ? "继续查看你收藏过的内容。"
+                : "创建账号后，开始建立自己的内容知识库。",
             style: .body,
             color: .secondaryLabel
+        )
+
+        let switchButton = UIButton(type: .system)
+        var switchConfiguration = UIButton.Configuration.plain()
+        switchConfiguration.title = mode == .login
+            ? "还没有账号？创建账号"
+            : "已有账号？登录"
+        switchConfiguration.baseForegroundColor = MemoStyle.orange
+        switchConfiguration.contentInsets = NSDirectionalEdgeInsets(
+            top: 12,
+            leading: 16,
+            bottom: 12,
+            trailing: 16
+        )
+        switchButton.configuration = switchConfiguration
+        switchButton.titleLabel?.font = .preferredFont(forTextStyle: .subheadline)
+        switchButton.titleLabel?.adjustsFontForContentSizeCategory = true
+        switchButton.accessibilityIdentifier = mode == .login
+            ? "切换到创建账号"
+            : "切换到登录"
+        switchButton.addTarget(
+            self,
+            action: #selector(switchModeTapped),
+            for: .touchUpInside
         )
 
         var arranged: [UIView] = [heading, description]
@@ -263,6 +344,7 @@ final class AuthFormViewController: UIViewController {
             identifierField,
             passwordField,
             submitButton,
+            switchButton,
         ])
 
         let stack = UIStackView(arrangedSubviews: arranged)
@@ -271,6 +353,7 @@ final class AuthFormViewController: UIViewController {
         stack.setCustomSpacing(8, after: heading)
         stack.setCustomSpacing(32, after: description)
         stack.setCustomSpacing(24, after: passwordField)
+        stack.setCustomSpacing(8, after: submitButton)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         let scroll = UIScrollView()
@@ -302,6 +385,10 @@ final class AuthFormViewController: UIViewController {
                 constant: -24
             ),
         ])
+    }
+
+    @objc private func switchModeTapped() {
+        onSwitchMode?(mode == .login ? .register : .login)
     }
 
     @objc private func submitTapped() {

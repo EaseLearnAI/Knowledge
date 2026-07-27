@@ -52,6 +52,33 @@ enum MemoStyle {
         return button
     }
 
+    static func accentButtonConfiguration(
+        title: String
+    ) -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = title
+        configuration.baseBackgroundColor = orange
+        configuration.baseForegroundColor = .white
+        configuration.cornerStyle = .capsule
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: 16,
+            leading: 24,
+            bottom: 16,
+            trailing: 24
+        )
+        return configuration
+    }
+
+    static func accentButton(title: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.configuration = accentButtonConfiguration(title: title)
+        button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 56).isActive = true
+        button.accessibilityIdentifier = title
+        return button
+    }
+
     static func secondaryButton(title: String) -> UIButton {
         let button = UIButton(type: .system)
         var configuration = UIButton.Configuration.gray()

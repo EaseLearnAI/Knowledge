@@ -1,36 +1,77 @@
 # Design QA
 
-- Source screenshot: `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-6cbf91f4-7b25-4e38-8502-0f801f8c5e17.png`
-- Implementation screenshot: `/Users/mac/.codex/visualizations/2026/07/21/019f8583-0a2c-7932-b97d-ca1172e99ff3/memo-chat-fixed.png`
-- Authentication correction source: `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-a65eca04-c818-44c4-b702-43803e9c29f3.png`
-- Authentication screenshot: `/Users/mac/.codex/visualizations/2026/07/21/019f8583-0a2c-7932-b97d-ca1172e99ff3/memo-unified-auth-final.jpg`
-- Onboarding screenshot: `/Users/mac/.codex/visualizations/2026/07/21/019f8583-0a2c-7932-b97d-ca1172e99ff3/memo-onboarding-final.jpg`
-- Authentication comparison: `/Users/mac/.codex/visualizations/2026/07/21/019f8583-0a2c-7932-b97d-ca1172e99ff3/memo-unified-auth-comparison.png`
-- Combined comparison: `/Users/mac/.codex/visualizations/2026/07/21/019f8583-0a2c-7932-b97d-ca1172e99ff3/memo-layout-comparison.png`
-- Viewport: iPhone 17 Pro simulator, 402 x 874 pt, iOS 26.3.1
-- State: first-launch onboarding and unauthenticated login captured separately
+## Evidence
 
-## Comparison evidence
+- Product-introduction source:
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-f0c89169-8446-47f8-8529-13aa17248454.png`
+- Onboarding source:
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/codex-clipboard-329046c8-46a7-4c59-ba2f-4bdb8c38dbf4.png`
+- Product-introduction implementation:
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_dce19edd-6064-45ad-9f03-00d58454517f.jpg`
+- Problem-page implementation:
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_07cb7214-8534-4b9b-ab82-83c77e71b089.jpg`
+- How-it-works implementation:
+  `/var/folders/tx/hvt9p87x33sb8ggxvj2hmyq80000gq/T/screenshot_optimized_0634e210-8dba-4c04-8917-c7460dddfb26.jpg`
+- Full-view comparisons:
+  `/Users/mac/.codex/visualizations/2026/07/27/memo-native-onboarding/auth-intro-comparison.jpg`,
+  `/Users/mac/.codex/visualizations/2026/07/27/memo-native-onboarding/onboarding-problem-comparison.jpg`,
+  `/Users/mac/.codex/visualizations/2026/07/27/memo-native-onboarding/onboarding-how-comparison.jpg`
+- Simulator: iPhone 17 Pro, iOS 26.3.1.
+- Implementation capture: optimized 368 x 800 pixels.
+- Source normalization: product panel cropped from 775 x 1508 pixels; onboarding
+  panels cropped from 748 x 1458 pixels. Each source crop was scaled and padded
+  to 368 x 800 before horizontal comparison.
+- States: unauthenticated product introduction, onboarding page 1, onboarding
+  page 2.
 
-The full source and implementation screenshots were normalized to the same 402 x 874 viewport and inspected together in `memo-layout-comparison.png`. Focused crops were not needed because both reported problem regions—the full top safe area and full bottom input area—are simultaneously visible at native comparison scale.
-
-The latest authentication source crop and the corresponding implementation region were also inspected together in `memo-unified-auth-comparison.png`. The two-way phone/email tab and extra “下一步：输入密码” control are gone. Login and registration now each expose one field labeled and placeholdered “手机号或者邮箱”.
-
-## History
-
-1. Initial screenshot: fake in-document Dynamic Island and header overlapped the real iOS safe area; the system keyboard input accessory bar was visible; no login or registration entry existed.
-2. First implementation pass: moved layout to UIKit safe-area values, disabled web zoom, added authentication screens and native/backend authentication flow.
-3. Keyboard verification pass: replaced the web view with an accessory-free `WKWebView` subclass and synchronized layout with `visualViewport` so the composer remains above the keyboard.
-4. Authentication correction: removed the phone/email mode tabs and changed both flows to a single unified identifier input.
-5. Final comparison: header begins below the real Dynamic Island, only one system island is visible, the artificial bottom accessory is absent, the composer sits inside the app viewport, and the login screen provides an explicit registration entry.
+The full screens were readable at the normalized size, so no additional focused
+crop was required. The three comparison images were opened and inspected after
+the final capture.
 
 ## Findings
 
 - P0: none.
-- P1: none. The two layout defects highlighted by the user are removed.
-- P2: none in the requested flow. The implemented screen keeps the existing Memo typography, monochrome palette, card language, spacing rhythm, and chat structure.
-- First launch shows product onboarding before authentication, as verified in `memo-onboarding-final.jpg`. After onboarding, authentication is visible before entering the app and supports phone/email login and registration through the same “手机号或者邮箱” field, plus logout, session restoration, and secure token storage.
-- Double-tap and pinch zoom are disabled at both viewport and `WKWebView` levels.
+- P1: none.
+- P2: none after the image-scale correction.
+- Intentional differences: Memo uses its burnt-orange accent instead of Flomo
+  green; the product flow contains the two pages requested for Memo instead of
+  copying Flomo's four-page feature tour; the introduction has one primary
+  `开始使用` action instead of exposing multiple authentication methods.
+
+### Required fidelity surfaces
+
+- Fonts and typography: large bold Chinese display type, short supporting copy,
+  and compact step pills preserve the source hierarchy without clipping.
+- Spacing and layout rhythm: title, illustration, explanation, page indicator,
+  and bottom action follow the source's vertical sequence and safe-area spacing.
+- Colors and tokens: warm off-white background, black display text, muted gray
+  body copy, and one burnt-orange interaction accent remain consistent.
+- Image quality and asset fidelity: three project-owned raster illustrations are
+  sharp, share one paper-like editorial direction, and replace the earlier
+  system-symbol placeholders.
+- Copy and content: page 1 clearly states `别再让收藏夹吃灰`; page 2 explains
+  that sending a link automatically produces a personal knowledge entry.
+
+## Comparison history
+
+1. Initial native pass used one system books symbol and two full-width
+   authentication buttons. It lacked the source's content illustration and
+   information hierarchy.
+2. The first redesign added a single primary action and three matching raster
+   illustrations, but the images used aspect-fit and appeared too small
+   relative to the source (P2).
+3. The final pass uses clipped aspect-fill containers. The visual subjects now
+   occupy the middle content region at the intended scale, with no remaining
+   P0/P1/P2 mismatch.
+
+## Interaction verification
+
+- `开始使用` is the only action on the product introduction.
+- It opens login; registration is available as the secondary text action inside
+  the login screen.
+- `下一步` moves from the problem page to the how-it-works page.
+- `开始使用` completes onboarding and opens the native library.
+- Product-introduction, onboarding, and registration/login UI tests pass.
 
 ## Final result
 

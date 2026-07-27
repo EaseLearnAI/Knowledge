@@ -64,16 +64,31 @@ final class MemoRootViewController: UIViewController {
     private func showAuthentication(animated: Bool) {
         didHandleRequestedScreen = false
         let controller = AuthIntroViewController()
-        controller.onCreateAccount = { [weak self] in
-            self?.showAuthForm(mode: .register)
-        }
-        controller.onLogin = { [weak self] in
+        controller.onContinue = { [weak self] in
             self?.showAuthForm(mode: .login)
         }
         installNavigationController(rootViewController: controller)
     }
 
     private func showAuthForm(mode: AuthFormViewController.Mode) {
+        let controller = makeAuthForm(mode: mode)
+        rootNavigationController.pushViewController(controller, animated: true)
+    }
+
+    private func replaceAuthForm(mode: AuthFormViewController.Mode) {
+        let controller = makeAuthForm(mode: mode)
+        var controllers = rootNavigationController.viewControllers
+        if controllers.isEmpty {
+            controllers = [controller]
+        } else {
+            controllers[controllers.count - 1] = controller
+        }
+        rootNavigationController.setViewControllers(controllers, animated: true)
+    }
+
+    private func makeAuthForm(
+        mode: AuthFormViewController.Mode
+    ) -> AuthFormViewController {
         let controller = AuthFormViewController(mode: mode)
         controller.onSubmit = { [weak self] identifier, password, nickname in
             guard let self else { return }
@@ -95,7 +110,10 @@ final class MemoRootViewController: UIViewController {
                 self?.show(destination: destination, animated: false)
             }
         }
-        rootNavigationController.pushViewController(controller, animated: true)
+        controller.onSwitchMode = { [weak self] nextMode in
+            self?.replaceAuthForm(mode: nextMode)
+        }
+        return controller
     }
 
     private func showOnboarding(animated: Bool) {
