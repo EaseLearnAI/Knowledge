@@ -1,12 +1,20 @@
 import bcrypt from "bcryptjs";
+import { unlink } from "node:fs/promises";
 import type { AppConfig } from "../../config.js";
 import { AppError } from "../../shared/errors/app-error.js";
+import { ProcessingTaskModel } from "../video/processing-task.model.js";
+import { SourceItemModel } from "../video/source-item.model.js";
 import {
   createAccessToken,
   createRefreshToken,
   hashToken,
 } from "../../shared/security/tokens.js";
-import type { LoginInput, RegisterInput } from "./auth.schemas.js";
+import type {
+  ChangePasswordInput,
+  DeleteAccountInput,
+  LoginInput,
+  RegisterInput,
+} from "./auth.schemas.js";
 import { RefreshTokenModel } from "./refresh-token.model.js";
 import { UserModel } from "./user.model.js";
 
@@ -155,4 +163,66 @@ export async function getCurrentUser(userId: string): Promise<PublicUser> {
   const user = await UserModel.findById(userId).lean();
   if (!user) throw new AppError(404, "USER_NOT_FOUND", "用户不存在");
   return publicUser(user);
+}
+
+export async function changePassword(
+  userId: string,
+  input: ChangePasswordInput,
+  config: AppConfig,
+): Promise<AuthResult> {
+  const user = await UserModel.findById(userId).select("+passwordHash");
+  if (!user) throw new AppError(404, "USER_NOT_FOUND", "用户不存在");
+
+  const currentMatches = await bcrypt.compare(
+    input.currentPassword,
+    user.passwordHash,
+  );
+  if (!currentMatches) {
+    throw new AppError(401, "INVALID_CURRENT_PASSWORD", "当前密码不正确");
+  }
+  if (await bcrypt.compare(input.newPassword, user.passwordHash)) {
+    throw new AppError(409, "PASSWORD_UNCHANGED", "新密码不能与当前密码相同");
+  }
+
+  user.passwordHash = await bcrypt.hash(input.newPassword, 12);
+  await user.save();
+  await RefreshTokenModel.deleteMany({ userId: user._id });
+  return issueTokens(user, config);
+}
+
+export async function deleteAccount(
+  userId: string,
+  input: DeleteAccountInput,
+): Promise<void> {
+  const user = await UserModel.findById(userId).select("+passwordHash");
+  if (!user) throw new AppError(404, "USER_NOT_FOUND", "用户不存在");
+  if (!(await bcrypt.compare(input.currentPassword, user.passwordHash))) {
+    throw new AppError(401, "INVALID_CURRENT_PASSWORD", "当前密码不正确");
+  }
+
+  const [tasks, items] = await Promise.all([
+    ProcessingTaskModel.find({ userId })
+      .select("inputType source")
+      .lean(),
+    SourceItemModel.find({ userId })
+      .select("transcript.path")
+      .lean(),
+  ]);
+  const ownedFiles = new Set<string>();
+  for (const task of tasks) {
+    if (task.inputType === "upload" && task.source) ownedFiles.add(task.source);
+  }
+  for (const item of items) {
+    if (item.transcript?.path) ownedFiles.add(item.transcript.path);
+  }
+
+  await Promise.all([
+    RefreshTokenModel.deleteMany({ userId }),
+    ProcessingTaskModel.deleteMany({ userId }),
+    SourceItemModel.deleteMany({ userId }),
+  ]);
+  await UserModel.deleteOne({ _id: userId });
+  await Promise.all(
+    [...ownedFiles].map((path) => unlink(path).catch(() => undefined)),
+  );
 }

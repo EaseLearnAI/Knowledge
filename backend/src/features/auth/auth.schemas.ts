@@ -59,9 +59,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, "密码不能为空").max(72),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "请输入当前密码").max(72),
+  newPassword: password,
+});
+
+export const deleteAccountSchema = z.object({
+  currentPassword: z.string().min(1, "请输入当前密码").max(72),
+});
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(32),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

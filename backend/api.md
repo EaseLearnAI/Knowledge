@@ -140,6 +140,51 @@
 
 需要 Bearer Token。成功 `200` 返回用户，不返回密码哈希。
 
+### 2.6 修改密码
+
+`PATCH /api/v1/auth/me/password`
+
+需要 Bearer Token。
+
+```json
+{
+  "currentPassword": "Password123",
+  "newPassword": "NewPassword123"
+}
+```
+
+新密码至少 8 位且同时包含字母和数字，不能与当前密码相同。成功 `200`
+返回完整的新登录会话；该用户此前的全部 Refresh Token 会立即失效，客户端应
+原子替换本地 Access Token 和 Refresh Token。
+
+失败：
+
+| HTTP | code | 场景 |
+|---:|---|---|
+| 401 | `INVALID_CURRENT_PASSWORD` | 当前密码错误 |
+| 409 | `PASSWORD_UNCHANGED` | 新旧密码相同 |
+| 422 | `VALIDATION_ERROR` | 新密码不符合强度要求 |
+
+### 2.7 删除账号
+
+`DELETE /api/v1/auth/me`
+
+需要 Bearer Token，并要求注册用户再次输入当前密码：
+
+```json
+{ "currentPassword": "Password123" }
+```
+
+成功 `204`，无响应体。用户、Refresh Token、处理任务、内容记录，以及该用户
+上传和转录产生的文件会被清理；用户删除后，旧 Access Token 会立即被拒绝。
+
+失败：
+
+| HTTP | code | 场景 |
+|---:|---|---|
+| 401 | `INVALID_CURRENT_PASSWORD` | 当前密码错误 |
+| 401 | `TOKEN_INVALID` | 用户已删除或令牌无效 |
+
 ## 3. 视频解析接口
 
 ### 3.1 提交视频链接

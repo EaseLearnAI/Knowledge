@@ -4,7 +4,11 @@ import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
+import { RefreshTokenModel } from "../src/features/auth/refresh-token.model.js";
+import { UserModel } from "../src/features/auth/user.model.js";
 import { MockVideoProcessor } from "../src/features/video/mock-video.processor.js";
+import { ProcessingTaskModel } from "../src/features/video/processing-task.model.js";
+import { SourceItemModel } from "../src/features/video/source-item.model.js";
 import { disconnectDatabase, connectDatabase } from "../src/shared/db/mongoose.js";
 import { createLogger } from "../src/shared/logger/logger.js";
 
@@ -142,6 +146,124 @@ describe("注册、登录和令牌刷新", () => {
     });
     expect(wrong.status).toBe(401);
     expect(wrong.body.error.code).toBe("INVALID_CREDENTIALS");
+  });
+
+  it("修改密码后撤销旧会话并签发新会话", async () => {
+    const registered = await register();
+
+    const wrongCurrent = await api
+      .patch("/api/v1/auth/me/password")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({
+        currentPassword: "WrongPassword1",
+        newPassword: "NewPassword123",
+      });
+    expect(wrongCurrent.status).toBe(401);
+    expect(wrongCurrent.body.error.code).toBe("INVALID_CURRENT_PASSWORD");
+
+    const unchanged = await api
+      .patch("/api/v1/auth/me/password")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({
+        currentPassword: "Password123",
+        newPassword: "Password123",
+      });
+    expect(unchanged.status).toBe(409);
+    expect(unchanged.body.error.code).toBe("PASSWORD_UNCHANGED");
+
+    const weakPassword = await api
+      .patch("/api/v1/auth/me/password")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({
+        currentPassword: "Password123",
+        newPassword: "passwordonly",
+      });
+    expect(weakPassword.status).toBe(422);
+    expect(weakPassword.body.error.code).toBe("VALIDATION_ERROR");
+
+    const changed = await api
+      .patch("/api/v1/auth/me/password")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({
+        currentPassword: "Password123",
+        newPassword: "NewPassword123",
+      });
+    expect(changed.status).toBe(200);
+    expect(changed.body.data.accessToken).toBeTypeOf("string");
+    expect(changed.body.data.refreshToken).toBeTypeOf("string");
+
+    const oldRefresh = await api.post("/api/v1/auth/refresh").send({
+      refreshToken: registered.refreshToken,
+    });
+    expect(oldRefresh.status).toBe(401);
+
+    const oldPassword = await api.post("/api/v1/auth/login").send({
+      identifier: "tester@example.com",
+      password: "Password123",
+    });
+    expect(oldPassword.status).toBe(401);
+
+    const newPassword = await api.post("/api/v1/auth/login").send({
+      identifier: "tester@example.com",
+      password: "NewPassword123",
+    });
+    expect(newPassword.status).toBe(200);
+  });
+
+  it("删除账号、令牌、内容和任务，并立即拒绝旧访问令牌", async () => {
+    const registered = await register();
+    const item = await SourceItemModel.create({
+      userId: registered.user.id,
+      type: "video",
+      platform: "B站",
+      title: "待删除内容",
+      status: "completed",
+      tags: [],
+      capturedAt: new Date(),
+    });
+    const task = await ProcessingTaskModel.create({
+      userId: registered.user.id,
+      sourceItemId: item._id,
+      inputType: "url",
+      source: "https://www.bilibili.com/video/BV1test",
+      quality: "balanced",
+      language: "zh",
+      idempotencyKey: "delete-account-test",
+      status: "completed",
+      stage: "completed",
+      progress: 100,
+      logs: [],
+    });
+    item.taskId = task._id;
+    await item.save();
+
+    const wrongPassword = await api
+      .delete("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({ currentPassword: "WrongPassword1" });
+    expect(wrongPassword.status).toBe(401);
+
+    const deleted = await api
+      .delete("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${registered.accessToken}`)
+      .send({ currentPassword: "Password123" });
+    expect(deleted.status).toBe(204);
+
+    expect(await UserModel.countDocuments({ _id: registered.user.id })).toBe(0);
+    expect(await RefreshTokenModel.countDocuments({ userId: registered.user.id })).toBe(0);
+    expect(await SourceItemModel.countDocuments({ userId: registered.user.id })).toBe(0);
+    expect(await ProcessingTaskModel.countDocuments({ userId: registered.user.id })).toBe(0);
+
+    const oldAccess = await api
+      .get("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${registered.accessToken}`);
+    expect(oldAccess.status).toBe(401);
+
+    const loginDeleted = await api.post("/api/v1/auth/login").send({
+      identifier: "tester@example.com",
+      password: "Password123",
+    });
+    expect(loginDeleted.status).toBe(401);
   });
 
   it("支持中国手机号注册、规范化、登录和重复校验", async () => {

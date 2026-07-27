@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { AppConfig } from "../../config.js";
+import { UserModel } from "../../features/auth/user.model.js";
 import { AppError } from "../errors/app-error.js";
 import { verifyAccessToken } from "./tokens.js";
 
@@ -12,6 +13,11 @@ export function requireAuth(config: AppConfig) {
     }
     try {
       request.auth = await verifyAccessToken(authorization.slice(7), config);
+      const userExists = await UserModel.exists({ _id: request.auth.userId });
+      if (!userExists) {
+        next(new AppError(401, "TOKEN_INVALID", "访问令牌无效或已过期"));
+        return;
+      }
       next();
     } catch (error) {
       next(error);

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 actor LibraryStore {
@@ -9,29 +10,67 @@ actor LibraryStore {
         var preferences = AppPreferences()
     }
 
-    private let stateURL: URL
-    private var state: PersistedState
+    private let directoryURL: URL
+    private let legacyStateURL: URL
+    private var activeOwnerID: String?
+    private var state = PersistedState()
 
     init(fileManager: FileManager = .default) {
         let baseURL = fileManager.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first ?? fileManager.temporaryDirectory
-        let directoryURL = baseURL.appendingPathComponent(
+        let memoDirectoryURL = baseURL.appendingPathComponent(
             "Memo",
             isDirectory: true
         )
+        directoryURL = memoDirectoryURL
+        legacyStateURL = memoDirectoryURL.appendingPathComponent("library.json")
         try? fileManager.createDirectory(
-            at: directoryURL,
+            at: memoDirectoryURL,
             withIntermediateDirectories: true
         )
-        stateURL = directoryURL.appendingPathComponent("library.json")
+    }
 
-        if let data = try? Data(contentsOf: stateURL),
+    func activate(ownerID: String) throws {
+        guard activeOwnerID != ownerID else { return }
+        if activeOwnerID != nil {
+            try persist()
+        }
+        activeOwnerID = ownerID
+        let profileURL = stateURL(for: ownerID)
+        if let data = try? Data(contentsOf: profileURL),
            let decoded = try? Self.decoder.decode(PersistedState.self, from: data) {
             state = decoded
+            return
+        }
+
+        if let data = try? Data(contentsOf: legacyStateURL),
+           let decoded = try? Self.decoder.decode(PersistedState.self, from: data) {
+            state = decoded
+            try persist()
+            try? FileManager.default.removeItem(at: legacyStateURL)
         } else {
             state = PersistedState()
+        }
+    }
+
+    func deactivate() throws {
+        if activeOwnerID != nil {
+            try persist()
+        }
+        activeOwnerID = nil
+        state = PersistedState()
+    }
+
+    func deleteProfile(ownerID: String) throws {
+        if activeOwnerID == ownerID {
+            activeOwnerID = nil
+            state = PersistedState()
+        }
+        let profileURL = stateURL(for: ownerID)
+        if FileManager.default.fileExists(atPath: profileURL.path) {
+            try FileManager.default.removeItem(at: profileURL)
         }
     }
 
@@ -266,8 +305,21 @@ actor LibraryStore {
     }
 
     private func persist() throws {
+        guard let activeOwnerID else { return }
         let data = try Self.encoder.encode(state)
-        try data.write(to: stateURL, options: [.atomic, .completeFileProtection])
+        try data.write(
+            to: stateURL(for: activeOwnerID),
+            options: [.atomic, .completeFileProtection]
+        )
+    }
+
+    private func stateURL(for ownerID: String) -> URL {
+        let digest = SHA256.hash(data: Data(ownerID.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+        return directoryURL.appendingPathComponent(
+            "library-\(digest.prefix(24)).json"
+        )
     }
 
     private static let encoder: JSONEncoder = {
