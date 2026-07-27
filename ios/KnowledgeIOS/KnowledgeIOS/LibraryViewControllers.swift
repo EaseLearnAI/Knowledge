@@ -14,11 +14,7 @@ final class KnowledgeItemCell: UITableViewCell {
         color: .secondaryLabel,
         lines: 2
     )
-    private let tagsLabel = MemoStyle.label(
-        style: .caption1,
-        color: .secondaryLabel,
-        lines: 1
-    )
+    private let tagsStack = UIStackView()
     private let progressView = UIProgressView(progressViewStyle: .default)
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -29,12 +25,16 @@ final class KnowledgeItemCell: UITableViewCell {
         layer.masksToBounds = true
         accessoryType = .disclosureIndicator
 
+        tagsStack.axis = .horizontal
+        tagsStack.alignment = .center
+        tagsStack.spacing = 8
+
         let stack = UIStackView(
             arrangedSubviews: [
                 sourceLabel,
                 titleLabel,
                 summaryLabel,
-                tagsLabel,
+                tagsStack,
                 progressView,
             ]
         )
@@ -60,10 +60,14 @@ final class KnowledgeItemCell: UITableViewCell {
         summaryLabel.text = item.status == .ready
             ? item.summary
             : item.statusText
-        tagsLabel.text = item.tags.isEmpty
-            ? nil
-            : item.tags.map { "#\($0)" }.joined(separator: "  ")
-        tagsLabel.isHidden = item.tags.isEmpty
+        tagsStack.arrangedSubviews.forEach {
+            tagsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        item.tags.prefix(3).forEach {
+            tagsStack.addArrangedSubview(MemoStyle.tagPill($0))
+        }
+        tagsStack.isHidden = item.tags.isEmpty
         progressView.isHidden = [.ready, .failed].contains(item.status)
         progressView.progress = Float(item.progress)
         accessibilityLabel = [

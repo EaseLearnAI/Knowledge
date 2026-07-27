@@ -95,6 +95,7 @@ actor ContentProcessor {
             content: transcript.text,
             enrichment: ContentEnrichment(
                 summary: copywriting.oneSentenceSummary,
+                whyWorthWatching: copywriting.whyWorthWatching,
                 keyPoints: copywriting.keyPoints,
                 tags: item.tags.isEmpty ? copywriting.tags : item.tags
             )
@@ -477,6 +478,7 @@ private struct RemoteTranscript: Decodable {
 
 private struct RemoteCopywriting: Decodable {
     let oneSentenceSummary: String
+    let whyWorthWatching: String
     let keyPoints: [String]
     let tags: [String]
 }

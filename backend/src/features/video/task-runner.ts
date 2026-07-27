@@ -222,7 +222,7 @@ export class VideoTaskRunner {
         { _id: task.sourceItemId },
         {
           $set: {
-            title: transcript.title,
+            title: copywriting.displayTitle?.trim() || transcript.title,
             status: "completed",
             transcript: {
               text: transcript.text,

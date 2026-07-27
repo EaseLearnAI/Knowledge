@@ -150,8 +150,19 @@ final class ProcessingViewController: UIViewController {
         color: .secondaryLabel,
         alignment: .center
     )
+    private let etaLabel = MemoStyle.label(
+        style: .subheadline,
+        color: .secondaryLabel
+    )
+    private let percentLabel = MemoStyle.label(
+        style: .subheadline,
+        color: MemoStyle.orange,
+        alignment: .right,
+        lines: 1
+    )
     private let progressView = UIProgressView(progressViewStyle: .default)
     private let retryButton = MemoStyle.primaryButton(title: "重试")
+    private let symbolView = UIImageView()
     private var observationToken: UUID?
 
     init(application: MemoApplication, item: KnowledgeItem) {
@@ -186,22 +197,48 @@ final class ProcessingViewController: UIViewController {
     }
 
     private func configureContent() {
-        let symbol = UIImageView(
-            image: UIImage(
-                systemName: "sparkles",
-                withConfiguration: UIImage.SymbolConfiguration(
-                    pointSize: 76,
-                    weight: .medium
-                )
+        let iconContainer = UIView()
+        iconContainer.backgroundColor = MemoStyle.orange.withAlphaComponent(0.11)
+        iconContainer.layer.cornerRadius = 32
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.widthAnchor.constraint(equalToConstant: 64).isActive = true
+        iconContainer.heightAnchor.constraint(equalToConstant: 64).isActive = true
+
+        symbolView.image = UIImage(
+            systemName: "waveform.and.magnifyingglass",
+            withConfiguration: UIImage.SymbolConfiguration(
+                pointSize: 30,
+                weight: .semibold
             )
         )
-        symbol.tintColor = MemoStyle.orange
-        symbol.contentMode = .scaleAspectFit
-        symbol.heightAnchor.constraint(equalToConstant: 96).isActive = true
+        symbolView.tintColor = MemoStyle.orange
+        symbolView.contentMode = .scaleAspectFit
+        symbolView.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.addSubview(symbolView)
+        NSLayoutConstraint.activate([
+            symbolView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
+            symbolView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
+            symbolView.widthAnchor.constraint(equalToConstant: 36),
+            symbolView.heightAnchor.constraint(equalToConstant: 36),
+        ])
 
         progressView.progressTintColor = MemoStyle.orange
         progressView.trackTintColor = .tertiarySystemFill
-        progressView.heightAnchor.constraint(equalToConstant: 6).isActive = true
+        progressView.layer.cornerRadius = 4
+        progressView.clipsToBounds = true
+        progressView.transform = CGAffineTransform(scaleX: 1, y: 2)
+
+        let progressMeta = UIStackView(arrangedSubviews: [etaLabel, percentLabel])
+        progressMeta.axis = .horizontal
+        progressMeta.alignment = .center
+        progressMeta.distribution = .fill
+
+        let backgroundTip = MemoStyle.label(
+            text: "可以先返回首页，处理会在后台继续。",
+            style: .caption1,
+            color: .tertiaryLabel,
+            alignment: .center
+        )
 
         retryButton.addTarget(
             self,
@@ -209,41 +246,113 @@ final class ProcessingViewController: UIViewController {
             for: .touchUpInside
         )
 
+        iconContainer.setContentHuggingPriority(.required, for: .horizontal)
+        let iconRow = UIStackView(arrangedSubviews: [UIView(), iconContainer, UIView()])
+        iconRow.axis = .horizontal
+        iconRow.distribution = .equalCentering
+
         let stack = UIStackView(
             arrangedSubviews: [
-                symbol,
+                iconRow,
                 statusLabel,
                 detailLabel,
                 progressView,
+                progressMeta,
+                backgroundTip,
                 retryButton,
             ]
         )
         stack.axis = .vertical
-        stack.spacing = 18
-        stack.setCustomSpacing(32, after: symbol)
-        stack.setCustomSpacing(10, after: statusLabel)
-        stack.setCustomSpacing(28, after: detailLabel)
+        stack.alignment = .fill
+        stack.spacing = 16
+        stack.setCustomSpacing(24, after: iconRow)
+        stack.setCustomSpacing(8, after: statusLabel)
+        stack.setCustomSpacing(24, after: detailLabel)
+        stack.setCustomSpacing(10, after: progressView)
+        stack.setCustomSpacing(20, after: progressMeta)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
+
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.layer.cornerRadius = 28
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.08
+        card.layer.shadowRadius = 24
+        card.layer.shadowOffset = CGSize(width: 0, height: 10)
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+        view.addSubview(card)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 34),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -34),
-            stack.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            card.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 22),
+            card.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -22),
+            card.centerYAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.centerYAnchor,
+                constant: -28
+            ),
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 28),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -24),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -26),
         ])
     }
 
     private func render() {
         statusLabel.text = item.status == .failed ? "处理失败" : item.statusText
-        detailLabel.text = item.status == .failed
-            ? item.errorMessage
-            : "正在把原始内容整理成可以回看的知识。"
+        detailLabel.text = item.status == .failed ? item.errorMessage : stageDetail
+        etaLabel.text = item.status == .failed ? nil : estimatedTime
+        percentLabel.text = item.status == .failed
+            ? nil
+            : "\(Int((item.progress * 100).rounded()))%"
         progressView.progress = Float(item.progress)
         progressView.isHidden = item.status == .failed
+        etaLabel.isHidden = item.status == .failed
+        percentLabel.isHidden = item.status == .failed
         retryButton.isHidden = item.status != .failed
+        symbolView.image = UIImage(
+            systemName: item.status == .failed
+                ? "exclamationmark.triangle.fill"
+                : "waveform.and.magnifyingglass",
+            withConfiguration: UIImage.SymbolConfiguration(
+                pointSize: 30,
+                weight: .semibold
+            )
+        )
         view.accessibilityIdentifier = "处理页面"
 
         if item.status == .ready {
             onReady?(item)
+        }
+    }
+
+    private var stageDetail: String {
+        switch item.status {
+        case .queued:
+            "任务已加入队列，马上开始解析。"
+        case .fetching:
+            "正在识别分享链接并读取原始视频。"
+        case .extracting:
+            "正在转写音频并提取可回看的正文。"
+        case .enriching:
+            "正在整理标题、摘要、核心要点和标签。"
+        case .ready:
+            "内容已经整理完成。"
+        case .failed:
+            item.errorMessage ?? "处理没有完成，请稍后重试。"
+        }
+    }
+
+    private var estimatedTime: String {
+        switch item.status {
+        case .queued, .fetching:
+            "预计还需 2–4 分钟"
+        case .extracting:
+            "预计还需 1–3 分钟"
+        case .enriching:
+            "预计不到 1 分钟"
+        case .ready:
+            "已完成"
+        case .failed:
+            ""
         }
     }
 
@@ -371,27 +480,21 @@ final class DetailViewController: UIViewController {
         )
         let titleLabel = MemoStyle.label(
             text: item.title,
-            style: .largeTitle
+            style: .title1
         )
-        titleLabel.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
-            for: .systemFont(ofSize: 31, weight: .bold)
+        titleLabel.font = UIFontMetrics(forTextStyle: .title1).scaledFont(
+            for: .systemFont(ofSize: 26, weight: .bold)
         )
         titleLabel.accessibilityIdentifier = item.title
 
-        let summaryTitle = sectionTitle("摘要")
+        let summaryTitle = sectionTitle("一句话摘要")
         let summary = cardLabel(item.summary)
-        let keyPointsTitle = sectionTitle("要点")
-        let keyPoints = cardLabel(
-            item.keyPoints.enumerated()
-                .map { "\($0.offset + 1). \($0.element)" }
-                .joined(separator: "\n\n")
-        )
-        let tagsTitle = sectionTitle("Tag")
-        let tags = cardLabel(
-            item.tags.isEmpty
-                ? "还没有 Tag"
-                : item.tags.map { "#\($0)" }.joined(separator: "  ")
-        )
+        let whyWorthWatchingTitle = sectionTitle("为什么值得看")
+        let whyWorthWatching = cardLabel(item.whyWorthWatching ?? "")
+        let keyPointsTitle = sectionTitle("核心要点")
+        let keyPoints = keyPointsCard(item.keyPoints)
+        let tagsTitle = sectionTitle("标签")
+        let tags = tagsView(item.tags)
         let editTags = MemoStyle.secondaryButton(title: "编辑 Tag")
         editTags.addTarget(
             self,
@@ -421,6 +524,8 @@ final class DetailViewController: UIViewController {
             titleLabel,
             summaryTitle,
             summary,
+            whyWorthWatchingTitle,
+            whyWorthWatching,
             keyPointsTitle,
             keyPoints,
             tagsTitle,
@@ -432,6 +537,8 @@ final class DetailViewController: UIViewController {
         contentStack.setCustomSpacing(32, after: titleLabel)
         contentStack.setCustomSpacing(8, after: summaryTitle)
         contentStack.setCustomSpacing(28, after: summary)
+        contentStack.setCustomSpacing(8, after: whyWorthWatchingTitle)
+        contentStack.setCustomSpacing(28, after: whyWorthWatching)
         contentStack.setCustomSpacing(8, after: keyPointsTitle)
         contentStack.setCustomSpacing(28, after: keyPoints)
         contentStack.setCustomSpacing(8, after: tagsTitle)
@@ -461,6 +568,72 @@ final class DetailViewController: UIViewController {
             label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
         ])
         return container
+    }
+
+    private func keyPointsCard(_ points: [String]) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .secondarySystemBackground
+        container.layer.cornerRadius = 18
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 18
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+
+        if points.isEmpty {
+            stack.addArrangedSubview(
+                MemoStyle.label(
+                    text: "暂无核心要点",
+                    style: .body,
+                    color: .secondaryLabel
+                )
+            )
+        } else {
+            for (index, point) in points.enumerated() {
+                let number = MemoStyle.label(
+                    text: "\(index + 1)",
+                    style: .caption1,
+                    color: .white,
+                    alignment: .center,
+                    lines: 1
+                )
+                number.backgroundColor = MemoStyle.orange
+                number.layer.cornerRadius = 11
+                number.clipsToBounds = true
+                number.translatesAutoresizingMaskIntoConstraints = false
+                number.widthAnchor.constraint(equalToConstant: 22).isActive = true
+                number.heightAnchor.constraint(equalToConstant: 22).isActive = true
+
+                let text = MemoStyle.label(text: point, style: .body)
+                let row = UIStackView(arrangedSubviews: [number, text])
+                row.axis = .horizontal
+                row.alignment = .top
+                row.spacing = 12
+                stack.addArrangedSubview(row)
+            }
+        }
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 18),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
+        ])
+        return container
+    }
+
+    private func tagsView(_ tags: [String]) -> UIView {
+        guard !tags.isEmpty else {
+            return cardLabel("还没有标签")
+        }
+        let stack = UIStackView(
+            arrangedSubviews: tags.prefix(3).map(MemoStyle.tagPill)
+        )
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
     }
 
     @objc private func editTagsTapped() {

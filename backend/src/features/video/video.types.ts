@@ -24,6 +24,7 @@ export type Chapter = {
 };
 
 export type CopywritingResult = {
+  displayTitle?: string;
   oneSentenceSummary: string;
   whyWorthWatching: string;
   keyPoints: string[];

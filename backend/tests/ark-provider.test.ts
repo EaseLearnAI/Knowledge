@@ -293,6 +293,7 @@ describe("ArkCopywriter", () => {
       create: vi.fn().mockResolvedValue(
         responseResult(
           JSON.stringify({
+            displayTitle: "最小上线方案",
             oneSentenceSummary: "视频解释了最小上线方案。",
             whyWorthWatching: "可以直接用于个人开发者上线。",
             keyPoints: ["使用单机部署。", "先验证真实用户需求。", "外部 ASR 按量付费。"],
@@ -331,6 +332,7 @@ describe("ArkCopywriter", () => {
     );
 
     expect(result.oneSentenceSummary).toBe("视频解释了最小上线方案。");
+    expect(result.displayTitle).toBe("最小上线方案");
     expect(result.provider).toBe("volcengine-ark-responses");
     expect(result.model).toBe(config.arkSummaryModel);
   });
@@ -577,6 +579,7 @@ describe("ArkCopywriter", () => {
       create: vi.fn().mockResolvedValue(
         responseResult(
           JSON.stringify({
+            displayTitle: "AI 工具 #教程\n",
             oneSentenceSummary: "结构可自动归一化。",
             whyWorthWatching: "不会因为非关键格式漂移丢失真实总结。",
             keyPoints: Array.from({ length: 9 }, (_, index) => `要点${index + 1}`),
@@ -606,11 +609,12 @@ describe("ArkCopywriter", () => {
       () => undefined,
     );
 
-    expect(result.keyPoints).toHaveLength(7);
+    expect(result.keyPoints).toHaveLength(5);
+    expect(result.displayTitle).toBe("AI 工具");
     expect(result.tags).toEqual(["一", "二", "三"]);
     expect(result.chapters[0]).toMatchObject({ startMs: 0, endMs: 5_000 });
     expect(result.actionItems).toEqual([]);
-    expect(result.markdown).toContain("# 结构可自动归一化。");
+    expect(result.markdown).toContain("# AI 工具");
     expect(client.create).toHaveBeenCalledTimes(1);
   });
 });

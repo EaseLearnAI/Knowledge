@@ -93,6 +93,14 @@ final class KnowledgeIOSUITests: XCTestCase {
         app.buttons["收藏到 Memo"].tap()
 
         XCTAssertTrue(app.navigationBars["处理中"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.staticTexts["预计还需 2–4 分钟"].waitForExistence(timeout: 3)
+        )
+        XCTAssertTrue(
+            app.staticTexts[
+                "可以先返回首页，处理会在后台继续。"
+            ].exists
+        )
         XCTAssertFalse(app.alerts["无法收藏"].exists)
     }
 
@@ -115,7 +123,7 @@ final class KnowledgeIOSUITests: XCTestCase {
 
     func testNativeDetailAndTagsPersist() {
         let app = launchAndIngestExample()
-        XCTAssertTrue(app.staticTexts["摘要"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["一句话摘要"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["基于这篇问 AI"].exists)
 
         app.buttons["编辑 Tag"].tap()

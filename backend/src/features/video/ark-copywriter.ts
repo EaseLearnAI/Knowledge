@@ -12,10 +12,22 @@ import type {
   TranscriptResult,
 } from "./video.types.js";
 
+function normalizeDisplayTitle(value: string): string {
+  const withoutTags = value
+    .replace(/#[^\s#]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .replace(/^(?:该视频|本视频|视频中|作者(?:分享|讲述|介绍)了?)[：:\s]*/u, "")
+    .trim();
+  const firstClause = withoutTags.split(/[。！？\n]/u)[0]?.trim() ?? "";
+  const candidate = firstClause.length >= 6 ? firstClause : withoutTags;
+  return Array.from(candidate).slice(0, 28).join("");
+}
+
 const resultSchema = z.object({
+  displayTitle: z.string().trim().min(1).optional(),
   oneSentenceSummary: z.string().min(1),
   whyWorthWatching: z.string().min(1),
-  keyPoints: z.array(z.string().min(1)).min(1).transform((items) => items.slice(0, 7)),
+  keyPoints: z.array(z.string().min(1)).min(1).transform((items) => items.slice(0, 5)),
   chapters: z
     .array(
       z.object({
@@ -35,25 +47,32 @@ const resultSchema = z.object({
   markdown: z.string().min(1).optional(),
 });
 
-type ParsedCopywriting = Omit<z.infer<typeof resultSchema>, "markdown"> & {
+type ParsedCopywriting = Omit<
+  z.infer<typeof resultSchema>,
+  "displayTitle" | "markdown"
+> & {
+  displayTitle: string;
   markdown: string;
 };
 
 function completeMarkdown(
   value: z.infer<typeof resultSchema>,
 ): ParsedCopywriting {
+  const displayTitle = normalizeDisplayTitle(
+    value.displayTitle ?? value.oneSentenceSummary,
+  );
   if (value.markdown?.trim()) {
-    return { ...value, markdown: value.markdown.trim() };
+    return { ...value, displayTitle, markdown: value.markdown.trim() };
   }
   const markdown = [
-    `# ${value.oneSentenceSummary}`,
+    `# ${displayTitle}`,
     "",
     value.whyWorthWatching,
     "",
     "## 核心要点",
     ...value.keyPoints.map((item) => `- ${item}`),
   ].join("\n");
-  return { ...value, markdown };
+  return { ...value, displayTitle, markdown };
 }
 
 const MAP_THRESHOLD_CHARACTERS = 45_000;
@@ -172,7 +191,7 @@ export class ArkCopywriter implements Copywriter {
     const request = {
       max_output_tokens: 8_192,
       instructions:
-        "你是内容总结编辑。只能根据用户提供的转录或分段提炼生成结果，不得编造。只输出一个合法且完整的 JSON 对象，不要代码围栏、思考过程或额外说明。",
+        "你是内容知识编辑。只能根据用户提供的转录或分段提炼，不得编造。目标是让用户在首页快速判断内容讲什么、值不值得看，并在详情页获得不重复的结构化笔记。只输出一个合法且完整的 JSON 对象，不要代码围栏、思考过程或额外说明。",
       input: [
         {
           role: "user",
@@ -180,9 +199,14 @@ export class ArkCopywriter implements Copywriter {
             {
               type: "input_text",
               text: [
-                `标题：${transcript.title}`,
-                "输出 JSON 字段：oneSentenceSummary、whyWorthWatching、keyPoints（3-7条字符串）、chapters（对象数组，每项 title/startMs/endMs/summary）、actionItems（字符串数组）、tags（1-3个字符串）、markdown（完整 Markdown）。",
-                "chapters 最多 12 个；actionItems 最多 6 个；markdown 控制在 3000 个中文字符以内，必须完整结束。",
+                `来源标题：${transcript.title}`,
+                "输出 JSON 字段：displayTitle、oneSentenceSummary、whyWorthWatching、keyPoints、chapters、actionItems、tags、markdown。",
+                "displayTitle：12-24个中文字符，直接写核心主题或关键结论；不要保留作者自述、平台话术、Emoji、#话题、问候语或整段原标题，不要使用“该视频/本期内容”。",
+                "oneSentenceSummary：45-90个中文字符，只回答“内容讲了什么、核心结论是什么”；不要重复标题，不要写空泛评价。",
+                "whyWorthWatching：20-50个中文字符，只说明用户能获得的具体价值；不要重复摘要。",
+                "keyPoints：3-5条字符串，每条只表达一个独立信息，优先保留方法、论据、数据、例子或反常识结论；不要编号，不要互相重复，不要复述标题和摘要。",
+                "tags：2-3个名词短语，每个2-8个中文字符；覆盖主题、方法或场景等不同维度；禁止使用“视频、内容、分享、干货、知识”等泛标签，不要带#。",
+                "chapters：对象数组，每项 title/startMs/endMs/summary，最多8项；actionItems最多5项；markdown控制在2000个中文字符以内，必须完整结束。",
                 "章节时间必须来自材料中的毫秒区间；没有时间戳时 chapters 返回空数组。",
                 timedTranscript.length > MAP_THRESHOLD_CHARACTERS
                   ? "以下是按时间段从完整逐字稿提炼的忠实笔记："
@@ -219,7 +243,8 @@ export class ArkCopywriter implements Copywriter {
                 {
                   type: "input_text",
                   text: [
-                    "目标字段：oneSentenceSummary(string)、whyWorthWatching(string)、keyPoints(string[1..7])、chapters({title,startMs,endMs,summary}[]，最多12项)、actionItems(string[]，最多6项)、tags(string[1..3])、markdown(string，最多3000中文字)。",
+                    "目标字段：displayTitle(string，12-24字)、oneSentenceSummary(string，45-90字)、whyWorthWatching(string，20-50字)、keyPoints(string[3..5])、chapters({title,startMs,endMs,summary}[]，最多8项)、actionItems(string[]，最多5项)、tags(string[2..3]，每个2-8字)、markdown(string，最多2000中文字)。",
+                    "displayTitle 不得包含平台话术、Emoji 或 #话题；要点之间不得重复；标签不得使用“视频、内容、分享、干货、知识”等泛词。",
                     "待修复输出：",
                     firstResult.response.text.slice(0, 120_000),
                   ].join("\n"),
