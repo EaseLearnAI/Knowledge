@@ -1,6 +1,8 @@
 # Memo iOS
 
-这是 `prototype-v2/app.html` 的 iOS 可安装版本。App 直接打包并加载当前原型源文件，因此页面结构、视觉样式、动画和交互路由与原型保持同源。
+Memo 使用 UIKit 原生实现注册登录、引导、收藏列表、添加、处理进度、搜索、
+详情、Tag 编辑、侧边栏与账号设置。App 不打包 HTML、JavaScript 或 WKWebView
+页面。
 
 ## 打开
 
@@ -12,10 +14,15 @@ open KnowledgeIOS.xcodeproj
 
 默认 Scheme：`KnowledgeIOS`。
 
-App 默认连接 `http://127.0.0.1:3100/api/v1`。首次启动会自动向
-`POST /auth/guest` 获取游客令牌；YouTube、B 站、抖音和小红书链接会提交到
-`POST /captures`，客户端轮询任务状态并把真实转录和总结写入本地资料库。
+## UI 测试状态直达
 
-## 原型状态直达
+运行或 UI 测试时可设置 `KNOWLEDGE_SCREEN`：
 
-运行或 UI 测试时可设置环境变量 `KNOWLEDGE_SCREEN`，值为 `01-home` 到 `12-ai-empty` 中的任一完整页面 ID。未设置时默认进入 `01-home`。
+- `01-home`：收藏首页；
+- `03-add`：原生添加页；
+- `08-search`：原生搜索页；
+- `04-detail-podcast` / `06-detail-article`：首条收藏详情；
+- `07-processing`：首条处理中收藏；
+- `11-edit-tags`：首条收藏的 Tag 编辑。
+
+未设置时默认进入原生收藏首页。

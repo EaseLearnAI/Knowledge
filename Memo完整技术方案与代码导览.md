@@ -1,6 +1,6 @@
 # Memo 完整技术方案与代码导览
 
-> 文档版本：2026-07-20<br>
+> 文档版本：2026-07-26<br>
 > 对应仓库：`/Users/mac/Desktop/test/Knowledge`<br>
 > 说明：本文以当前仓库中的真实代码为准，讲清楚已经构建的内容、前后端架构、核心用户流程、视频解析链路，以及主要文件的职责。
 
@@ -12,14 +12,14 @@ Memo 一期是一个“把网页、文章、播客和视频变成可搜索、可
 
 > 上线范围说明：一期不提供 AI 问答机器人，只发布内容提取、分析、收藏与搜索闭环。完整问答能力保存在 `codex/phase2-ai-chat`（基线提交 `42dff1c`），用于二期继续开发。
 
-1. 一套与原 HTML 原型同源的可安装 iOS App；
+1. 一套完全使用 UIKit 构建、不打包 HTML/JavaScript/WKWebView 的可安装 iOS App；
 2. 一套 Node.js + Express + MongoDB 的独立后端；
 3. 一条真实可运行的本地视频下载、音频提取、Whisper 转录和承接文案生成链路；
 4. 注册、登录、令牌刷新、内容任务、实时日志、内容列表与详情等 RESTful API；
 5. API 文档、OpenAPI、前端接入指南、测试代码和 Web 调试终端；
 6. iOS 上架资料、隐私清单以及公开的隐私与支持页面。
 
-它不是简单地“把网页套进壳里”：界面继续使用原型的 HTML/CSS 保证视觉一致，数据保存、网络抓取、内容处理、AI 问答、分享、删除等能力由 iOS 原生代码真实执行。
+它不是“把网页套进壳里”：产品介绍、登录注册、引导、收藏首页、添加、处理、搜索、详情、Tag、侧边栏和账号设置均由 UIKit 原生实现，数据保存、网络抓取、内容处理、分享与删除同样由 Swift 直接执行。
 
 ---
 
@@ -29,9 +29,9 @@ Memo 一期是一个“把网页、文章、播客和视频变成可搜索、可
 
 | 模块 | 当前状态 | 说明 |
 |---|---|---|
-| 原型 | 已完成 | `prototype-v2` 提供 12 个移动端产品状态及 Web 展示页 |
-| iOS App | 可构建、可运行 | 工程位于 `ios/KnowledgeIOS`，Bundle ID 为 `ai.easelearn.knowledge` |
-| iOS 本地交互 | 已实现 | 添加网页、处理进度、保存、搜索、Tag、收藏、删除、分享、打开原文、设置与清空数据 |
+| 原型 | 已移除 | 旧 `prototype-v2` HTML/CSS/JS 页面不再作为产品运行时或构建资源 |
+| iOS App | 可构建、可运行 | 工程位于 `ios/KnowledgeIOS`，Bundle ID 为 `ai.easelearn.knowledge`，界面为纯 UIKit |
+| iOS 本地交互 | 已实现 | 原生添加、处理进度、保存、搜索、Tag、收藏、删除、分享、打开原文、侧边栏与账号设置 |
 | iOS UI 自动化 | 已验证 | 覆盖首次启动、真实链接处理、搜索、Tag、一期无问答入口和设置等流程 |
 | iOS Release Archive | 已生成 | 已生成无签名 Archive，证明 Release 构建链路可通过 |
 | 后端 API | 已实现 | Express 5 + TypeScript + MongoDB/Mongoose |
@@ -51,7 +51,7 @@ Memo 一期是一个“把网页、文章、播客和视频变成可搜索、可
 
 #### “认证已接入”不等于“所有数据已经云端化”
 
-当前 iOS App 已接入后端手机号/邮箱认证：首次打开先完成产品引导，再注册或登录；Access Token 与 Refresh Token 保存在系统 Keychain，并支持会话恢复、刷新和退出。未登录时不会加载收藏、摘要、Tag、搜索和对话，也不能调用原生业务桥接；认证后的内容仍保存在设备中。后端同时提供视频解析、云端内容和日志能力。
+当前 iOS App 已接入后端手机号/邮箱认证：首次打开先完成产品引导，再注册或登录；Access Token 与 Refresh Token 保存在系统 Keychain，并支持会话恢复、刷新和退出。未登录时不会加载收藏、摘要、Tag 和搜索；认证后的内容仍保存在设备中。后端同时提供视频解析、云端内容和日志能力。
 
 也就是说：
 
@@ -75,20 +75,20 @@ Memo 一期是一个“把网页、文章、播客和视频变成可搜索、可
 flowchart TB
     U["用户"]
 
-    subgraph IOS["iOS App：本地优先客户端"]
-        UI["原型 UI<br/>app.html + CSS"]
-        JS["AppRuntime.js<br/>页面状态与交互"]
-        BRIDGE["NativeBridge<br/>JS / Swift 桥"]
+    subgraph IOS["iOS App：纯原生 UIKit 客户端"]
+        ROOT["MemoRootViewController<br/>原生页面协调"]
+        UI["UIKit ViewController<br/>认证、引导、收藏、搜索、详情与设置"]
+        APP["MemoApplication<br/>页面状态与业务动作"]
         STORE["LibraryStore<br/>本地 JSON 持久化"]
         FETCH["ContentProcessor<br/>网页抓取与正文提取"]
         AI["AIService<br/>端侧模型 / 本地提取回退"]
         SYS["iOS 系统能力<br/>分享、浏览器、弹窗、删除确认"]
-        UI --> JS
-        JS <--> BRIDGE
-        BRIDGE --> STORE
-        BRIDGE --> FETCH
-        BRIDGE --> AI
-        BRIDGE --> SYS
+        ROOT --> UI
+        UI <--> APP
+        APP --> STORE
+        APP --> FETCH
+        APP --> AI
+        UI --> SYS
         FETCH --> AI
     end
 
@@ -126,89 +126,67 @@ flowchart TB
 
 这套架构实际上解决了三个不同目标：
 
-1. **视觉不能变**：继续使用原型的 HTML/CSS，避免用 SwiftUI 或 UIKit 重新画一遍造成字号、间距、动画和页面状态偏差；
-2. **交互必须真实**：通过 `WKWebView` 与原生 Swift 桥接，让保存、抓取、搜索、分享、删除、AI 等操作真正执行；
+1. **界面必须原生**：所有页面使用 UIKit、Safe Area、Dynamic Type 和系统无障碍能力，不保留网页容器；
+2. **交互必须真实**：ViewController 直接调用 Swift 应用层，让保存、抓取、搜索、分享和删除等操作真正执行；
 3. **后端要能扩展**：把账号、视频解析、任务系统和云端内容做成独立 API，未来可以同时服务 iOS、Web 或其他客户端。
 
 ---
 
 ## 4. iOS 前端架构
 
-### 4.1 前端采用的不是纯 Web，也不是纯原生重绘
+### 4.1 纯 UIKit 分层
 
-iOS 客户端采用“同源原型 UI + 原生业务能力”的混合架构：
+iOS 客户端不打包 HTML、JavaScript 或 WKWebView：
 
 | 层级 | 技术 | 主要职责 |
 |---|---|---|
-| 展示层 | HTML + CSS | 直接复用原型结构、颜色、字体、间距、动画和 12 个页面状态 |
-| 页面运行时 | JavaScript | 接管点击、输入、页面切换、列表渲染、搜索、聊天和处理状态 |
-| 容器层 | UIKit + WKWebView | 加载本地原型资源、限制导航、控制全屏与屏幕方向 |
-| 桥接层 | `WKScriptMessageHandlerWithReply` | 把 JavaScript 命令传给 Swift，并把执行结果返回页面 |
-| 领域层 | Swift Actor / Model | 收藏、对话、内容处理、AI 回答和数据状态 |
+| 页面层 | UIKit ViewController | 产品介绍、认证、引导、收藏、添加、处理、搜索、详情、Tag、侧边栏和设置 |
+| 导航层 | UINavigationController + 原生容器 | 页面切换、系统状态栏、Safe Area、侧边栏与模态流程 |
+| 应用层 | `MemoApplication` | 汇总认证、收藏、处理、搜索、账号操作并向页面发布状态 |
+| 领域层 | Swift Actor / Model | 收藏、内容处理、摘要生成和数据状态 |
 | 持久化层 | Application Support JSON | 保存收藏、Tag、对话和设置，写入时采用原子写 |
-| 系统能力层 | UIKit / UIApplication | 系统分享、外部链接、设置弹窗、删除确认和隐私说明 |
+| 系统能力层 | UIKit / SafariServices | 系统分享、外部链接、删除确认和隐私政策 |
 
-### 4.2 UI 为什么能保持与原型一致
+### 4.2 原生 UI 约束
 
-App 并没有复制原型截图，也没有按照截图重新猜测布局，而是直接把以下源文件打包进 App：
+所有页面共同遵守：
 
-- `prototype-v2/app.html`
-- `prototype-v2/styles/tokens.css`
-- `prototype-v2/styles/phone-frame.css`
+- 使用系统状态栏与 Safe Area；
+- 可点击目标不小于 44pt；
+- 文本使用 Dynamic Type；
+- 控件提供 VoiceOver 标签和 UI 自动化标识；
+- 外部链接交给 `SFSafariViewController` 或系统浏览器；
+- 只锁定竖屏，不绘制假的系统状态栏或底部 Tab 栏。
 
-`PrototypeViewController` 在启动时加载打包后的 `app.html`。页面 DOM 和 CSS 与原型同源，所以视觉基线天然一致。iOS 侧只注入必要的适配：
+### 4.3 页面与业务状态如何通信
 
-- 手机容器铺满 `100vw × 100vh`；
-- 中文字体优先使用 `PingFang SC`；
-- 隐藏状态栏并锁定竖屏；
-- 为原型按钮和输入框补充无障碍名称，便于 VoiceOver 和 UI 自动化；
-- 外部链接交给系统浏览器，不在本地页面中任意跳转。
-
-### 4.3 JavaScript 和 Swift 如何通信
-
-页面通过统一命令调用原生能力：
+页面直接调用 `MemoApplication` 的公开动作：
 
 ```text
-AppRuntime.js
-  → window.webkit.messageHandlers.nativeBridge.postMessage(...)
-  → NativeBridge.handle(action, payload)
+UIKit ViewController
+  → MemoApplication
   → LibraryStore / ContentProcessor / AIService / UIKit
-  → Promise 返回结果
-  → AppRuntime.js 更新当前页面
+  → async/await 返回结果或观察者回调
+  → ViewController 更新原生视图
 ```
 
-Swift 也会主动向页面发送事件：
+耗时处理通过按收藏 ID 隔离的观察者回调更新原生进度页和详情页，多个页面不会互相覆盖监听。
 
-```text
-processingUpdated
-processingCompleted
-processingFailed
-itemUpdated
-itemDeleted
-libraryReset
-```
-
-这种双向机制让耗时处理不必卡住页面。用户提交链接后，可以立即看到待处理记录，后续进度和结果通过事件更新。
-
-### 4.4 原生桥接支持的真实动作
+### 4.4 应用层支持的真实动作
 
 | Action | Swift 侧执行内容 |
 |---|---|
-| `bootstrap` | 读取本地收藏、对话、设置和 AI 模型状态 |
+| `bootstrap` | 恢复会话、激活当前用户本地资料并决定首个原生页面 |
 | `addURL` | 校验 URL、创建待处理条目并启动真实抓取 |
-| `items` | 获取本地收藏列表 |
-| `item` | 获取单条收藏 |
 | `search` | 按关键词和 Tag 搜索 |
 | `updateTags` | 更新并持久化 Tag |
-| `deleteItem` | 弹出原生确认框并删除 |
+| `deleteItem` | 删除收藏与本地记录 |
 | `toggleFavorite` | 切换喜欢状态 |
 | `retryItem` | 对失败内容重新处理 |
-| `chat` | 基于当前收藏或指定收藏生成带引用回答 |
 | `completeOnboarding` | 保存已经完成新手引导 |
-| `share` | 打开 iOS 系统分享面板 |
-| `openURL` | 打开系统浏览器 |
-| `showSettings` | 打开原生设置操作表 |
-| `reset` | 清空本机 Memo 数据 |
+| `changePassword` | 调用账号接口并更新 Keychain 会话 |
+| `deleteAccount` | 删除服务端账号和当前用户本地资料 |
+| `logout` | 撤销 Refresh Token、清理会话并隐藏当前账号资料 |
 
 ### 4.5 iOS 本地数据结构
 
@@ -240,7 +218,7 @@ libraryReset
 
 用户提交普通网页 URL 后：
 
-1. `NativeBridge` 校验 URL；
+1. `MemoApplication` 校验 URL；
 2. `LibraryStore` 先创建一条 pending 收藏，页面立即进入处理态；
 3. `ContentProcessor` 用临时 `URLSession` 发起请求；
 4. 校验 HTTP 响应、页面大小和编码；
@@ -249,7 +227,7 @@ libraryReset
 7. 如果设备支持相应端侧模型，则使用 Apple 端侧模型；
 8. 如果不可用或生成失败，则使用本地句子切分、关键词与规则算法回退；
 9. 完整结果写入本机 JSON；
-10. Swift 发送 `processingCompleted`，页面切换到真实详情。
+10. 观察者收到完成状态，原生处理页切换到真实详情。
 
 ### 4.7 本地 AI 的设计
 
@@ -584,40 +562,39 @@ MiniMax 适合生成更自然、更高质量的总结和文案，但依赖网络
 ```mermaid
 sequenceDiagram
     actor U as 用户
-    participant UI as 原型页面
-    participant JS as AppRuntime.js
-    participant NB as NativeBridge
+    participant UI as UIKit 页面
+    participant APP as MemoApplication
     participant CP as ContentProcessor
     participant AI as AIService
     participant LS as LibraryStore
 
     U->>UI: 点击添加并粘贴 URL
-    UI->>JS: 提交
-    JS->>NB: addURL
-    NB->>LS: 创建待处理收藏
-    NB-->>JS: 立即返回 pending item
-    JS-->>UI: 展示处理进度页
-    NB->>CP: 异步抓取网页
-    CP-->>JS: fetching / extracting 进度
+    UI->>APP: addURL
+    APP->>LS: 创建待处理收藏
+    APP-->>UI: 立即返回 pending item
+    UI-->>U: 展示原生处理进度页
+    APP->>CP: 异步抓取网页
+    CP-->>APP: fetching / extracting 进度
+    APP-->>UI: 观察者回调刷新进度
     CP->>AI: 生成摘要、关键点、Tag
     AI-->>CP: 端侧生成或本地回退结果
-    CP-->>NB: 完整 ProcessedContent
-    NB->>LS: 完成并持久化收藏
-    NB-->>JS: processingCompleted
-    JS-->>UI: 展示真实内容详情
+    CP-->>APP: 完整 ProcessedContent
+    APP->>LS: 完成并持久化收藏
+    APP-->>UI: 完成状态回调
+    UI-->>U: 展示原生内容详情
 ```
 
 失败时会保存失败状态和错误信息，用户可以触发 `retryItem` 再次处理。
 
 ### 7.2 搜索、Tag 与收藏管理
 
-1. App 启动时通过 `bootstrap` 载入全部本地状态；
-2. 搜索框输入时，JavaScript 调用 `search`；
+1. App 启动时由 `MemoApplication.bootstrap` 恢复会话并载入当前账号状态；
+2. 原生搜索控制器输入时直接调用 `MemoApplication.search`；
 3. `LibraryStore` 对标题、摘要、正文、来源和 Tag 进行匹配和排序；
 4. 点击结果进入真实详情；
 5. 用户可以编辑 Tag、切换喜欢、系统分享、打开原文或删除；
 6. 每次修改都先更新 Store，再原子写入本机文件；
-7. Swift 主动发事件，列表和详情同步刷新。
+7. UIKit 页面通过回调和重新加载同步刷新列表与详情。
 
 ### 7.3 基于收藏问 AI
 
@@ -756,44 +733,17 @@ sequenceDiagram
 
 | 文件或目录 | 作用 |
 |---|---|
-| `prototype-v2/` | iOS App 和浏览器预览共同使用的原型视觉基线 |
-| `prototype-v2_副本/` | 原型备份副本，不参与当前 iOS 构建 |
 | `ios/KnowledgeIOS/` | 可安装的 iOS App 工程 |
 | `backend/` | Node.js + Express + MongoDB 后端 |
 | `privacy-site/` | App Store 隐私与支持网站 |
 | `Build-iOS-Apps-插件分析.md` | 对构建 iOS App 所用能力和方案的前期分析，不是运行时代码 |
 | `Memo完整技术方案与代码导览.md` | 当前这份总体架构、流程与文件说明 |
 
-### 9.2 原型文件
+### 9.2 已移除的网页原型
 
-| 文件 | 作用 |
-|---|---|
-| `prototype-v2/app.html` | iOS 实际打包使用的完整单页原型，包含 12 个页面状态 |
-| `prototype-v2/app.html.bak` | `app.html` 的人工备份，不参与构建 |
-| `prototype-v2/index.html` | 原型入口或展示入口 |
-| `prototype-v2/index.showcase-backup.html` | 原型展示页备份 |
-| `prototype-v2/web.html` | Web 尺寸的综合预览页 |
-| `prototype-v2/home-preview.png` | 首页视觉预览图 |
-| `prototype-v2/styles/tokens.css` | 颜色、字体、圆角、间距等设计 Token |
-| `prototype-v2/styles/phone-frame.css` | 手机框架、屏幕尺寸和外层展示样式 |
-| `prototype-v2/screens/mobile/index.html` | 移动页面索引 |
-| `prototype-v2/screens/mobile/01-home.html` | 有收藏数据的首页 |
-| `prototype-v2/screens/mobile/02-home-empty.html` | 空收藏首页 |
-| `prototype-v2/screens/mobile/03-add.html` | 添加链接页面 |
-| `prototype-v2/screens/mobile/04-detail-podcast.html` | 播客/音视频详情 |
-| `prototype-v2/screens/mobile/05-ai-chat.html` | 有上下文的 AI 对话页 |
-| `prototype-v2/screens/mobile/06-detail-article.html` | 文章详情页 |
-| `prototype-v2/screens/mobile/07-processing.html` | 内容处理进度页 |
-| `prototype-v2/screens/mobile/08-search.html` | 搜索页 |
-| `prototype-v2/screens/mobile/09-onboarding.html` | 首次启动引导 |
-| `prototype-v2/screens/mobile/10-unsupported.html` | 不支持来源提示 |
-| `prototype-v2/screens/mobile/11-edit-tags.html` | Tag 编辑页 |
-| `prototype-v2/screens/mobile/12-ai-empty.html` | AI 助手空状态和对话历史入口 |
-| `prototype-v2/screens/web/web-home.html` | Web 首页状态 |
-| `prototype-v2/screens/web/web-add.html` | Web 添加状态 |
-| `prototype-v2/screens/web/web-ai.html` | Web AI 状态 |
-
-`prototype-v2_副本/` 中的文件与上述原型结构对应，仅作为备份，不应在两边同时修改。正式视觉基线以 `prototype-v2/` 为准。
+旧 `prototype-v2/`、`AppRuntime.js`、`NativeBridge.swift` 和 `PrototypeViewController.swift`
+已经删除，不参与 iOS 构建，也不再作为产品运行时。后端的 Web 调试终端和独立隐私支持站
+属于运维与公开说明页面，不是 iOS UI。
 
 ### 9.3 iOS 工程与配置
 
@@ -803,7 +753,7 @@ sequenceDiagram
 | `ios/KnowledgeIOS/KnowledgeIOS.xcodeproj/project.pbxproj` | 生成后的 Xcode 工程配置 |
 | `ios/KnowledgeIOS/KnowledgeIOS.xcodeproj/project.xcworkspace/contents.xcworkspacedata` | Xcode Workspace 元数据 |
 | `ios/KnowledgeIOS/KnowledgeIOS.xcodeproj/xcshareddata/xcschemes/KnowledgeIOS.xcscheme` | 可共享的构建和测试 Scheme |
-| `ios/KnowledgeIOS/README.md` | 打开工程、生成工程和指定原型页面启动的方法 |
+| `ios/KnowledgeIOS/README.md` | 打开工程、生成工程和指定原生页面启动的方法 |
 
 工程关键配置：
 
@@ -819,10 +769,15 @@ sequenceDiagram
 
 | 文件 | 作用 |
 |---|---|
-| `KnowledgeIOS/AppDelegate.swift` | App 入口，创建主窗口并将 `PrototypeViewController` 设为根控制器 |
-| `KnowledgeIOS/PrototypeViewController.swift` | 创建 WKWebView、加载本地原型、注入运行时和适配 CSS、管理页面导航与 Swift → JS 事件 |
-| `KnowledgeIOS/AppRuntime.js` | 页面运行时；把静态原型变为真实 App，负责页面点击、表单、列表、搜索、详情、处理状态、聊天与设置交互 |
-| `KnowledgeIOS/NativeBridge.swift` | JavaScript ↔ Swift 业务桥；分发动作、调用原生服务并向页面推送状态事件 |
+| `KnowledgeIOS/AppDelegate.swift` | App 入口，创建主窗口并安装纯原生根控制器 |
+| `KnowledgeIOS/MemoRootViewController.swift` | 原生页面协调器，管理认证、引导、收藏、添加、搜索、详情和设置导航 |
+| `KnowledgeIOS/MemoApplication.swift` | 应用层状态与动作，连接认证、本地知识库、内容处理和账号操作 |
+| `KnowledgeIOS/NativeUIComponents.swift` | 语义颜色、通用控件、44pt 导航按钮、加载态和原生侧边栏 |
+| `KnowledgeIOS/AuthViewControllers.swift` | 产品介绍、注册和登录页面 |
+| `KnowledgeIOS/OnboardingViewController.swift` | 两页原生首次使用引导 |
+| `KnowledgeIOS/LibraryViewControllers.swift` | 收藏首页、空状态、收藏列表、侧边栏和搜索 |
+| `KnowledgeIOS/ContentViewControllers.swift` | 添加、处理、详情和 Tag 编辑 |
+| `KnowledgeIOS/SettingsViewControllers.swift` | 设置、修改密码、删除账号、退出登录和隐私政策 |
 | `KnowledgeIOS/Models.swift` | 收藏、对话、引用、偏好、处理结果等共享数据模型 |
 | `KnowledgeIOS/LibraryStore.swift` | 本地状态中心；实现增删改查、搜索、对话保存、首次引导状态和 JSON 原子持久化 |
 | `KnowledgeIOS/ContentProcessor.swift` | 真实抓取 URL、检查响应、解析 HTML 元数据和正文，并调用 AI 生成增强内容 |
@@ -836,7 +791,7 @@ sequenceDiagram
 | `KnowledgeIOS/Assets.xcassets/Contents.json` | Xcode Asset Catalog 根配置 |
 | `KnowledgeIOS/Assets.xcassets/AppIcon.appiconset/Contents.json` | App Icon 资源声明 |
 | `KnowledgeIOS/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | App Store 与系统生成各尺寸图标使用的 1024 图标 |
-| `KnowledgeIOSUITests/KnowledgeIOSUITests.swift` | 6 条 iOS UI 自动化流程，并提供测试用 URL 收藏和启动环境控制 |
+| `KnowledgeIOSUITests/KnowledgeIOSUITests.swift` | 10 条纯原生 iOS UI 自动化流程，覆盖认证、引导、收藏、搜索、Tag、设置与账号隔离 |
 | `tools/GenerateAppIcon.swift` | 生成 App 图标的辅助脚本 |
 | `AppStore/AppStoreMetadata.md` | App Store 名称、描述、关键词、审核备注、隐私建议和待填写项 |
 | `build/Memo-unsigned-v2.xcarchive/` | 已成功生成的最新无签名 Release Archive；用于证明可归档，但不能直接上传商店 |
