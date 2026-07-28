@@ -26,14 +26,14 @@ final class AddContentViewController: UIViewController {
 
     private func configureContent() {
         let title = MemoStyle.label(
-            text: "粘贴内容链接",
+            text: "粘贴分享文案或链接",
             style: .largeTitle
         )
         title.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
             for: .systemFont(ofSize: 32, weight: .bold)
         )
         let body = MemoStyle.label(
-            text: "支持 B 站、小红书和抖音公开视频链接。",
+            text: "支持直接粘贴 B 站、小红书和抖音的分享文案，Memo 会自动识别其中的链接。",
             style: .body,
             color: .secondaryLabel
         )
@@ -50,7 +50,7 @@ final class AddContentViewController: UIViewController {
         )
         input.autocorrectionType = .no
         input.autocapitalizationType = .none
-        input.keyboardType = .URL
+        input.keyboardType = .default
         input.accessibilityLabel = "内容链接"
         input.accessibilityIdentifier = "内容链接"
         let toolbar = UIToolbar()
@@ -133,136 +133,6 @@ final class AddContentViewController: UIViewController {
         input.isEditable = !busy
         submitButton.isEnabled = !busy
         submitButton.configuration?.showsActivityIndicator = busy
-    }
-}
-
-final class ProcessingViewController: UIViewController {
-    var onReady: ((KnowledgeItem) -> Void)?
-
-    private let application: MemoApplication
-    private var item: KnowledgeItem
-    private let statusLabel = MemoStyle.label(
-        style: .title2,
-        alignment: .center
-    )
-    private let detailLabel = MemoStyle.label(
-        style: .body,
-        color: .secondaryLabel,
-        alignment: .center
-    )
-    private let progressView = UIProgressView(progressViewStyle: .default)
-    private let retryButton = MemoStyle.primaryButton(title: "重试")
-    private var observationToken: UUID?
-
-    init(application: MemoApplication, item: KnowledgeItem) {
-        self.application = application
-        self.item = item
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "处理中"
-        view.backgroundColor = MemoStyle.warmBackground
-        configureContent()
-        render()
-        observationToken = application.observeItem(id: item.id) { [weak self] item in
-            self?.item = item
-            self?.render()
-        }
-    }
-
-    deinit {
-        let application = application
-        let id = item.id
-        guard let observationToken else { return }
-        Task { @MainActor in
-            application.stopObservingItem(id: id, token: observationToken)
-        }
-    }
-
-    private func configureContent() {
-        let symbol = UIImageView(
-            image: UIImage(
-                systemName: "sparkles",
-                withConfiguration: UIImage.SymbolConfiguration(
-                    pointSize: 76,
-                    weight: .medium
-                )
-            )
-        )
-        symbol.tintColor = MemoStyle.orange
-        symbol.contentMode = .scaleAspectFit
-        symbol.heightAnchor.constraint(equalToConstant: 96).isActive = true
-
-        progressView.progressTintColor = MemoStyle.orange
-        progressView.trackTintColor = .tertiarySystemFill
-        progressView.heightAnchor.constraint(equalToConstant: 6).isActive = true
-
-        retryButton.addTarget(
-            self,
-            action: #selector(retryTapped),
-            for: .touchUpInside
-        )
-
-        let stack = UIStackView(
-            arrangedSubviews: [
-                symbol,
-                statusLabel,
-                detailLabel,
-                progressView,
-                retryButton,
-            ]
-        )
-        stack.axis = .vertical
-        stack.spacing = 18
-        stack.setCustomSpacing(32, after: symbol)
-        stack.setCustomSpacing(10, after: statusLabel)
-        stack.setCustomSpacing(28, after: detailLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 34),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -34),
-            stack.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
-        ])
-    }
-
-    private func render() {
-        statusLabel.text = item.status == .failed ? "处理失败" : item.statusText
-        detailLabel.text = item.status == .failed
-            ? item.errorMessage
-            : "正在把原始内容整理成可以回看的知识。"
-        progressView.progress = Float(item.progress)
-        progressView.isHidden = item.status == .failed
-        retryButton.isHidden = item.status != .failed
-        view.accessibilityIdentifier = "处理页面"
-
-        if item.status == .ready {
-            onReady?(item)
-        }
-    }
-
-    @objc private func retryTapped() {
-        retryButton.isEnabled = false
-        retryButton.configuration?.showsActivityIndicator = true
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                item = try await application.retry(itemID: item.id)
-                retryButton.isEnabled = true
-                retryButton.configuration?.showsActivityIndicator = false
-                render()
-            } catch {
-                retryButton.isEnabled = true
-                retryButton.configuration?.showsActivityIndicator = false
-                MemoStyle.showError(error, on: self)
-            }
-        }
     }
 }
 
@@ -371,72 +241,45 @@ final class DetailViewController: UIViewController {
         )
         let titleLabel = MemoStyle.label(
             text: item.title,
-            style: .largeTitle
+            style: .title1
         )
-        titleLabel.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(
-            for: .systemFont(ofSize: 31, weight: .bold)
+        titleLabel.font = UIFontMetrics(forTextStyle: .title1).scaledFont(
+            for: .systemFont(ofSize: 26, weight: .bold)
         )
         titleLabel.accessibilityIdentifier = item.title
 
-        let summaryTitle = sectionTitle("摘要")
+        let summaryTitle = sectionTitle("一句话摘要")
         let summary = cardLabel(item.summary)
-        let keyPointsTitle = sectionTitle("要点")
-        let keyPoints = cardLabel(
-            item.keyPoints.enumerated()
-                .map { "\($0.offset + 1). \($0.element)" }
-                .joined(separator: "\n\n")
-        )
-        let tagsTitle = sectionTitle("Tag")
-        let tags = cardLabel(
-            item.tags.isEmpty
-                ? "还没有 Tag"
-                : item.tags.map { "#\($0)" }.joined(separator: "  ")
-        )
-        let editTags = MemoStyle.secondaryButton(title: "编辑 Tag")
-        editTags.addTarget(
-            self,
-            action: #selector(editTagsTapped),
-            for: .touchUpInside
-        )
-
-        let favoriteTitle = item.favorite ? "取消喜欢" : "标记为喜欢"
-        let favorite = MemoStyle.secondaryButton(title: favoriteTitle)
-        favorite.accessibilityIdentifier = favoriteTitle
-        favorite.addTarget(
-            self,
-            action: #selector(favoriteTapped),
-            for: .touchUpInside
-        )
-        let delete = MemoStyle.secondaryButton(title: "删除收藏")
-        delete.configuration?.baseForegroundColor = .systemRed
-        delete.accessibilityIdentifier = "删除收藏"
-        delete.addTarget(
-            self,
-            action: #selector(deleteTapped),
-            for: .touchUpInside
-        )
+        let whyWorthWatchingTitle = sectionTitle("为什么值得看")
+        let whyWorthWatching = cardLabel(item.whyWorthWatching ?? "")
+        let keyPointsTitle = sectionTitle("核心要点")
+        let keyPoints = keyPointsCard(item.keyPoints)
+        let tagsTitle = sectionTitle("标签")
+        let tags = tagsView(item.tags)
+        let actions = actionToolbar()
 
         [
             source,
             titleLabel,
             summaryTitle,
             summary,
+            whyWorthWatchingTitle,
+            whyWorthWatching,
             keyPointsTitle,
             keyPoints,
             tagsTitle,
             tags,
-            editTags,
-            favorite,
-            delete,
+            actions,
         ].forEach { contentStack.addArrangedSubview($0) }
         contentStack.setCustomSpacing(32, after: titleLabel)
         contentStack.setCustomSpacing(8, after: summaryTitle)
         contentStack.setCustomSpacing(28, after: summary)
+        contentStack.setCustomSpacing(8, after: whyWorthWatchingTitle)
+        contentStack.setCustomSpacing(28, after: whyWorthWatching)
         contentStack.setCustomSpacing(8, after: keyPointsTitle)
         contentStack.setCustomSpacing(28, after: keyPoints)
         contentStack.setCustomSpacing(8, after: tagsTitle)
-        contentStack.setCustomSpacing(12, after: tags)
-        contentStack.setCustomSpacing(30, after: editTags)
+        contentStack.setCustomSpacing(20, after: tags)
     }
 
     private func sectionTitle(_ text: String) -> UILabel {
@@ -461,6 +304,139 @@ final class DetailViewController: UIViewController {
             label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
         ])
         return container
+    }
+
+    private func keyPointsCard(_ points: [String]) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .secondarySystemBackground
+        container.layer.cornerRadius = 18
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 18
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+
+        if points.isEmpty {
+            stack.addArrangedSubview(
+                MemoStyle.label(
+                    text: "暂无核心要点",
+                    style: .body,
+                    color: .secondaryLabel
+                )
+            )
+        } else {
+            for (index, point) in points.enumerated() {
+                let number = MemoStyle.label(
+                    text: "\(index + 1)",
+                    style: .caption1,
+                    color: .white,
+                    alignment: .center,
+                    lines: 1
+                )
+                number.backgroundColor = MemoStyle.orange
+                number.layer.cornerRadius = 11
+                number.clipsToBounds = true
+                number.translatesAutoresizingMaskIntoConstraints = false
+                number.widthAnchor.constraint(equalToConstant: 22).isActive = true
+                number.heightAnchor.constraint(equalToConstant: 22).isActive = true
+
+                let text = MemoStyle.label(text: point, style: .body)
+                let row = UIStackView(arrangedSubviews: [number, text])
+                row.axis = .horizontal
+                row.alignment = .top
+                row.spacing = 12
+                stack.addArrangedSubview(row)
+            }
+        }
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 18),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
+        ])
+        return container
+    }
+
+    private func tagsView(_ tags: [String]) -> UIView {
+        guard !tags.isEmpty else {
+            return cardLabel("还没有标签")
+        }
+        let stack = UIStackView(
+            arrangedSubviews: tags.prefix(3).map(MemoStyle.tagPill)
+        )
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
+    }
+
+    private func actionToolbar() -> UIView {
+        let editTags = actionButton(
+            symbol: "tag",
+            label: "编辑标签",
+            identifier: "编辑 Tag",
+            color: .label,
+            action: #selector(editTagsTapped)
+        )
+        let favoriteTitle = item.favorite ? "取消喜欢" : "标记为喜欢"
+        let favorite = actionButton(
+            symbol: item.favorite ? "heart.fill" : "heart",
+            label: favoriteTitle,
+            identifier: favoriteTitle,
+            color: item.favorite ? MemoStyle.orange : .label,
+            action: #selector(favoriteTapped)
+        )
+        let delete = actionButton(
+            symbol: "trash",
+            label: "删除收藏",
+            identifier: "删除收藏",
+            color: .systemRed,
+            action: #selector(deleteTapped)
+        )
+
+        let stack = UIStackView(arrangedSubviews: [editTags, favorite, delete])
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = UIView()
+        container.backgroundColor = .secondarySystemBackground
+        container.layer.cornerRadius = 26
+        container.layer.cornerCurve = .continuous
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            container.heightAnchor.constraint(equalToConstant: 56),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -2),
+        ])
+        return container
+    }
+
+    private func actionButton(
+        symbol: String,
+        label: String,
+        identifier: String,
+        color: UIColor,
+        action: Selector
+    ) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(
+            systemName: symbol,
+            withConfiguration: UIImage.SymbolConfiguration(
+                pointSize: 20,
+                weight: .medium
+            )
+        )
+        configuration.baseForegroundColor = color
+        let button = UIButton(configuration: configuration)
+        button.accessibilityLabel = label
+        button.accessibilityIdentifier = identifier
+        button.addTarget(self, action: action, for: .touchUpInside)
+        return button
     }
 
     @objc private func editTagsTapped() {

@@ -8,21 +8,45 @@ import type {
   TranscriptResult,
 } from "./video.types.js";
 
+function normalizeDisplayTitle(value: string): string {
+  const withoutTags = value
+    .replace(/#[^\s#]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .replace(/^(?:该视频|本视频|视频中|作者(?:分享|讲述|介绍)了?)[：:\s]*/u, "")
+    .trim();
+  const firstClause = withoutTags.split(/[。！？\n]/u)[0]?.trim() ?? "";
+  const candidate = firstClause.length >= 6 ? firstClause : withoutTags;
+  return Array.from(candidate).slice(0, 28).join("");
+}
+
 const resultSchema = z.object({
+  displayTitle: z.string().trim().min(1).optional(),
   oneSentenceSummary: z.string().min(1),
   whyWorthWatching: z.string().min(1),
-  keyPoints: z.array(z.string()).min(1).max(7),
-  chapters: z.array(
-    z.object({
-      title: z.string(),
-      startMs: z.number().nonnegative(),
-      endMs: z.number().nonnegative(),
-      summary: z.string(),
-    }),
-  ),
-  actionItems: z.array(z.string()).max(10),
-  tags: z.array(z.string()).min(1).max(3),
-  markdown: z.string().min(1),
+  keyPoints: z
+    .array(z.string().min(1))
+    .min(1)
+    .transform((items) => items.slice(0, 5)),
+  chapters: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        startMs: z.coerce.number().nonnegative(),
+        endMs: z.coerce.number().nonnegative(),
+        summary: z.string().min(1),
+      }),
+    )
+    .default([])
+    .transform((items) => items.slice(0, 8)),
+  actionItems: z
+    .array(z.string().min(1))
+    .default([])
+    .transform((items) => items.slice(0, 5)),
+  tags: z
+    .array(z.string().min(1))
+    .min(1)
+    .transform((items) => items.slice(0, 3)),
+  markdown: z.string().min(1).optional(),
 });
 
 type MiniMaxResponse = {
@@ -108,7 +132,11 @@ export class MiniMaxCopywriter implements Copywriter {
               role: "user",
               content: [
                 `标题：${transcript.title}`,
-                "请输出 JSON 字段：oneSentenceSummary、whyWorthWatching、keyPoints（3-7条字符串）、chapters（对象数组，每项 title/startMs/endMs/summary，时间为整数毫秒）、actionItems（字符串数组）、tags（1-3个字符串）、markdown（字符串）。",
+                "请输出 JSON 字段：displayTitle、oneSentenceSummary、whyWorthWatching、keyPoints、chapters、actionItems、tags、markdown。",
+                "displayTitle 用 12-24 个中文字符直接写核心主题或关键结论；不要保留作者自述、平台话术、Emoji、#话题、问候语或整段原标题，不要使用“该视频/本期内容”。",
+                "oneSentenceSummary 用 45-90 字讲清对象、方法和结论；whyWorthWatching 用 20-50 字说明用户能获得什么。",
+                "keyPoints 输出 3-5 条互不重复的具体事实或方法；actionItems 最多 5 条；tags 输出 2-3 个 2-8 字的具体主题词，禁止使用“视频、内容、分享、干货、知识”等泛词。",
+                "chapters 最多 8 项，每项包含 title/startMs/endMs/summary，时间为整数毫秒；markdown 不超过 2000 个中文字，结构清楚且不要复述标签。",
                 "章节时间必须来自转录行首的毫秒区间，不能编造超出视频范围的时间。",
                 "带时间戳转录：",
                 timedTranscript.slice(0, 900_000),
@@ -161,8 +189,23 @@ export class MiniMaxCopywriter implements Copywriter {
       outputTokens: payload.usage?.completion_tokens ?? 0,
       totalTokens: payload.usage?.total_tokens ?? 0,
     });
+    const displayTitle = normalizeDisplayTitle(
+      parsed.data.displayTitle ?? parsed.data.oneSentenceSummary,
+    );
+    const markdown =
+      parsed.data.markdown?.trim() ||
+      [
+        `# ${displayTitle}`,
+        "",
+        parsed.data.whyWorthWatching,
+        "",
+        "## 核心要点",
+        ...parsed.data.keyPoints.map((item) => `- ${item}`),
+      ].join("\n");
     return {
       ...parsed.data,
+      displayTitle,
+      markdown,
       provider: "minimax-openai-compatible",
       model: this.config.minimaxModel,
     };

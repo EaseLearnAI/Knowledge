@@ -4,6 +4,7 @@ enum KnowledgeItemKind: String, Codable, Sendable {
     case article
     case podcast
     case video
+    case imagePost = "image_post"
     case note
 }
 
@@ -23,6 +24,7 @@ struct KnowledgeItem: Codable, Identifiable, Sendable {
     var sourceName: String
     var title: String
     var summary: String
+    var whyWorthWatching: String? = nil
     var content: String
     var keyPoints: [String]
     var tags: [String]
@@ -38,7 +40,7 @@ struct KnowledgeItem: Codable, Identifiable, Sendable {
     var updatedAt: Date
 
     var searchText: String {
-        ([title, summary, content] + tags + keyPoints)
+        ([title, summary, whyWorthWatching ?? "", content] + tags + keyPoints)
             .joined(separator: " ")
             .lowercased()
     }
@@ -89,6 +91,7 @@ struct AppSnapshot: Codable, Sendable {
 
 struct ContentEnrichment: Sendable {
     let summary: String
+    let whyWorthWatching: String?
     let keyPoints: [String]
     let tags: [String]
 }

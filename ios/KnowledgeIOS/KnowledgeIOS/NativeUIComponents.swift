@@ -187,6 +187,21 @@ enum MemoStyle {
         return label
     }
 
+    static func tagPill(_ tag: String) -> UILabel {
+        let label = MemoTagPillLabel()
+        label.text = "#\(tag)"
+        label.font = .preferredFont(forTextStyle: .caption2)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = orange
+        label.backgroundColor = orange.withAlphaComponent(0.11)
+        label.layer.cornerRadius = 11
+        label.clipsToBounds = true
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.accessibilityLabel = "标签 \(tag)"
+        return label
+    }
+
     static func showError(
         _ error: Error,
         on controller: UIViewController,
@@ -199,6 +214,22 @@ enum MemoStyle {
         )
         alert.addAction(UIAlertAction(title: "知道了", style: .default))
         controller.present(alert, animated: true)
+    }
+}
+
+final class MemoTagPillLabel: UILabel {
+    private let insets = UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: insets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + insets.left + insets.right,
+            height: size.height + insets.top + insets.bottom
+        )
     }
 }
 

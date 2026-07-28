@@ -34,6 +34,7 @@ function modelPayload() {
         message: {
           content: JSON.stringify({
             contentText: "正文与画面共同说明了如何整理知识。",
+            displayTitle: "三步整理个人知识库",
             oneSentenceSummary: "这是一个知识整理方法。",
             whyWorthWatching: "包含可以立即执行的步骤。",
             keyPoints: Array.from(
@@ -129,7 +130,8 @@ describe("HybridMultimodalVideoProcessor", () => {
     expect(result.contentKind).toBe("image_post");
     expect(result.analysisMode).toBe("minimax_m3_multimodal");
     expect(result.copywriting?.oneSentenceSummary).toContain("知识整理");
-    expect(result.copywriting?.keyPoints).toHaveLength(7);
+    expect(result.copywriting?.displayTitle).toBe("三步整理个人知识库");
+    expect(result.copywriting?.keyPoints).toHaveLength(5);
     expect(result.copywriting?.tags).toHaveLength(3);
     expect(fallback.process).not.toHaveBeenCalled();
     expect(staged.cleanup).toHaveBeenCalledOnce();

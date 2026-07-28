@@ -20,14 +20,26 @@ import type {
   VideoProcessor,
 } from "./video.types.js";
 
+function normalizeDisplayTitle(value: string): string {
+  const withoutTags = value
+    .replace(/#[^\s#]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .replace(/^(?:该视频|本视频|视频中|作者(?:分享|讲述|介绍)了?)[：:\s]*/u, "")
+    .trim();
+  const firstClause = withoutTags.split(/[。！？\n]/u)[0]?.trim() ?? "";
+  const candidate = firstClause.length >= 6 ? firstClause : withoutTags;
+  return Array.from(candidate).slice(0, 28).join("");
+}
+
 const analysisSchema = z.object({
   contentText: z.string().min(1),
+  displayTitle: z.string().trim().min(1).optional(),
   oneSentenceSummary: z.string().min(1),
   whyWorthWatching: z.string().min(1),
   keyPoints: z
     .array(z.string().min(1))
     .min(1)
-    .transform((items) => items.slice(0, 7)),
+    .transform((items) => items.slice(0, 5)),
   chapters: z
     .array(
       z.object({
@@ -37,10 +49,10 @@ const analysisSchema = z.object({
         summary: z.string(),
       }),
     )
-    .transform((items) => items.slice(0, 12)),
+    .transform((items) => items.slice(0, 8)),
   actionItems: z
     .array(z.string())
-    .transform((items) => items.slice(0, 10)),
+    .transform((items) => items.slice(0, 5)),
   tags: z
     .array(z.string().min(1))
     .min(1)
@@ -100,7 +112,11 @@ export class MiniMaxMultimodalAnalyzer {
           content.text ? `平台正文：${content.text}` : "",
           "请综合正文、画面、字幕和视频中的声音生成 JSON。",
           "contentText 应保留适合全文搜索的正文、OCR、重要口播和画面信息，不要只重复摘要。",
-          "只输出字段：contentText、oneSentenceSummary、whyWorthWatching、keyPoints、chapters、actionItems、tags、markdown。",
+          "只输出字段：contentText、displayTitle、oneSentenceSummary、whyWorthWatching、keyPoints、chapters、actionItems、tags、markdown。",
+          "displayTitle 用 12-24 个中文字符直接写核心主题或关键结论；不要保留作者自述、平台话术、Emoji、#话题、问候语或整段原标题，不要使用“该视频/本期内容”。",
+          "oneSentenceSummary 用 45-90 字讲清对象、方法和结论；whyWorthWatching 用 20-50 字说明用户能获得什么。",
+          "keyPoints 输出 3-5 条互不重复的具体事实或方法；actionItems 最多 5 条；tags 输出 2-3 个 2-8 字的具体主题词，禁止使用“视频、内容、分享、干货、知识”等泛词。",
+          "markdown 不超过 2000 个中文字，结构清楚且不要复述标签。",
           "图文的 chapters 必须为空；视频章节时间使用整数毫秒，无法确认时间时也返回空数组，禁止编造。",
         ]
           .filter(Boolean)
@@ -166,6 +182,9 @@ export class MiniMaxMultimodalAnalyzer {
       );
     }
     const copywriting: CopywritingResult = {
+      displayTitle: normalizeDisplayTitle(
+        parsed.data.displayTitle ?? parsed.data.oneSentenceSummary,
+      ),
       oneSentenceSummary: parsed.data.oneSentenceSummary,
       whyWorthWatching: parsed.data.whyWorthWatching,
       keyPoints: parsed.data.keyPoints,
