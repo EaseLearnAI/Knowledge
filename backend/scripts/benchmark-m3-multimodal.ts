@@ -1,25 +1,25 @@
 import "dotenv/config";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
-import { createApp } from "../src/app.js";
-import { loadConfig } from "../src/config.js";
+import { createApp } from "../src/bootstrap/create-http-app.js";
+import { loadConfig } from "../src/platform/config/app-config.js";
 import {
   MiniMaxMultimodalAnalyzer,
-} from "../src/features/video/minimax-multimodal.processor.js";
+} from "../src/integrations/analysis/minimax/minimax-multimodal.processor.js";
 import {
   DefaultModelMediaStager,
   type StagedModelMedia,
-} from "../src/features/video/model-media-stager.js";
-import { DefaultPlatformContentResolver } from "../src/features/video/platform-content-resolver.js";
+} from "../src/integrations/media/model-media-stager.js";
+import { DefaultPlatformContentResolver } from "../src/integrations/media/platform-content-resolver.js";
 import type {
   ResolvedContent,
   VideoProcessInput,
-} from "../src/features/video/video.types.js";
+} from "../src/modules/processing/domain/video.types.js";
 import {
   connectDatabase,
   disconnectDatabase,
-} from "../src/shared/db/mongoose.js";
-import { createLogger } from "../src/shared/logger/logger.js";
+} from "../src/platform/database/mongoose.js";
+import { createLogger } from "../src/platform/observability/logger.js";
 
 type CaseResult = {
   id: string;

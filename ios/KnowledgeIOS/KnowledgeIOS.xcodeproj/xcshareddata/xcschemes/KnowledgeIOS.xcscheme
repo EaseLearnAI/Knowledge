@@ -29,6 +29,20 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8C5799DD7D4F2342CDC2CFB8"
+               BuildableName = "KnowledgeIOSTests.xctest"
+               BlueprintName = "KnowledgeIOSTests"
+               ReferencedContainer = "container:KnowledgeIOS.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "AA7076D735C8673DAFFD04B6"
                BuildableName = "KnowledgeIOSUITests.xctest"
                BlueprintName = "KnowledgeIOSUITests"
@@ -54,6 +68,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8C5799DD7D4F2342CDC2CFB8"
+               BuildableName = "KnowledgeIOSTests.xctest"
+               BlueprintName = "KnowledgeIOSTests"
+               ReferencedContainer = "container:KnowledgeIOS.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
          <TestableReference
             skipped = "NO"
             parallelizable = "NO">

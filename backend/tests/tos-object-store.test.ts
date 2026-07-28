@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadConfig } from "../src/config.js";
-import { TosTemporaryObjectStore } from "../src/features/video/tos-object-store.js";
+import { loadConfig } from "../src/platform/config/app-config.js";
+import { TosTemporaryObjectStore } from "../src/integrations/media/tos-object-store.js";
 
 const config = {
   ...loadConfig({ NODE_ENV: "test" }),

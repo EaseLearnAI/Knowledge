@@ -2,8 +2,8 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadConfig } from "../src/config.js";
-import { MediaMaterializer } from "../src/features/video/media-materializer.js";
+import { loadConfig } from "../src/platform/config/app-config.js";
+import { MediaMaterializer } from "../src/integrations/media/media-materializer.js";
 
 const directories: string[] = [];
 

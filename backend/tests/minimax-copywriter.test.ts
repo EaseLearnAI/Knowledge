@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadConfig, type AppConfig } from "../src/config.js";
-import { MiniMaxCopywriter } from "../src/features/video/minimax-copywriter.js";
-import type { TranscriptResult } from "../src/features/video/video.types.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
+import { MiniMaxCopywriter } from "../src/integrations/generation/minimax/minimax-copywriter.js";
+import type { TranscriptResult } from "../src/modules/processing/domain/video.types.js";
 
 const config: AppConfig = {
   ...loadConfig({ NODE_ENV: "test" }),

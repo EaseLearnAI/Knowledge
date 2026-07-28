@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadConfig, type AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
 import {
   resolvePublicBilibiliMedia,
   VolcAsrClient,
   VolcAsrVideoProcessor,
   type CloudMediaResolver,
   type VolcAsrClientLike,
-} from "../src/features/video/volc-asr-video.processor.js";
+} from "../src/integrations/transcription/volc/volc-asr-video.processor.js";
 
 const config: AppConfig = {
   ...loadConfig({ NODE_ENV: "test" }),

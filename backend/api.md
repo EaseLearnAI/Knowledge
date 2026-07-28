@@ -362,7 +362,22 @@ data: {"event":"video.cli.stdout","message":"transcribe: model=small",...}
 }
 ```
 
-### 4.3 删除内容
+### 4.3 修改标签或收藏状态
+
+`PATCH /api/v1/items/{sourceId}`
+
+请求体可只提交需要修改的字段：
+
+```json
+{
+  "tags": ["AI", "产品"],
+  "isFavorite": true
+}
+```
+
+成功 `200` 返回更新后的内容。Tag 会去除首尾空白并限制数量与单项长度。
+
+### 4.4 删除内容
 
 `DELETE /api/v1/items/{sourceId}`
 

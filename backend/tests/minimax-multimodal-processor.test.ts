@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadConfig, type AppConfig } from "../src/config.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
 import {
   HybridMultimodalVideoProcessor,
   MiniMaxMultimodalAnalyzer,
-} from "../src/features/video/minimax-multimodal.processor.js";
-import type { ModelMediaStager } from "../src/features/video/model-media-stager.js";
-import type { PlatformContentResolver } from "../src/features/video/platform-content-resolver.js";
+} from "../src/integrations/analysis/minimax/minimax-multimodal.processor.js";
+import type { ModelMediaStager } from "../src/integrations/media/model-media-stager.js";
+import type { PlatformContentResolver } from "../src/integrations/media/platform-content-resolver.js";
 import type {
   ResolvedContent,
   TranscriptResult,
   VideoProcessor,
-} from "../src/features/video/video.types.js";
+} from "../src/modules/processing/domain/video.types.js";
 
 const config: AppConfig = {
   ...loadConfig({ NODE_ENV: "test" }),

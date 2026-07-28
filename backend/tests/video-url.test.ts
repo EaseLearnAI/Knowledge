@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractHttpUrls,
   extractSupportedVideoUrl,
-} from "../src/features/video/video-url.js";
+} from "../src/integrations/media/video-url.js";
 
 const bilibiliUrl =
   "https://www.bilibili.com/video/BV1GWNQ6jE2x/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58";

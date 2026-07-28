@@ -677,7 +677,7 @@ sequenceDiagram
 
 ## 8. 主要 API 速览
 
-完整成功响应、失败响应和字段定义见 `backend/api.md` 与 `backend/docs/openapi.yaml`。
+完整成功响应、失败响应和字段定义见 `backend/api.md` 与 `contracts/openapi/memo-v1.yaml`。
 
 | 方法 | URL | 鉴权 | 作用 |
 |---|---|---:|---|
@@ -767,31 +767,29 @@ sequenceDiagram
 
 ### 9.4 iOS 运行时代码
 
-| 文件 | 作用 |
+| 目录 | 作用 |
 |---|---|
-| `KnowledgeIOS/AppDelegate.swift` | App 入口，创建主窗口并安装纯原生根控制器 |
-| `KnowledgeIOS/MemoRootViewController.swift` | 原生页面协调器，管理认证、引导、收藏、添加、搜索、详情和设置导航 |
-| `KnowledgeIOS/MemoApplication.swift` | 应用层状态与动作，连接认证、本地知识库、内容处理和账号操作 |
-| `KnowledgeIOS/NativeUIComponents.swift` | 语义颜色、通用控件、44pt 导航按钮、加载态和原生侧边栏 |
-| `KnowledgeIOS/AuthViewControllers.swift` | 产品介绍、注册和登录页面 |
-| `KnowledgeIOS/OnboardingViewController.swift` | 两页原生首次使用引导 |
-| `KnowledgeIOS/LibraryViewControllers.swift` | 收藏首页、空状态、收藏列表、侧边栏和搜索 |
-| `KnowledgeIOS/ContentViewControllers.swift` | 添加、处理、详情和 Tag 编辑 |
-| `KnowledgeIOS/SettingsViewControllers.swift` | 设置、修改密码、删除账号、退出登录和隐私政策 |
-| `KnowledgeIOS/Models.swift` | 收藏、对话、引用、偏好、处理结果等共享数据模型 |
-| `KnowledgeIOS/LibraryStore.swift` | 本地状态中心；实现增删改查、搜索、对话保存、首次引导状态和 JSON 原子持久化 |
-| `KnowledgeIOS/ContentProcessor.swift` | 真实抓取 URL、检查响应、解析 HTML 元数据和正文，并调用 AI 生成增强内容 |
-| `KnowledgeIOS/AIService.swift` | 端侧摘要和知识问答；不支持端侧模型时使用本地可追溯算法回退 |
-| `KnowledgeIOS/PrivacyInfo.xcprivacy` | Apple Privacy Manifest，声明 App 使用的数据与系统 API 情况 |
+| `KnowledgeIOS/App/` | App 生命周期、组合根、全局协调状态与根导航 |
+| `KnowledgeIOS/Features/Auth/` | 认证 Domain 协议、Keychain/API Data 实现与登录注册 UI |
+| `KnowledgeIOS/Features/Capture/` | 采集模型、后端任务轮询和添加内容 UI |
+| `KnowledgeIOS/Features/Library/` | 知识条目、资料库协议、本地缓存、列表和侧边栏 |
+| `KnowledgeIOS/Features/Search/` | 搜索 UI，只依赖 `LibraryFeatureService` |
+| `KnowledgeIOS/Features/ContentDetail/` | 内容详情与 Tag 编辑 |
+| `KnowledgeIOS/Features/Onboarding/` | 原生首次使用引导 |
+| `KnowledgeIOS/Features/Settings/` | 修改密码、删除账号、退出登录和隐私政策 |
+| `KnowledgeIOS/Shared/DesignSystem/` | 语义样式、Tag Pill 与加载反馈 |
+| `KnowledgeIOS/Shared/Utilities/` | 跨 Feature 的视频 URL 解析 |
+| `KnowledgeIOS/Resources/` | Info.plist、Privacy Manifest 与 Asset Catalog |
 
 ### 9.5 iOS 资源、测试和发布文件
 
 | 文件 | 作用 |
 |---|---|
-| `KnowledgeIOS/Assets.xcassets/Contents.json` | Xcode Asset Catalog 根配置 |
-| `KnowledgeIOS/Assets.xcassets/AppIcon.appiconset/Contents.json` | App Icon 资源声明 |
-| `KnowledgeIOS/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | App Store 与系统生成各尺寸图标使用的 1024 图标 |
-| `KnowledgeIOSUITests/KnowledgeIOSUITests.swift` | 10 条纯原生 iOS UI 自动化流程，覆盖认证、引导、收藏、搜索、Tag、设置与账号隔离 |
+| `KnowledgeIOS/Resources/Assets.xcassets/Contents.json` | Xcode Asset Catalog 根配置 |
+| `KnowledgeIOS/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json` | App Icon 资源声明 |
+| `KnowledgeIOS/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | App Store 与系统生成各尺寸图标使用的 1024 图标 |
+| `KnowledgeIOSTests/ArchitectureBoundaryTests.swift` | Feature 接缝与领域行为单元测试 |
+| `KnowledgeIOSUITests/KnowledgeIOSUITests.swift` | 12 条纯原生 iOS UI 自动化流程，覆盖认证、引导、收藏、搜索、Tag、设置与账号隔离 |
 | `tools/GenerateAppIcon.swift` | 生成 App 图标的辅助脚本 |
 | `AppStore/AppStoreMetadata.md` | App Store 名称、描述、关键词、审核备注、隐私建议和待填写项 |
 | `build/Memo-unsigned-v2.xcarchive/` | 已成功生成的最新无签名 Release Archive；用于证明可归档，但不能直接上传商店 |
@@ -807,58 +805,50 @@ sequenceDiagram
 | `backend/vitest.config.ts` | Vitest 测试配置 |
 | `backend/.env.example` | 全部环境变量示例，包括 MongoDB、JWT、视频解析器、MiniMax 和 Web 终端 |
 | `backend/.gitignore` | 忽略依赖、构建产物、环境密钥、上传内容和运行工作区 |
-| `backend/src/config.ts` | 使用 Zod 校验环境变量，并生成强类型 `AppConfig` |
-| `backend/src/app.ts` | Express 应用工厂；组装中间件、路由、处理器和文案 provider，也便于测试注入 Mock |
-| `backend/src/server.ts` | 服务启动入口；连接数据库、恢复任务、监听端口和优雅关闭 |
-| `backend/src/types/express.d.ts` | 扩展 Express Request 类型，补充 `auth` 和 `requestId` 等字段 |
+| `backend/src/bootstrap/create-container.ts` | 唯一依赖组合根，选择并注入 Processor、Copywriter 与对象存储实现 |
+| `backend/src/bootstrap/create-http-app.ts` | Express 应用工厂，只组装中间件和模块路由 |
+| `backend/src/bootstrap/create-worker.ts` | 独立 Worker 组合根，不创建 HTTP App |
+| `backend/src/bootstrap/server.ts` | HTTP 进程入口；数据库、任务恢复、监听和优雅关闭 |
+| `backend/src/platform/config/app-config.ts` | 使用 Zod 校验环境变量并生成强类型配置 |
+| `backend/src/platform/http/express.d.ts` | 扩展 Express Request 的认证与 requestId 字段 |
 
 ### 9.7 后端认证模块
 
 | 文件 | 作用 |
 |---|---|
-| `src/features/auth/auth.routes.ts` | 注册、登录、刷新、退出和当前用户路由 |
-| `src/features/auth/auth.schemas.ts` | 手机号/邮箱标识、密码、昵称和 Refresh Token 的 Zod 校验与规范化 |
-| `src/features/auth/auth.service.ts` | 注册登录业务、bcrypt 校验、Token 签发、轮换和撤销 |
-| `src/features/auth/user.model.ts` | User 的 Mongoose Schema，以及手机号和邮箱的稀疏唯一索引 |
-| `src/features/auth/refresh-token.model.ts` | Refresh Token 哈希、过期时间、撤销时间和 TTL 索引 |
+| `src/modules/auth/adapters/http/` | 注册、登录、刷新、账号路由与请求校验 |
+| `src/modules/auth/application/auth.service.ts` | 注册登录业务、bcrypt 校验、Token 签发、轮换和撤销 |
+| `src/modules/auth/adapters/mongo/` | User 与 RefreshToken Mongoose 模型 |
 
-### 9.8 后端视频模块
+### 9.8 后端业务模块与集成
 
-| 文件 | 作用 |
+| 目录 | 作用 |
 |---|---|
-| `src/features/video/video.routes.ts` | 视频 URL、文件上传、任务、SSE、内容列表/详情/删除路由 |
-| `src/features/video/video.schemas.ts` | 平台 URL、质量、语言、Mongo ID 和列表分页参数校验 |
-| `src/features/video/video.service.ts` | 创建幂等任务、平台判断、内容查询、分页和软删除 |
-| `src/features/video/video.types.ts` | Processor、Copywriter、Transcript、Chapter 和 Copywriting 的接口契约 |
-| `src/features/video/processing-task.model.ts` | ProcessingTask Schema、日志子结构和幂等唯一索引 |
-| `src/features/video/source-item.model.ts` | SourceItem、时间戳分段、全文搜索索引和软删除字段 |
-| `src/features/video/task-runner.ts` | 串行执行队列、阶段更新、日志记录、成功/失败落库和重启恢复 |
-| `src/features/video/videosummarize.processor.ts` | 真实处理器适配器；调用 videosummarize CLI 或本地 Python 转录桥 |
-| `src/features/video/mock-video.processor.ts` | 测试用模拟视频处理器，不调用真实下载和 Whisper |
-| `src/features/video/local-copywriter.ts` | 无外部 API 的确定性承接文案生成器 |
-| `src/features/video/minimax-copywriter.ts` | MiniMax OpenAI 兼容 API 的文案生成适配器，支持通过环境变量换模，并校验、归一化模型输出 |
+| `src/modules/capture/` | 创建幂等采集任务、查询任务与 SSE |
+| `src/modules/library/` | 内容列表、详情、Tag、收藏和软删除 |
+| `src/modules/processing/` | Processor/Copywriter 领域契约、任务模型和执行队列 |
+| `src/modules/operations/` | 健康检查与 Web 调试终端 |
+| `src/integrations/analysis/` | Ark、MiniMax、本地 Mock 等视频分析实现 |
+| `src/integrations/generation/` | Ark、MiniMax 与本地确定性文案实现 |
+| `src/integrations/media/` | 平台 URL、下载、素材整理与对象存储 |
+| `src/integrations/transcription/` | videosummarize 与火山 ASR 实现 |
 
 ### 9.9 后端共享基础设施
 
 | 文件 | 作用 |
 |---|---|
-| `src/shared/db/mongoose.ts` | MongoDB 连接、断开和就绪状态 |
-| `src/shared/errors/app-error.ts` | 带 HTTP 状态、业务错误码和 details 的标准错误 |
-| `src/shared/errors/error-handler.ts` | 404 和全局错误处理中间件，统一错误响应并记录日志 |
-| `src/shared/http/response.ts` | 标准成功响应封装 |
-| `src/shared/http/validate.ts` | 把 Zod Schema 包装成 Express 校验中间件 |
-| `src/shared/logger/logger.ts` | 创建 Pino Logger，并做敏感字段脱敏配置 |
-| `src/shared/logger/request-logger.middleware.ts` | 请求 ID、请求开始/结束、状态码和耗时日志 |
-| `src/shared/logger/event-bus.ts` | 内存事件总线和最近事件缓冲，为 SSE 与 Web 终端供数 |
-| `src/shared/security/tokens.ts` | 创建/校验 JWT、创建 Refresh Token、哈希 Token |
-| `src/shared/security/auth.middleware.ts` | 校验 Bearer Token，并把用户身份写入 Request |
+| `src/platform/database/` | MongoDB 连接、断开和就绪状态 |
+| `src/platform/http/` | 标准错误、响应、校验、请求日志和 Express 类型 |
+| `src/platform/observability/` | Pino 日志与任务事件总线 |
+| `src/platform/security/` | JWT、Refresh Token 与认证中间件 |
+| `src/platform/config/` | 环境变量校验和强类型配置 |
 
 ### 9.10 健康检查与 Web 终端
 
 | 文件 | 作用 |
 |---|---|
-| `src/features/health/health.routes.ts` | `/health` 和 `/ready`，区分进程存活与数据库就绪 |
-| `src/features/terminal/terminal.routes.ts` | 带终端 Token 的全局 SSE 日志接口 |
+| `src/modules/operations/health.routes.ts` | `/health` 和 `/ready`，区分进程存活与数据库就绪 |
+| `src/modules/operations/terminal.routes.ts` | 带终端 Token 的全局 SSE 日志接口 |
 | `public/terminal.html` | 浏览器调试终端界面，实时显示请求、响应和视频处理事件 |
 
 ### 9.11 后端脚本和运行目录
@@ -884,7 +874,8 @@ sequenceDiagram
 |---|---|
 | `backend/README.md` | 后端能力、启动、验证和 MiniMax 配置的快速说明 |
 | `backend/api.md` | 中文 RESTful API 文档，包含成功/失败响应和请求示例 |
-| `backend/docs/openapi.yaml` | 可导入 Swagger、Postman 或 API 客户端的机器可读契约 |
+| `contracts/openapi/memo-v1.yaml` | 前后端共享、可导入 Swagger 或 Postman 的机器可读契约 |
+| `contracts/fixtures/v1/` | 认证、采集、资料库与错误响应的契约样例 |
 | `backend/docs/前端接入指南.md` | TypeScript 类型、登录封装、任务跟踪、UI 状态和时间戳跳转建议 |
 | `backend/docs/视频解析方案与改进总结.md` | 方案选择、复用路径、文案结构、验证结果、边界与下一步 |
 
