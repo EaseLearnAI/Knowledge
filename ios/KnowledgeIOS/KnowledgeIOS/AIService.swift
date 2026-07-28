@@ -96,6 +96,7 @@ actor AIService {
             ?? String(content.prefix(180))
         return ContentEnrichment(
             summary: summary,
+            whyWorthWatching: nil,
             keyPoints: keyPoints.isEmpty ? [summary] : keyPoints,
             tags: inferTags(from: "\(title) \(content)")
         )
@@ -265,6 +266,7 @@ actor AIService {
         let tags = splitList(value(after: "标签：", in: lines))
         return ContentEnrichment(
             summary: summary,
+            whyWorthWatching: nil,
             keyPoints: points.isEmpty ? fallback.keyPoints : points,
             tags: tags.isEmpty ? fallback.tags : tags
         )

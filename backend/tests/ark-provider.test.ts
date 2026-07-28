@@ -181,6 +181,30 @@ describe("ArkResponseClient", () => {
     });
   });
 
+  it("把不存在或无权访问的 endpoint 映射成模型不可用", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "InvalidParameter",
+              message:
+                "The model or endpoint stale-model does not exist or you do not have access to it.",
+            },
+          }),
+          { status: 404, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    await expect(
+      new ArkResponseClient(config).create({ model: "stale-model" }),
+    ).rejects.toMatchObject({
+      code: "ARK_MODEL_NOT_OPEN",
+    });
+  });
+
   it("没有密钥时在发请求前失败", async () => {
     const withoutKey = { ...config };
     delete withoutKey.arkApiKey;
@@ -269,6 +293,7 @@ describe("ArkCopywriter", () => {
       create: vi.fn().mockResolvedValue(
         responseResult(
           JSON.stringify({
+            displayTitle: "最小上线方案",
             oneSentenceSummary: "视频解释了最小上线方案。",
             whyWorthWatching: "可以直接用于个人开发者上线。",
             keyPoints: ["使用单机部署。", "先验证真实用户需求。", "外部 ASR 按量付费。"],
@@ -307,6 +332,7 @@ describe("ArkCopywriter", () => {
     );
 
     expect(result.oneSentenceSummary).toBe("视频解释了最小上线方案。");
+    expect(result.displayTitle).toBe("最小上线方案");
     expect(result.provider).toBe("volcengine-ark-responses");
     expect(result.model).toBe(config.arkSummaryModel);
   });
@@ -409,6 +435,56 @@ describe("ArkCopywriter", () => {
     expect(events).toContain("copywriting.ark.model_fallback");
   });
 
+  it("主 endpoint 不存在时自动切换备用模型", async () => {
+    const fallbackConfig: AppConfig = {
+      ...config,
+      arkSummaryModel: "stale-endpoint",
+      arkSummaryFallbackModels: ["fallback-ready"],
+    };
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new AppError(
+          502,
+          "ARK_MODEL_NOT_OPEN",
+          "The model or endpoint stale-endpoint does not exist or you do not have access to it.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        responseResult(
+          JSON.stringify({
+            oneSentenceSummary: "备用 endpoint 总结成功。",
+            whyWorthWatching: "配置过期不会中断任务。",
+            keyPoints: ["自动切换可用 endpoint。"],
+            chapters: [],
+            actionItems: [],
+            tags: ["稳定性"],
+            markdown: "# 备用 endpoint 总结成功",
+          }),
+        ),
+      );
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create,
+    };
+
+    const result = await new ArkCopywriter(fallbackConfig, client).generate(
+      {
+        title: "endpoint 降级",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      () => undefined,
+    );
+
+    expect(result.model).toBe("fallback-ready");
+    expect(create.mock.calls[1]?.[0]).toMatchObject({ model: "fallback-ready" });
+  });
+
   it("长逐字稿先分段提炼再做最终汇总", async () => {
     const validResult = JSON.stringify({
       oneSentenceSummary: "长访谈总结完成。",
@@ -494,5 +570,51 @@ describe("ArkCopywriter", () => {
     expect(result.oneSentenceSummary).toBe("修复成功。");
     expect(client.create).toHaveBeenCalledTimes(2);
     expect(events).toContain("copywriting.ark.repairing");
+  });
+
+  it("容忍模型返回字符串时间戳、超量数组和缺失 markdown", async () => {
+    const client: ArkClient = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn(),
+      create: vi.fn().mockResolvedValue(
+        responseResult(
+          JSON.stringify({
+            displayTitle: "AI 工具 #教程\n",
+            oneSentenceSummary: "结构可自动归一化。",
+            whyWorthWatching: "不会因为非关键格式漂移丢失真实总结。",
+            keyPoints: Array.from({ length: 9 }, (_, index) => `要点${index + 1}`),
+            chapters: [
+              {
+                title: "开场",
+                startMs: "0",
+                endMs: "5000",
+                summary: "介绍主题。",
+              },
+            ],
+            tags: ["一", "二", "三", "四"],
+          }),
+        ),
+      ),
+    };
+
+    const result = await new ArkCopywriter(config, client).generate(
+      {
+        title: "格式归一化",
+        source: "https://example.com/video",
+        transcriptPath: "test://transcript",
+        text: "完整逐字稿",
+        segments: [],
+        provider: "test",
+      },
+      () => undefined,
+    );
+
+    expect(result.keyPoints).toHaveLength(5);
+    expect(result.displayTitle).toBe("AI 工具");
+    expect(result.tags).toEqual(["一", "二", "三"]);
+    expect(result.chapters[0]).toMatchObject({ startMs: 0, endMs: 5_000 });
+    expect(result.actionItems).toEqual([]);
+    expect(result.markdown).toContain("# AI 工具");
+    expect(client.create).toHaveBeenCalledTimes(1);
   });
 });

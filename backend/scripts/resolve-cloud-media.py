@@ -226,6 +226,10 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
             None,
         )
         if media_url:
+            # `playwm` may redirect to an HTTP CDN URL that external model
+            # providers cannot fetch. The equivalent `play` route resolves to
+            # the same public media without that unstable redirect.
+            media_url = media_url.replace("/playwm/", "/play/")
             raw_duration = float(video.get("duration") or 0)
             duration = raw_duration / 1000 if raw_duration > 18_000 else raw_duration
             return {

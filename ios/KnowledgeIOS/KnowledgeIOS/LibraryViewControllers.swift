@@ -3,6 +3,7 @@ import UIKit
 final class KnowledgeItemCell: UITableViewCell {
     static let reuseIdentifier = "KnowledgeItemCell"
 
+    private let cardView = UIView()
     private let sourceLabel = MemoStyle.label(
         style: .caption1,
         color: .secondaryLabel,
@@ -14,39 +15,72 @@ final class KnowledgeItemCell: UITableViewCell {
         color: .secondaryLabel,
         lines: 2
     )
-    private let tagsLabel = MemoStyle.label(
+    private let tagsStack = UIStackView()
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    private let etaLabel = MemoStyle.label(
         style: .caption1,
         color: .secondaryLabel,
         lines: 1
     )
-    private let progressView = UIProgressView(progressViewStyle: .default)
+    private let percentLabel = MemoStyle.label(
+        style: .caption1,
+        color: MemoStyle.orange,
+        alignment: .right,
+        lines: 1
+    )
+    private let progressMeta = UIStackView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .secondarySystemBackground
-        contentView.backgroundColor = .secondarySystemBackground
-        layer.cornerRadius = 18
-        layer.masksToBounds = true
-        accessoryType = .disclosureIndicator
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
+
+        cardView.backgroundColor = .secondarySystemBackground
+        cardView.layer.cornerRadius = 20
+        cardView.layer.cornerCurve = .continuous
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(cardView)
+
+        tagsStack.axis = .horizontal
+        tagsStack.alignment = .center
+        tagsStack.spacing = 6
+
+        progressView.progressTintColor = MemoStyle.orange
+        progressView.trackTintColor = .tertiarySystemFill
+        progressView.layer.cornerRadius = 3
+        progressView.clipsToBounds = true
+        progressView.transform = CGAffineTransform(scaleX: 1, y: 1.7)
+
+        progressMeta.axis = .horizontal
+        progressMeta.alignment = .center
+        progressMeta.addArrangedSubview(etaLabel)
+        progressMeta.addArrangedSubview(percentLabel)
 
         let stack = UIStackView(
             arrangedSubviews: [
                 sourceLabel,
                 titleLabel,
                 summaryLabel,
-                tagsLabel,
+                tagsStack,
                 progressView,
+                progressMeta,
             ]
         )
         stack.axis = .vertical
         stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(stack)
+        cardView.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
+
+            stack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 18),
+            stack.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 18),
+            stack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -18),
+            stack.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -18),
         ])
     }
 
@@ -55,25 +89,94 @@ final class KnowledgeItemCell: UITableViewCell {
     }
 
     func configure(item: KnowledgeItem) {
-        sourceLabel.text = item.sourceName
-        titleLabel.text = item.title
-        summaryLabel.text = item.status == .ready
+        let isReady = item.status == .ready
+        let isFailed = item.status == .failed
+        sourceLabel.text = isReady
+            ? item.sourceName
+            : "\(platformName(for: item)) · \(isFailed ? "分析失败" : "分析中")"
+        titleLabel.text = isReady
+            ? item.title
+            : (isFailed ? "这条内容没有分析完成" : item.statusText)
+        summaryLabel.text = isReady
             ? item.summary
-            : item.statusText
-        tagsLabel.text = item.tags.isEmpty
-            ? nil
-            : item.tags.map { "#\($0)" }.joined(separator: "  ")
-        tagsLabel.isHidden = item.tags.isEmpty
-        progressView.isHidden = [.ready, .failed].contains(item.status)
+            : (isFailed
+                ? item.errorMessage ?? "点击卡片重试"
+                : processingDetail(for: item.status))
+        tagsStack.arrangedSubviews.forEach {
+            tagsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        item.tags.prefix(3).forEach {
+            tagsStack.addArrangedSubview(MemoStyle.tagPill($0))
+        }
+        tagsStack.isHidden = !isReady || item.tags.isEmpty
+        progressView.isHidden = isReady || isFailed
         progressView.progress = Float(item.progress)
+        progressMeta.isHidden = isReady || isFailed
+        etaLabel.text = estimatedTime(for: item.status)
+        percentLabel.text = "\(Int((item.progress * 100).rounded()))%"
+        cardView.backgroundColor = isFailed
+            ? UIColor.systemRed.withAlphaComponent(0.07)
+            : .secondarySystemBackground
         accessibilityLabel = [
-            item.title,
-            item.summary,
+            sourceLabel.text ?? "",
+            titleLabel.text ?? "",
+            summaryLabel.text ?? "",
             item.tags.joined(separator: "、"),
+            progressMeta.isHidden ? "" : etaLabel.text ?? "",
+            progressMeta.isHidden ? "" : percentLabel.text ?? "",
         ]
         .filter { !$0.isEmpty }
         .joined(separator: "，")
-        accessibilityIdentifier = item.title
+        accessibilityIdentifier = isReady
+            ? item.title
+            : (isFailed ? "分析失败卡片" : "分析中卡片")
+    }
+
+    private func platformName(for item: KnowledgeItem) -> String {
+        let host = item.sourceURL.host()?.lowercased() ?? item.sourceName.lowercased()
+        if host.contains("xiaohongshu") || host.contains("xhslink") {
+            return "小红书"
+        }
+        if host.contains("douyin") {
+            return "抖音"
+        }
+        if host.contains("bilibili") || host.contains("b23") {
+            return "B站"
+        }
+        return item.sourceName
+    }
+
+    private func processingDetail(for status: KnowledgeItemStatus) -> String {
+        switch status {
+        case .queued:
+            "任务已加入队列，马上开始解析。"
+        case .fetching:
+            "正在识别分享链接并读取原始视频。"
+        case .extracting:
+            "正在转写音频并提取可回看的正文。"
+        case .enriching:
+            "正在整理标题、摘要、核心要点和标签。"
+        case .ready:
+            "内容已经整理完成。"
+        case .failed:
+            "处理没有完成，请点击重试。"
+        }
+    }
+
+    private func estimatedTime(for status: KnowledgeItemStatus) -> String {
+        switch status {
+        case .queued, .fetching:
+            "预计还需 2–4 分钟"
+        case .extracting:
+            "预计还需 1–3 分钟"
+        case .enriching:
+            "预计不到 1 分钟"
+        case .ready:
+            "已完成"
+        case .failed:
+            ""
+        }
     }
 }
 
@@ -136,9 +239,9 @@ final class LibraryViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.contentInset = UIEdgeInsets(
             top: 12,
-            left: 16,
+            left: 0,
             bottom: 104,
-            right: 16
+            right: 0
         )
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 148
@@ -181,7 +284,7 @@ final class LibraryViewController: UIViewController {
         )
 
         let body = MemoStyle.label(
-            text: "粘贴一个链接，Memo 自动提取内容、生成摘要和 Tag。",
+            text: "粘贴分享文案或链接，Memo 自动识别链接、提取内容并生成摘要和 Tag。",
             style: .body,
             color: .secondaryLabel,
             alignment: .center
@@ -292,18 +395,6 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
         onOpenItem?(items[indexPath.row])
     }
 
-    func tableView(
-        _ tableView: UITableView,
-        willDisplay cell: UITableViewCell,
-        forRowAt indexPath: IndexPath
-    ) {
-        cell.contentView.layoutMargins = UIEdgeInsets(
-            top: 0,
-            left: 0,
-            bottom: 12,
-            right: 0
-        )
-    }
 }
 
 final class SearchViewController: UIViewController {

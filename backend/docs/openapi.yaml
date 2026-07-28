@@ -447,7 +447,8 @@ components:
       properties:
         url:
           type: string
-          format: uri
+          description: 支持纯链接，也支持包含分享文案和一个或多个 HTTP(S) 链接的完整文本；服务端会提取首个受支持的平台链接。
+          example: "复制这段分享文案 https://v.douyin.com/example/ 打开抖音查看"
         quality:
           $ref: "#/components/schemas/Quality"
         language:

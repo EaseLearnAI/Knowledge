@@ -63,7 +63,13 @@ function outputText(payload: ArkResponsePayload): string {
 
 function arkErrorCode(payload: ArkResponsePayload): string {
   const code = payload.error?.code;
-  if (code === "ModelNotOpen") return "ARK_MODEL_NOT_OPEN";
+  const message = payload.error?.message ?? "";
+  if (
+    code === "ModelNotOpen" ||
+    /model or endpoint .* does not exist|do not have access to it/i.test(message)
+  ) {
+    return "ARK_MODEL_NOT_OPEN";
+  }
   if (code === "AuthenticationError" || code === "InvalidAuthentication") {
     return "ARK_AUTHENTICATION_FAILED";
   }

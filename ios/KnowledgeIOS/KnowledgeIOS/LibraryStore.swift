@@ -158,6 +158,7 @@ actor LibraryStore {
         state.items[index].sourceName = content.sourceName
         state.items[index].title = content.title
         state.items[index].summary = content.enrichment.summary
+        state.items[index].whyWorthWatching = content.enrichment.whyWorthWatching
         state.items[index].content = content.content
         state.items[index].keyPoints = content.enrichment.keyPoints
         state.items[index].tags = content.enrichment.tags
