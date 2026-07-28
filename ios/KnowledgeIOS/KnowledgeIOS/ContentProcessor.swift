@@ -4,14 +4,17 @@ actor ContentProcessor {
     private let authStore: AuthStore
     private let videoClient: VideoBackendClient
     private let session: URLSession
+    private let usesUITestFixture: Bool
 
     init(
-        authStore: AuthStore = .shared
+        authStore: AuthStore = .shared,
+        environment: [String: String] = ProcessInfo.processInfo.environment
     ) {
         self.authStore = authStore
         videoClient = VideoBackendClient(
-            environment: ProcessInfo.processInfo.environment
+            environment: environment
         )
+        usesUITestFixture = environment["KNOWLEDGE_UI_TEST_FIXTURE"] == "1"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 25
         configuration.timeoutIntervalForResource = 40
@@ -34,12 +37,41 @@ actor ContentProcessor {
         guard Self.isSupportedVideo(url) else {
             throw ContentProcessingError.unsupportedPlatform
         }
+        if usesUITestFixture {
+            return await processUITestFixture(onProgress: onProgress)
+        }
         return try await processVideo(
             url: url,
             idempotencyKey: idempotencyKey,
             remoteTaskID: remoteTaskID,
             onRemoteTaskCreated: onRemoteTaskCreated,
             onProgress: onProgress
+        )
+    }
+
+    private func processUITestFixture(
+        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
+    ) async -> ProcessedContent {
+        await onProgress(.fetching, 18)
+        try? await Task.sleep(for: .seconds(2))
+        await onProgress(.extracting, 48)
+        try? await Task.sleep(for: .seconds(2))
+        await onProgress(.enriching, 76)
+        return ProcessedContent(
+            kind: .video,
+            sourceName: "B 站",
+            title: "AI 工具复刻官方宣传片",
+            content: "用 Codex、Gemini Omni 等 AI 工具复刻宣传片，并完成分镜、生成和剪辑。",
+            enrichment: ContentEnrichment(
+                summary: "可掌握低成本 AI 工具复刻视频的实操方法，理解从分镜到剪辑的完整流程。",
+                whyWorthWatching: "用较低成本跑通一条可复用的视频生产工作流。",
+                keyPoints: [
+                    "先分析原片结构并拆成可执行分镜",
+                    "使用生成式工具逐段生成画面",
+                    "最后统一剪辑、配音并校正节奏",
+                ],
+                tags: ["AI视频创作", "AI工具应用", "内容复刻案例"]
+            )
         )
     }
 

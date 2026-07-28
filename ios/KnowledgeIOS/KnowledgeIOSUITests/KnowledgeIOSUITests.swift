@@ -2,7 +2,8 @@ import XCTest
 
 @MainActor
 final class KnowledgeIOSUITests: XCTestCase {
-    private let exampleURL = "https://example.com"
+    private let exampleURL = "https://www.bilibili.com/video/BV1GWNQ6jE2x/"
+    private let exampleTitle = "AI 工具复刻官方宣传片"
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -62,14 +63,14 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         addExampleURL(in: app)
         XCTAssertTrue(
-            app.staticTexts["Example Domain"].waitForExistence(timeout: 30)
+            app.staticTexts[exampleTitle].waitForExistence(timeout: 30)
         )
         XCTAssertFalse(app.webViews.firstMatch.exists)
 
         app.terminate()
         app = launchApp(reset: false, skipOnboarding: true)
         XCTAssertTrue(
-            app.cells["Example Domain"].waitForExistence(timeout: 8)
+            app.cells[exampleTitle].waitForExistence(timeout: 8)
         )
     }
 
@@ -92,15 +93,12 @@ final class KnowledgeIOSUITests: XCTestCase {
         }
         app.buttons["收藏到 Memo"].tap()
 
-        XCTAssertTrue(app.navigationBars["处理中"].waitForExistence(timeout: 5))
-        XCTAssertTrue(
-            app.staticTexts["预计还需 2–4 分钟"].waitForExistence(timeout: 3)
-        )
-        XCTAssertTrue(
-            app.staticTexts[
-                "可以先返回首页，处理会在后台继续。"
-            ].exists
-        )
+        XCTAssertTrue(app.navigationBars["Memo"].waitForExistence(timeout: 5))
+        let analyzing = app.cells["分析中卡片"]
+        XCTAssertTrue(analyzing.waitForExistence(timeout: 3))
+        XCTAssertTrue(analyzing.label.contains("预计"))
+        XCTAssertTrue(analyzing.label.contains("%"))
+        XCTAssertFalse(app.navigationBars["处理中"].exists)
         XCTAssertFalse(app.alerts["无法收藏"].exists)
     }
 
@@ -114,11 +112,11 @@ final class KnowledgeIOSUITests: XCTestCase {
         let field = app.searchFields["搜索收藏"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
-        field.typeText("Example")
-        let result = app.cells["Example Domain"]
+        field.typeText("AI 工具")
+        let result = app.cells[exampleTitle]
         XCTAssertTrue(result.waitForExistence(timeout: 5))
         result.tap()
-        XCTAssertTrue(app.staticTexts["Example Domain"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[exampleTitle].waitForExistence(timeout: 5))
     }
 
     func testNativeDetailAndTagsPersist() {
@@ -135,9 +133,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         app.buttons["保存修改"].tap()
         XCTAssertTrue(
-            app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS %@", "#产品")
-            ).firstMatch.waitForExistence(timeout: 5)
+            app.staticTexts["标签 产品"].waitForExistence(timeout: 5)
         )
     }
 
@@ -244,7 +240,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         addExampleURL(in: app)
         XCTAssertTrue(
-            app.staticTexts["Example Domain"].waitForExistence(timeout: 30)
+            app.staticTexts[exampleTitle].waitForExistence(timeout: 30)
         )
 
         app.terminate()
@@ -254,7 +250,7 @@ final class KnowledgeIOSUITests: XCTestCase {
             bypassIdentifier: "native-owner-b@memo.local"
         )
         XCTAssertTrue(app.buttons["添加第 1 条"].waitForExistence(timeout: 8))
-        XCTAssertFalse(app.cells["Example Domain"].exists)
+        XCTAssertFalse(app.cells[exampleTitle].exists)
 
         app.terminate()
         app = launchApp(
@@ -262,7 +258,7 @@ final class KnowledgeIOSUITests: XCTestCase {
             skipOnboarding: true,
             bypassIdentifier: "native-owner-a@memo.local"
         )
-        XCTAssertTrue(app.cells["Example Domain"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.cells[exampleTitle].waitForExistence(timeout: 8))
     }
 
     func testNativeNavigationSupportsAccessibilityTextSize() {
@@ -285,8 +281,12 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         addExampleURL(in: app)
         XCTAssertTrue(
-            app.staticTexts["Example Domain"].waitForExistence(timeout: 30)
+            app.staticTexts[exampleTitle].waitForExistence(timeout: 30)
         )
+        let item = app.cells[exampleTitle]
+        XCTAssertTrue(item.waitForExistence(timeout: 5))
+        item.tap()
+        XCTAssertTrue(app.staticTexts["一句话摘要"].waitForExistence(timeout: 5))
         return app
     }
 
@@ -361,6 +361,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         app.launchEnvironment["KNOWLEDGE_BYPASS_IDENTIFIER"] = bypassIdentifier
         app.launchEnvironment["KNOWLEDGE_RESET_AUTH_ON_LAUNCH"] =
             resetAuth ? "1" : "0"
+        app.launchEnvironment["KNOWLEDGE_UI_TEST_FIXTURE"] = "1"
         app.launch()
         return app
     }

@@ -156,9 +156,7 @@ final class MemoRootViewController: UIViewController {
                 showItem(item)
             }
         case "07-processing":
-            if let item = application.items.first(where: { $0.status != .ready }) {
-                showProcessing(item)
-            }
+            break
         case "11-edit-tags":
             if let item = application.items.first {
                 showTagEditor(item)
@@ -173,10 +171,8 @@ final class MemoRootViewController: UIViewController {
         let controller = AddContentViewController()
         controller.onSubmit = { [weak self, weak controller] rawURL in
             guard let self else { return }
-            let item = try await application.addURL(rawURL)
-            controller?.dismiss(animated: true) { [weak self] in
-                self?.showProcessing(item)
-            }
+            _ = try await application.addURL(rawURL)
+            controller?.dismiss(animated: true)
         }
         let navigation = UINavigationController(rootViewController: controller)
         MemoStyle.configureNavigationBar(navigation.navigationBar)
@@ -190,28 +186,13 @@ final class MemoRootViewController: UIViewController {
         rootNavigationController.pushViewController(controller, animated: true)
     }
 
-    private func showProcessing(_ item: KnowledgeItem) {
-        let controller = ProcessingViewController(
-            application: application,
-            item: item
-        )
-        controller.onReady = { [weak self, weak controller] item in
-            guard let self, let controller,
-                  rootNavigationController.topViewController === controller else {
-                return
-            }
-            let detail = makeDetailController(item)
-            var controllers = rootNavigationController.viewControllers
-            controllers.removeLast()
-            controllers.append(detail)
-            rootNavigationController.setViewControllers(controllers, animated: true)
-        }
-        rootNavigationController.pushViewController(controller, animated: true)
-    }
-
     private func showItem(_ item: KnowledgeItem) {
-        if item.status != .ready {
-            showProcessing(item)
+        guard item.status == .ready else {
+            if item.status == .failed {
+                Task { @MainActor [weak self] in
+                    _ = try? await self?.application.retry(itemID: item.id)
+                }
+            }
             return
         }
         rootNavigationController.pushViewController(

@@ -190,7 +190,7 @@ enum MemoStyle {
     static func tagPill(_ tag: String) -> UILabel {
         let label = MemoTagPillLabel()
         label.text = "#\(tag)"
-        label.font = .preferredFont(forTextStyle: .caption1)
+        label.font = .preferredFont(forTextStyle: .caption2)
         label.adjustsFontForContentSizeCategory = true
         label.textColor = orange
         label.backgroundColor = orange.withAlphaComponent(0.11)
@@ -218,7 +218,7 @@ enum MemoStyle {
 }
 
 final class MemoTagPillLabel: UILabel {
-    private let insets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
+    private let insets = UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
 
     override func drawText(in rect: CGRect) {
         super.drawText(in: rect.inset(by: insets))
