@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
-import { loadConfig, type AppConfig } from "../src/config.js";
-import { RefreshTokenModel } from "../src/features/auth/refresh-token.model.js";
-import { UserModel } from "../src/features/auth/user.model.js";
-import { MockVideoProcessor } from "../src/features/video/mock-video.processor.js";
-import { ProcessingTaskModel } from "../src/features/video/processing-task.model.js";
-import { SourceItemModel } from "../src/features/video/source-item.model.js";
-import { disconnectDatabase, connectDatabase } from "../src/shared/db/mongoose.js";
-import { createLogger } from "../src/shared/logger/logger.js";
+import { createApp } from "../src/bootstrap/create-http-app.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
+import { RefreshTokenModel } from "../src/modules/auth/adapters/mongo/refresh-token.model.js";
+import { UserModel } from "../src/modules/auth/adapters/mongo/user.model.js";
+import { MockVideoProcessor } from "../src/integrations/analysis/local/mock-video.processor.js";
+import { ProcessingTaskModel } from "../src/modules/processing/adapters/mongo/processing-task.model.js";
+import { SourceItemModel } from "../src/modules/library/adapters/mongo/source-item.model.js";
+import { disconnectDatabase, connectDatabase } from "../src/platform/database/mongoose.js";
+import { createLogger } from "../src/platform/observability/logger.js";
 
 let mongo: MongoMemoryServer;
 let config: AppConfig;
@@ -402,6 +402,14 @@ describe("视频解析和承接文案", () => {
     expect(item.body.data.copywriting.oneSentenceSummary).toBeTruthy();
     expect(item.body.data.copywriting.keyPoints.length).toBeGreaterThan(0);
     expect(item.body.data.copywriting.markdown).toContain("## 关键观点");
+
+    const updated = await api
+      .patch(`/api/v1/items/${itemId}`)
+      .set("Authorization", authorization)
+      .send({ tags: ["架构", "重构", "架构"], isFavorite: true });
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.tags).toEqual(["架构", "重构"]);
+    expect(updated.body.data.isFavorite).toBe(true);
 
     const list = await api
       .get("/api/v1/items?page=1&pageSize=20")

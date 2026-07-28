@@ -1,0 +1,523 @@
+openapi: 3.1.0
+info:
+  title: Memo 内容与视频解析 API
+  version: 1.0.0
+  description: 注册登录、视频/音频解析任务、结构化文案和收藏内容接口。
+servers:
+  - url: http://127.0.0.1:3100
+    description: 本地开发
+tags:
+  - name: Auth
+  - name: Captures
+  - name: Tasks
+  - name: Items
+  - name: System
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: 服务存活检查
+      responses:
+        "200":
+          description: 服务存活
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+  /ready:
+    get:
+      tags: [System]
+      summary: 服务就绪检查
+      responses:
+        "200":
+          description: MongoDB 已连接
+        "503":
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: 注册
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: 登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 刷新并轮换令牌
+      requestBody:
+        $ref: "#/components/requestBodies/RefreshToken"
+      responses:
+        "200":
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: 退出
+      requestBody:
+        $ref: "#/components/requestBodies/RefreshToken"
+      responses:
+        "204":
+          description: 退出成功
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: 当前用户
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 当前用户
+        "401":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Auth]
+      summary: 删除当前账号及其数据
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountRequest"
+      responses:
+        "204":
+          description: 账号已删除
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/me/password:
+    patch:
+      tags: [Auth]
+      summary: 修改当前账号密码并撤销旧会话
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: 密码已修改并返回新登录会话
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/Error"
+  /api/v1/captures:
+    post:
+      tags: [Captures]
+      summary: 提交视频链接
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCaptureRequest"
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/Error"
+  /api/v1/captures/upload:
+    post:
+      tags: [Captures]
+      summary: 上传音视频
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                quality:
+                  $ref: "#/components/schemas/Quality"
+                language:
+                  $ref: "#/components/schemas/Language"
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "413":
+          $ref: "#/components/responses/Error"
+        "415":
+          $ref: "#/components/responses/Error"
+  /api/v1/tasks/{taskId}:
+    get:
+      tags: [Tasks]
+      summary: 查询任务
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: 任务详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/tasks/{taskId}/events:
+    get:
+      tags: [Tasks]
+      summary: 任务实时日志 SSE
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: SSE 流
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /api/v1/items:
+    get:
+      tags: [Items]
+      summary: 收藏列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [processing, completed, failed]
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: 收藏列表
+  /api/v1/items/{sourceId}:
+    get:
+      tags: [Items]
+      summary: 内容详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "200":
+          description: 内容详情
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Items]
+      summary: 更新内容标签或收藏状态
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                tags:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 50
+                isFavorite:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新后的内容
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Items]
+      summary: 删除内容
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "204":
+          description: 删除成功
+        "404":
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TaskId:
+      in: path
+      name: taskId
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+    SourceId:
+      in: path
+      name: sourceId
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+  requestBodies:
+    RefreshToken:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [refreshToken]
+            properties:
+              refreshToken:
+                type: string
+                minLength: 32
+  responses:
+    Error:
+      description: 失败响应
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Success:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data: {}
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details: {}
+            requestId:
+              type: string
+              format: uuid
+    RegisterRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: 邮箱、中国大陆手机号或 E.164 国际手机号
+          examples: [user@example.com, "13800138000", "+14155552671"]
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        nickname:
+          type: string
+          maxLength: 40
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: 注册时使用的手机号或邮箱
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+          maxLength: 72
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 72
+          description: 必须同时包含字母和数字，且不能与当前密码相同
+    DeleteAccountRequest:
+      type: object
+      required: [currentPassword]
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+          maxLength: 72
+    AuthResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [user, accessToken, refreshToken, tokenType]
+          properties:
+            user:
+              type: object
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            tokenType:
+              type: string
+              const: Bearer
+    Quality:
+      type: string
+      enum: [fast, balanced, accurate]
+      default: balanced
+    Language:
+      type: string
+      enum: [zh, en, ja, auto]
+      default: zh
+    CreateCaptureRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: 支持纯链接，也支持包含分享文案和一个或多个 HTTP(S) 链接的完整文本；服务端会提取首个受支持的平台链接。
+          example: "复制这段分享文案 https://v.douyin.com/example/ 打开抖音查看"
+        quality:
+          $ref: "#/components/schemas/Quality"
+        language:
+          $ref: "#/components/schemas/Language"
+    ProcessingTask:
+      type: object
+      required: [_id, sourceItemId, status, stage, progress]
+      properties:
+        _id:
+          type: string
+        sourceItemId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        stage:
+          type: string
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+        contentKind:
+          type: string
+          enum: [image_post, short_video, long_video]
+        analysisMode:
+          type: string
+          enum: [minimax_m3_multimodal, asr_then_summary]
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    TaskResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/ProcessingTask"

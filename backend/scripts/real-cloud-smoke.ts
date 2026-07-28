@@ -1,12 +1,12 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { ArkCopywriter } from "../src/features/video/ark-copywriter.js";
-import { VolcAsrVideoProcessor } from "../src/features/video/volc-asr-video.processor.js";
+import { ArkCopywriter } from "../src/integrations/generation/ark/ark-copywriter.js";
+import { VolcAsrVideoProcessor } from "../src/integrations/transcription/volc/volc-asr-video.processor.js";
 import type {
   CopywritingResult,
   TranscriptResult,
-} from "../src/features/video/video.types.js";
-import { loadConfig } from "../src/config.js";
+} from "../src/modules/processing/domain/video.types.js";
+import { loadConfig } from "../src/platform/config/app-config.js";
 
 const source = process.env.REAL_VIDEO_URL?.trim();
 const providerTaskId = process.env.REAL_VOLC_REQUEST_ID?.trim();

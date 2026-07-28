@@ -1,0 +1,11 @@
+{
+  "data": {
+    "accessToken": "fixture-access-token",
+    "refreshToken": "fixture-refresh-token",
+    "user": {
+      "id": "fixture-user-id",
+      "identifier": "fixture@example.com",
+      "nickname": "Fixture User"
+    }
+  }
+}

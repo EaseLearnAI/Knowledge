@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildSignedBilibiliMediaUrl,
   createBilibiliMediaProxyRouter,
-} from "../src/features/video/bilibili-media-proxy.js";
-import { AppError } from "../src/shared/errors/app-error.js";
+} from "../src/integrations/media/bilibili-media-proxy.js";
+import { AppError } from "../src/platform/http/errors/app-error.js";
 
 const config = {
   jwtAccessSecret: "test-secret-with-at-least-thirty-two-characters",

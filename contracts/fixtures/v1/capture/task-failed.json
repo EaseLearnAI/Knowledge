@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "sourceItemId": "507f1f77bcf86cd799439012",
+    "status": "failed",
+    "stage": "failed",
+    "progress": 48,
+    "attempts": 3,
+    "error": {
+      "code": "VIDEO_TASK_FAILED",
+      "message": "视频处理失败"
+    }
+  }
+}

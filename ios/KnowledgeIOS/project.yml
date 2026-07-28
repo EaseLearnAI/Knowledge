@@ -17,7 +17,7 @@ targets:
     type: application
     platform: iOS
     info:
-      path: KnowledgeIOS/Info.plist
+      path: KnowledgeIOS/Resources/Info.plist
       properties:
         CFBundleDisplayName: Memo
         ITSAppUsesNonExemptEncryption: false
@@ -56,6 +56,20 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
         TEST_TARGET_NAME: KnowledgeIOS
 
+  KnowledgeIOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: KnowledgeIOSTests
+    dependencies:
+      - target: KnowledgeIOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.easelearn.knowledge.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Memo.app/Memo"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
 schemes:
   KnowledgeIOS:
     build:
@@ -63,7 +77,10 @@ schemes:
         KnowledgeIOS: all
         KnowledgeIOSUITests:
           - test
+        KnowledgeIOSTests:
+          - test
     test:
       gatherCoverageData: true
       targets:
+        - KnowledgeIOSTests
         - KnowledgeIOSUITests

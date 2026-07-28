@@ -2,20 +2,20 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadConfig, type AppConfig } from "../src/config.js";
-import { AppError } from "../src/shared/errors/app-error.js";
-import { ArkCopywriter } from "../src/features/video/ark-copywriter.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
+import { AppError } from "../src/platform/http/errors/app-error.js";
+import { ArkCopywriter } from "../src/integrations/generation/ark/ark-copywriter.js";
 import {
   ArkResponseClient,
   type ArkClient,
   type ArkResponseResult,
-} from "../src/features/video/ark-response.client.js";
+} from "../src/integrations/generation/ark/ark-response.client.js";
 import {
   ArkVideoProcessor,
   mapAudioPreparationError,
   type AudioPreparer,
-} from "../src/features/video/ark-video.processor.js";
-import type { TranscriptResult } from "../src/features/video/video.types.js";
+} from "../src/integrations/analysis/ark/ark-video.processor.js";
+import type { TranscriptResult } from "../src/modules/processing/domain/video.types.js";
 
 const config: AppConfig = {
   ...loadConfig({ NODE_ENV: "test" }),

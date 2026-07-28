@@ -7,26 +7,49 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		143E1FBBA0E0BC56EC8A426A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D2E2C380722349006134AFC7 /* PrivacyInfo.xcprivacy */; };
+		0CA1059CBC30D0845E220115 /* MemoApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C7B369528B59313FF20DF9 /* MemoApplication.swift */; };
+		0CF004CA395BC0A22E417473 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 737515883378D4CD259DEC99 /* Assets.xcassets */; };
+		10E04D517DFA4DBE21BCAAF7 /* MemoRootViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CAEE133321CE07DCE28C7BC /* MemoRootViewController.swift */; };
 		20AD930CAF0CB185E690DE16 /* KnowledgeIOSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D0332A38229864C2DBFB48 /* KnowledgeIOSUITests.swift */; };
-		30F0404BCF1D874DEE1DBADC /* ContentProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A491E50BBA01B036B8F7532 /* ContentProcessor.swift */; };
-		4CF71BF48449AD4831579E27 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA1CCE6BF1EF0BB9C6B4353 /* AIService.swift */; };
-		5589DF39B5E892C5D8E7879D /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9DB9073684C810A5858293 /* OnboardingViewController.swift */; };
-		5D6E87029709D2CFD0803F8F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7D51FF88A1892AD4E16ED /* AppDelegate.swift */; };
-		6C264C79768D148F9901CC82 /* ContentViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1B2FE464BDEDAC23BB6E3D /* ContentViewControllers.swift */; };
-		6D56EB789CBB40FA65B22580 /* MemoRootViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C524528BADC1AD32B59B5BF8 /* MemoRootViewController.swift */; };
-		6DE95AED96E69E63CB41D1C6 /* AuthViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1382EE6D374B80DEB05B118 /* AuthViewControllers.swift */; };
-		776B8A2058BF6374A6BAB199 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE22F58087E9AA9A5653128 /* Models.swift */; };
-		7AEDA48EC54B96ACD0221E63 /* SettingsViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4A76EE3CBBC18011DB9EE0 /* SettingsViewControllers.swift */; };
-		7ED4D524EF09C904EBD70D9F /* LibraryViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98301D521942C272C9F468DF /* LibraryViewControllers.swift */; };
-		84186A817CE4C8B5B7FA909E /* MemoApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE65865ABF2AB2E21BC8DC3 /* MemoApplication.swift */; };
-		D377D7D2AAF4A7DB4B44A164 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603FB3B2A6E6DBF60062A5B7 /* LibraryStore.swift */; };
-		D876DA1FB8FB96EA6B3204CC /* NativeUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FC7BD62400CA67867BE3C8 /* NativeUIComponents.swift */; };
-		E5F13B6B42FA952B75E95851 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01141A762D022B851673CE8A /* AuthService.swift */; };
-		F69606B03B4FB65A4EA0A663 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FE9DA2C56C0A2C6341B365BA /* Assets.xcassets */; };
+		23EA6A3845F639A9A8F9B7F9 /* MemoStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D229D50C86F1A4199DD0A46 /* MemoStyle.swift */; };
+		3D4CE850D22FD5FB5982B160 /* SharedVideoURLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3420FE8AA7074667DF88FE75 /* SharedVideoURLParser.swift */; };
+		47FE529C02CBDE97C22E6485 /* ArchitectureBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9252A41B9AB12EB97324745A /* ArchitectureBoundaryTests.swift */; };
+		4F80923CAB20618E5836B0F9 /* KnowledgeItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1012D276475D63B145264CEF /* KnowledgeItemCell.swift */; };
+		5E3B9D0BB7061C2163949A65 /* ContentProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7221CA1150E28A47F871CEFB /* ContentProcessor.swift */; };
+		5E8AAA32CC1B6E45ECB45C1B /* MemoLoadingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A1AC69273B699B4480518A /* MemoLoadingViewController.swift */; };
+		64C29BD1815F72CB9A24A7A4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 04771FB5282E124A0D4EEE3C /* PrivacyInfo.xcprivacy */; };
+		6DE2488E748EB27D0887FB7E /* TagEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0EFE9F0DFFFBD2848C48F /* TagEditorViewController.swift */; };
+		7C637B7ED4D2E37761D4EB0E /* LibraryFeatureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E826E52E0E784148081BF3FC /* LibraryFeatureService.swift */; };
+		7E86217CBEA6A767EAC924C9 /* AuthFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11FDDF7F4F27921F8FA06E81 /* AuthFormViewController.swift */; };
+		80525D9C559E9992A2A5F05E /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E00B1CAFC48CF44401EB8C /* SearchViewController.swift */; };
+		80F6B9FD749D9595A73103BA /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D336C88814313273AFC503FF /* AuthRepository.swift */; };
+		8AE3909B7DF42B880B3A8262 /* MemoSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29555AEE4C2C7EE93D69D606 /* MemoSettingsViewController.swift */; };
+		90DA547F41FDC5DD831D67F0 /* AuthIntroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE2F6B3CB153B46D14C4ADE /* AuthIntroViewController.swift */; };
+		939ECE6D2DE4BB10D029EDA2 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34620B12CF7DA136DC72A79A /* AuthService.swift */; };
+		95EC1601E78D5AB34365DCFE /* MemoTagPillLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B66A526CBDDC73F33E9B67 /* MemoTagPillLabel.swift */; };
+		99439ED4D9A29C036F1889D5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C599D50E453C085B6DF439 /* AppDelegate.swift */; };
+		9A84757BF990D091FEAADF88 /* MemoDrawerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE4D63A8B31F6FB8631B9F7 /* MemoDrawerViewController.swift */; };
+		A7223EAAB8A449725132E065 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22C4EF8292EB49A4F8A265B /* DetailViewController.swift */; };
+		AC74D8EA3C08D60FB46215BD /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FEC25259530F088EA28AF9B /* AuthModels.swift */; };
+		B41B665C501D9D40AD8CD44C /* AppCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED420035F79ABE8F3446A086 /* AppCompositionRoot.swift */; };
+		B4A355D7DA6609DF3832BD3E /* CaptureModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D6B09585189495F0BBB40F /* CaptureModels.swift */; };
+		C8D16CC1A22DF66E9626C0A0 /* KnowledgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A307DCB09056793AB1ED3C2 /* KnowledgeItem.swift */; };
+		D129E15027013D6522969BB2 /* ChangePasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59FC61401550B67D5CE9CD5B /* ChangePasswordViewController.swift */; };
+		D3FC79D8A444C525CA29D252 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 456667F6F5EBC2AEAF8F86BC /* LibraryStore.swift */; };
+		E11D9DDD8929C7CD31FC22C9 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71C42FCC5CFB428B183B8F9D /* OnboardingViewController.swift */; };
+		EED0839AA62F237B4183C3B1 /* AddContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B731F2209C7D7B8E65C7B5DA /* AddContentViewController.swift */; };
+		F79E63BB96A1DA5A41D23564 /* LibrarySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = E669854DB35AB78A5A01056E /* LibrarySnapshot.swift */; };
+		FEB3B5FDEF6B89095177FA0E /* LibraryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FBFE7233799A4759128203 /* LibraryViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		3B4BA7C2330E57A8A3A1D802 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FE8C8649E1730BE47FBCAEBE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED0ED904A564886CA110FBCD;
+			remoteInfo = KnowledgeIOS;
+		};
 		CFE88DB19702C464BAC2D089 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FE8C8649E1730BE47FBCAEBE /* Project object */;
@@ -37,49 +60,64 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		01141A762D022B851673CE8A /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		0A491E50BBA01B036B8F7532 /* ContentProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProcessor.swift; sourceTree = "<group>"; };
-		1B4A76EE3CBBC18011DB9EE0 /* SettingsViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewControllers.swift; sourceTree = "<group>"; };
-		3DA1CCE6BF1EF0BB9C6B4353 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
-		603FB3B2A6E6DBF60062A5B7 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
-		6D9DB9073684C810A5858293 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		04771FB5282E124A0D4EEE3C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		05C599D50E453C085B6DF439 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		05FBFE7233799A4759128203 /* LibraryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewController.swift; sourceTree = "<group>"; };
+		1012D276475D63B145264CEF /* KnowledgeItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeItemCell.swift; sourceTree = "<group>"; };
+		11FDDF7F4F27921F8FA06E81 /* AuthFormViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFormViewController.swift; sourceTree = "<group>"; };
+		29555AEE4C2C7EE93D69D606 /* MemoSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoSettingsViewController.swift; sourceTree = "<group>"; };
+		3420FE8AA7074667DF88FE75 /* SharedVideoURLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedVideoURLParser.swift; sourceTree = "<group>"; };
+		34620B12CF7DA136DC72A79A /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		456667F6F5EBC2AEAF8F86BC /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		48E00B1CAFC48CF44401EB8C /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
+		59FC61401550B67D5CE9CD5B /* ChangePasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordViewController.swift; sourceTree = "<group>"; };
+		5CAEE133321CE07DCE28C7BC /* MemoRootViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoRootViewController.swift; sourceTree = "<group>"; };
+		64D6B09585189495F0BBB40F /* CaptureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
+		71C42FCC5CFB428B183B8F9D /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		7221CA1150E28A47F871CEFB /* ContentProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProcessor.swift; sourceTree = "<group>"; };
+		737515883378D4CD259DEC99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7798FAEE744FF74B248A647A /* KnowledgeIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KnowledgeIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8E1B2FE464BDEDAC23BB6E3D /* ContentViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewControllers.swift; sourceTree = "<group>"; };
-		93FC7BD62400CA67867BE3C8 /* NativeUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeUIComponents.swift; sourceTree = "<group>"; };
-		98301D521942C272C9F468DF /* LibraryViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewControllers.swift; sourceTree = "<group>"; };
-		9AE22F58087E9AA9A5653128 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		BDB7D51FF88A1892AD4E16ED /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		C524528BADC1AD32B59B5BF8 /* MemoRootViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoRootViewController.swift; sourceTree = "<group>"; };
+		7A307DCB09056793AB1ED3C2 /* KnowledgeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeItem.swift; sourceTree = "<group>"; };
+		7FEC25259530F088EA28AF9B /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		89B66A526CBDDC73F33E9B67 /* MemoTagPillLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoTagPillLabel.swift; sourceTree = "<group>"; };
+		8E7A728710536E3600B8D334 /* KnowledgeIOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KnowledgeIOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9252A41B9AB12EB97324745A /* ArchitectureBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureBoundaryTests.swift; sourceTree = "<group>"; };
+		9D229D50C86F1A4199DD0A46 /* MemoStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoStyle.swift; sourceTree = "<group>"; };
+		A5A1AC69273B699B4480518A /* MemoLoadingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLoadingViewController.swift; sourceTree = "<group>"; };
+		ADE4D63A8B31F6FB8631B9F7 /* MemoDrawerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoDrawerViewController.swift; sourceTree = "<group>"; };
+		B6C7B369528B59313FF20DF9 /* MemoApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoApplication.swift; sourceTree = "<group>"; };
+		B731F2209C7D7B8E65C7B5DA /* AddContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddContentViewController.swift; sourceTree = "<group>"; };
+		BBA0EFE9F0DFFFBD2848C48F /* TagEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagEditorViewController.swift; sourceTree = "<group>"; };
+		C281818032EA9A0EFFD6BF18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D1D0332A38229864C2DBFB48 /* KnowledgeIOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeIOSUITests.swift; sourceTree = "<group>"; };
-		D2E2C380722349006134AFC7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D336C88814313273AFC503FF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
 		D6F7B45D9DFD3C7B9D4AA7A2 /* KnowledgeIOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KnowledgeIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1382EE6D374B80DEB05B118 /* AuthViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewControllers.swift; sourceTree = "<group>"; };
-		E66549C56E4ECA71ADC312BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		EAE65865ABF2AB2E21BC8DC3 /* MemoApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoApplication.swift; sourceTree = "<group>"; };
-		FE9DA2C56C0A2C6341B365BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E22C4EF8292EB49A4F8A265B /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
+		E669854DB35AB78A5A01056E /* LibrarySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySnapshot.swift; sourceTree = "<group>"; };
+		E826E52E0E784148081BF3FC /* LibraryFeatureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFeatureService.swift; sourceTree = "<group>"; };
+		ED420035F79ABE8F3446A086 /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
+		FBE2F6B3CB153B46D14C4ADE /* AuthIntroViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthIntroViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		00C558D5D1999F76EA55FD3B /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				1012D276475D63B145264CEF /* KnowledgeItemCell.swift */,
+				05FBFE7233799A4759128203 /* LibraryViewController.swift */,
+				ADE4D63A8B31F6FB8631B9F7 /* MemoDrawerViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		111379856D7762BA5D85BDC2 /* KnowledgeIOS */ = {
 			isa = PBXGroup;
 			children = (
-				3DA1CCE6BF1EF0BB9C6B4353 /* AIService.swift */,
-				BDB7D51FF88A1892AD4E16ED /* AppDelegate.swift */,
-				FE9DA2C56C0A2C6341B365BA /* Assets.xcassets */,
-				01141A762D022B851673CE8A /* AuthService.swift */,
-				E1382EE6D374B80DEB05B118 /* AuthViewControllers.swift */,
-				0A491E50BBA01B036B8F7532 /* ContentProcessor.swift */,
-				8E1B2FE464BDEDAC23BB6E3D /* ContentViewControllers.swift */,
-				E66549C56E4ECA71ADC312BA /* Info.plist */,
-				603FB3B2A6E6DBF60062A5B7 /* LibraryStore.swift */,
-				98301D521942C272C9F468DF /* LibraryViewControllers.swift */,
-				EAE65865ABF2AB2E21BC8DC3 /* MemoApplication.swift */,
-				C524528BADC1AD32B59B5BF8 /* MemoRootViewController.swift */,
-				9AE22F58087E9AA9A5653128 /* Models.swift */,
-				93FC7BD62400CA67867BE3C8 /* NativeUIComponents.swift */,
-				6D9DB9073684C810A5858293 /* OnboardingViewController.swift */,
-				D2E2C380722349006134AFC7 /* PrivacyInfo.xcprivacy */,
-				1B4A76EE3CBBC18011DB9EE0 /* SettingsViewControllers.swift */,
+				6B09546829506FF170FCE2CB /* App */,
+				DE61DD90A18E24192D5282F1 /* Features */,
+				A5D6B0565F2AD7E036037FA4 /* Resources */,
+				E3AAD38D77F5A4BE2D69CA31 /* Shared */,
+				1D432D5E3850009E020A690C /* Support */,
 			);
 			path = KnowledgeIOS;
 			sourceTree = "<group>";
@@ -88,9 +126,86 @@
 			isa = PBXGroup;
 			children = (
 				111379856D7762BA5D85BDC2 /* KnowledgeIOS */,
+				A481E118BE3E83F9718AEDF3 /* KnowledgeIOSTests */,
 				5A95B60AD3A6AFD57A7CF360 /* KnowledgeIOSUITests */,
 				6AF07B6A2534CC775E0BB527 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		194AD2BA51211B4ADCFC547D /* ContentDetail */ = {
+			isa = PBXGroup;
+			children = (
+				A7C0C4AD4A4BE99C2F31B065 /* UI */,
+			);
+			path = ContentDetail;
+			sourceTree = "<group>";
+		};
+		1A20048B08C302341B066F29 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				7FEC25259530F088EA28AF9B /* AuthModels.swift */,
+				D336C88814313273AFC503FF /* AuthRepository.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		1D432D5E3850009E020A690C /* Support */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		261B66090C73E14A2F537B67 /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				28A3DB0D5C8B0D78BF147BFF /* Data */,
+				60BE66822987B4ADC5A39A21 /* Domain */,
+				CBFE0834EE02AB3D48DF041D /* UI */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		28A3DB0D5C8B0D78BF147BFF /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				7221CA1150E28A47F871CEFB /* ContentProcessor.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		321DAC7B201772A6E1EF7DB5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				59FC61401550B67D5CE9CD5B /* ChangePasswordViewController.swift */,
+				29555AEE4C2C7EE93D69D606 /* MemoSettingsViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		4A92119EBB13690429DF023A /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				34620B12CF7DA136DC72A79A /* AuthService.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		54BD653AF9CC11CC8BECD9E7 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				11FDDF7F4F27921F8FA06E81 /* AuthFormViewController.swift */,
+				FBE2F6B3CB153B46D14C4ADE /* AuthIntroViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		55C43037F2CB70057E14EA8D /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				71C42FCC5CFB428B183B8F9D /* OnboardingViewController.swift */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 		5A95B60AD3A6AFD57A7CF360 /* KnowledgeIOSUITests */ = {
@@ -101,18 +216,226 @@
 			path = KnowledgeIOSUITests;
 			sourceTree = "<group>";
 		};
+		5F314D709854366D1F963443 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				D648137ECA2BFE5DB5728D1A /* UI */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		60BE66822987B4ADC5A39A21 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				64D6B09585189495F0BBB40F /* CaptureModels.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
 		6AF07B6A2534CC775E0BB527 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				7798FAEE744FF74B248A647A /* KnowledgeIOS.app */,
+				8E7A728710536E3600B8D334 /* KnowledgeIOSTests.xctest */,
 				D6F7B45D9DFD3C7B9D4AA7A2 /* KnowledgeIOSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
+		6B09546829506FF170FCE2CB /* App */ = {
+			isa = PBXGroup;
+			children = (
+				ED420035F79ABE8F3446A086 /* AppCompositionRoot.swift */,
+				05C599D50E453C085B6DF439 /* AppDelegate.swift */,
+				B6C7B369528B59313FF20DF9 /* MemoApplication.swift */,
+				5CAEE133321CE07DCE28C7BC /* MemoRootViewController.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		6B895F183A5EA39951ACDC6C /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				55C43037F2CB70057E14EA8D /* UI */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		715B42718CD0E1E2AAE7323B /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				89B66A526CBDDC73F33E9B67 /* MemoTagPillLabel.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		7F827E570F6E27242A3D0456 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				456667F6F5EBC2AEAF8F86BC /* LibraryStore.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		93816F031652A71BC0ADB6D2 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				3420FE8AA7074667DF88FE75 /* SharedVideoURLParser.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		9A4FD569650FFA5721B207A6 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				321DAC7B201772A6E1EF7DB5 /* UI */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A481E118BE3E83F9718AEDF3 /* KnowledgeIOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				9252A41B9AB12EB97324745A /* ArchitectureBoundaryTests.swift */,
+			);
+			path = KnowledgeIOSTests;
+			sourceTree = "<group>";
+		};
+		A5D6B0565F2AD7E036037FA4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				737515883378D4CD259DEC99 /* Assets.xcassets */,
+				C281818032EA9A0EFFD6BF18 /* Info.plist */,
+				04771FB5282E124A0D4EEE3C /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A70C1A4A15007168C0B870F6 /* Foundation */ = {
+			isa = PBXGroup;
+			children = (
+				9D229D50C86F1A4199DD0A46 /* MemoStyle.swift */,
+			);
+			path = Foundation;
+			sourceTree = "<group>";
+		};
+		A7C0C4AD4A4BE99C2F31B065 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				E22C4EF8292EB49A4F8A265B /* DetailViewController.swift */,
+				BBA0EFE9F0DFFFBD2848C48F /* TagEditorViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		C59168D159B3A07AFB4DBE14 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				715B42718CD0E1E2AAE7323B /* Components */,
+				E926CE795A1D335399102AA4 /* Feedback */,
+				A70C1A4A15007168C0B870F6 /* Foundation */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		CBFE0834EE02AB3D48DF041D /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B731F2209C7D7B8E65C7B5DA /* AddContentViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		D025E73EFB50F59A94D188CE /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				7F827E570F6E27242A3D0456 /* Data */,
+				D1A66AD1CA2866FB89CAE9F9 /* Domain */,
+				00C558D5D1999F76EA55FD3B /* UI */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		D1A66AD1CA2866FB89CAE9F9 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				7A307DCB09056793AB1ED3C2 /* KnowledgeItem.swift */,
+				E826E52E0E784148081BF3FC /* LibraryFeatureService.swift */,
+				E669854DB35AB78A5A01056E /* LibrarySnapshot.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		D648137ECA2BFE5DB5728D1A /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				48E00B1CAFC48CF44401EB8C /* SearchViewController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		DE61DD90A18E24192D5282F1 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				FB566C85CECE67F3BFE6DA26 /* Auth */,
+				261B66090C73E14A2F537B67 /* Capture */,
+				194AD2BA51211B4ADCFC547D /* ContentDetail */,
+				D025E73EFB50F59A94D188CE /* Library */,
+				6B895F183A5EA39951ACDC6C /* Onboarding */,
+				5F314D709854366D1F963443 /* Search */,
+				9A4FD569650FFA5721B207A6 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		E3AAD38D77F5A4BE2D69CA31 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C59168D159B3A07AFB4DBE14 /* DesignSystem */,
+				93816F031652A71BC0ADB6D2 /* Utilities */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		E926CE795A1D335399102AA4 /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				A5A1AC69273B699B4480518A /* MemoLoadingViewController.swift */,
+			);
+			path = Feedback;
+			sourceTree = "<group>";
+		};
+		FB566C85CECE67F3BFE6DA26 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				4A92119EBB13690429DF023A /* Data */,
+				1A20048B08C302341B066F29 /* Domain */,
+				54BD653AF9CC11CC8BECD9E7 /* UI */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8C5799DD7D4F2342CDC2CFB8 /* KnowledgeIOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60F72EFA7A74621AC08AD8E8 /* Build configuration list for PBXNativeTarget "KnowledgeIOSTests" */;
+			buildPhases = (
+				1F8AB0F041EBE7F4F72073EF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C3EC5C55FFF88A8CF386C8CE /* PBXTargetDependency */,
+			);
+			name = KnowledgeIOSTests;
+			packageProductDependencies = (
+			);
+			productName = KnowledgeIOSTests;
+			productReference = 8E7A728710536E3600B8D334 /* KnowledgeIOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		AA7076D735C8673DAFFD04B6 /* KnowledgeIOSUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 65EA37A81EDCDE6CC1D0B1E5 /* Build configuration list for PBXNativeTarget "KnowledgeIOSUITests" */;
@@ -182,6 +505,7 @@
 			projectRoot = "";
 			targets = (
 				ED0ED904A564886CA110FBCD /* KnowledgeIOS */,
+				8C5799DD7D4F2342CDC2CFB8 /* KnowledgeIOSTests */,
 				AA7076D735C8673DAFFD04B6 /* KnowledgeIOSUITests */,
 			);
 		};
@@ -192,32 +516,55 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F69606B03B4FB65A4EA0A663 /* Assets.xcassets in Resources */,
-				143E1FBBA0E0BC56EC8A426A /* PrivacyInfo.xcprivacy in Resources */,
+				0CF004CA395BC0A22E417473 /* Assets.xcassets in Resources */,
+				64C29BD1815F72CB9A24A7A4 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		1F8AB0F041EBE7F4F72073EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47FE529C02CBDE97C22E6485 /* ArchitectureBoundaryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A918EA36143D06724B1CD3CE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CF71BF48449AD4831579E27 /* AIService.swift in Sources */,
-				5D6E87029709D2CFD0803F8F /* AppDelegate.swift in Sources */,
-				E5F13B6B42FA952B75E95851 /* AuthService.swift in Sources */,
-				6DE95AED96E69E63CB41D1C6 /* AuthViewControllers.swift in Sources */,
-				30F0404BCF1D874DEE1DBADC /* ContentProcessor.swift in Sources */,
-				6C264C79768D148F9901CC82 /* ContentViewControllers.swift in Sources */,
-				D377D7D2AAF4A7DB4B44A164 /* LibraryStore.swift in Sources */,
-				7ED4D524EF09C904EBD70D9F /* LibraryViewControllers.swift in Sources */,
-				84186A817CE4C8B5B7FA909E /* MemoApplication.swift in Sources */,
-				6D56EB789CBB40FA65B22580 /* MemoRootViewController.swift in Sources */,
-				776B8A2058BF6374A6BAB199 /* Models.swift in Sources */,
-				D876DA1FB8FB96EA6B3204CC /* NativeUIComponents.swift in Sources */,
-				5589DF39B5E892C5D8E7879D /* OnboardingViewController.swift in Sources */,
-				7AEDA48EC54B96ACD0221E63 /* SettingsViewControllers.swift in Sources */,
+				EED0839AA62F237B4183C3B1 /* AddContentViewController.swift in Sources */,
+				B41B665C501D9D40AD8CD44C /* AppCompositionRoot.swift in Sources */,
+				99439ED4D9A29C036F1889D5 /* AppDelegate.swift in Sources */,
+				7E86217CBEA6A767EAC924C9 /* AuthFormViewController.swift in Sources */,
+				90DA547F41FDC5DD831D67F0 /* AuthIntroViewController.swift in Sources */,
+				AC74D8EA3C08D60FB46215BD /* AuthModels.swift in Sources */,
+				80F6B9FD749D9595A73103BA /* AuthRepository.swift in Sources */,
+				939ECE6D2DE4BB10D029EDA2 /* AuthService.swift in Sources */,
+				B4A355D7DA6609DF3832BD3E /* CaptureModels.swift in Sources */,
+				D129E15027013D6522969BB2 /* ChangePasswordViewController.swift in Sources */,
+				5E3B9D0BB7061C2163949A65 /* ContentProcessor.swift in Sources */,
+				A7223EAAB8A449725132E065 /* DetailViewController.swift in Sources */,
+				C8D16CC1A22DF66E9626C0A0 /* KnowledgeItem.swift in Sources */,
+				4F80923CAB20618E5836B0F9 /* KnowledgeItemCell.swift in Sources */,
+				7C637B7ED4D2E37761D4EB0E /* LibraryFeatureService.swift in Sources */,
+				F79E63BB96A1DA5A41D23564 /* LibrarySnapshot.swift in Sources */,
+				D3FC79D8A444C525CA29D252 /* LibraryStore.swift in Sources */,
+				FEB3B5FDEF6B89095177FA0E /* LibraryViewController.swift in Sources */,
+				0CA1059CBC30D0845E220115 /* MemoApplication.swift in Sources */,
+				9A84757BF990D091FEAADF88 /* MemoDrawerViewController.swift in Sources */,
+				5E8AAA32CC1B6E45ECB45C1B /* MemoLoadingViewController.swift in Sources */,
+				10E04D517DFA4DBE21BCAAF7 /* MemoRootViewController.swift in Sources */,
+				8AE3909B7DF42B880B3A8262 /* MemoSettingsViewController.swift in Sources */,
+				23EA6A3845F639A9A8F9B7F9 /* MemoStyle.swift in Sources */,
+				95EC1601E78D5AB34365DCFE /* MemoTagPillLabel.swift in Sources */,
+				E11D9DDD8929C7CD31FC22C9 /* OnboardingViewController.swift in Sources */,
+				80525D9C559E9992A2A5F05E /* SearchViewController.swift in Sources */,
+				3D4CE850D22FD5FB5982B160 /* SharedVideoURLParser.swift in Sources */,
+				6DE2488E748EB27D0887FB7E /* TagEditorViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +579,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		C3EC5C55FFF88A8CF386C8CE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED0ED904A564886CA110FBCD /* KnowledgeIOS */;
+			targetProxy = 3B4BA7C2330E57A8A3A1D802 /* PBXContainerItemProxy */;
+		};
 		EE5EC71B5D8BD45762A8F846 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = ED0ED904A564886CA110FBCD /* KnowledgeIOS */;
@@ -282,7 +634,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				INFOPLIST_FILE = KnowledgeIOS/Info.plist;
+				INFOPLIST_FILE = KnowledgeIOS/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -294,6 +646,40 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		7DD6E4C17D491967E1E91955 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.easelearn.knowledge.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Memo.app/Memo";
+			};
+			name = Debug;
+		};
+		CF72A415CD301C1885A9568E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.easelearn.knowledge.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Memo.app/Memo";
+			};
+			name = Release;
 		};
 		D2B36851ED88C998D3B2E447 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -426,7 +812,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				INFOPLIST_FILE = KnowledgeIOS/Info.plist;
+				INFOPLIST_FILE = KnowledgeIOS/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -456,6 +842,15 @@
 			buildConfigurations = (
 				598C8BCF842674D611249C01 /* Debug */,
 				EBFC8FD813B7ABBEF6FEA439 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		60F72EFA7A74621AC08AD8E8 /* Build configuration list for PBXNativeTarget "KnowledgeIOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7DD6E4C17D491967E1E91955 /* Debug */,
+				CF72A415CD301C1885A9568E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

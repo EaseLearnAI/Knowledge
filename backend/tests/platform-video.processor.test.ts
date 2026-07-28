@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { PlatformVideoProcessor } from "../src/features/video/platform-video.processor.js";
+import { PlatformVideoProcessor } from "../src/integrations/analysis/platform-video.processor.js";
 import type {
   TranscriptResult,
   VideoProcessor,
-} from "../src/features/video/video.types.js";
+} from "../src/modules/processing/domain/video.types.js";
 
 function processor(provider: string): VideoProcessor {
   return {

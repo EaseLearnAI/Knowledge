@@ -188,6 +188,6 @@ M3_BENCHMARK_CASES=REAL-04 npm run benchmark:m3
 ## 文档
 
 - [完整 API 文档](./api.md)
-- [OpenAPI 3.1](./docs/openapi.yaml)
+- [OpenAPI 3.1](../contracts/openapi/memo-v1.yaml)
 - [前端接入指南](./docs/前端接入指南.md)
 - [视频解析方案与改进总结](./docs/视频解析方案与改进总结.md)

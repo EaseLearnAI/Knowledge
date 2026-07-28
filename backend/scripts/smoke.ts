@@ -1,10 +1,10 @@
 import { createServer } from "node:http";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { createApp } from "../src/app.js";
-import { loadConfig, type AppConfig } from "../src/config.js";
-import { MockVideoProcessor } from "../src/features/video/mock-video.processor.js";
-import { connectDatabase, disconnectDatabase } from "../src/shared/db/mongoose.js";
-import { createLogger } from "../src/shared/logger/logger.js";
+import { createApp } from "../src/bootstrap/create-http-app.js";
+import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
+import { MockVideoProcessor } from "../src/integrations/analysis/local/mock-video.processor.js";
+import { connectDatabase, disconnectDatabase } from "../src/platform/database/mongoose.js";
+import { createLogger } from "../src/platform/observability/logger.js";
 
 const mongo = await MongoMemoryServer.create();
 const config: AppConfig = {

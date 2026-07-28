@@ -2,9 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadConfig } from "../src/config.js";
-import { DefaultModelMediaStager } from "../src/features/video/model-media-stager.js";
-import type { TemporaryObjectStore } from "../src/features/video/tos-object-store.js";
+import { loadConfig } from "../src/platform/config/app-config.js";
+import { DefaultModelMediaStager } from "../src/integrations/media/model-media-stager.js";
+import type { TemporaryObjectStore } from "../src/integrations/media/tos-object-store.js";
 
 const workspaces: string[] = [];
 

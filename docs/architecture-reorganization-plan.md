@@ -1,10 +1,19 @@
-# Memo 架构重组与组件化拆分方案（审批稿）
+# Memo 架构重组与组件化拆分方案（实施记录）
 
-> 状态：待审批
+> 状态：已实施（2026-07-28）
 > 规划分支：`codex/architecture-reorganization`
 > 基线：`main@406f9d21252a5dc02ada32ad185818874cdcbe38`
 > 参考文档：[飞书《工作树、分支与前后端重构逻辑》](https://vrfi1sk8a0.feishu.cn/docx/J0tsdiFAVopk2axFgaTcZFTjnTf)
-> 本稿只定义边界、目录、迁移顺序和验收标准；审批前不实施代码重构。
+> 本稿保留原始决策与迁移依据；实际落地结构见 [`docs/architecture/overview.md`](architecture/overview.md)。
+
+## 0. 实施结果
+
+- 根级契约已迁移到 `contracts/openapi/memo-v1.yaml`，并增加可执行 Fixture 与 Contract Test。
+- iOS 已按 `App / Features / Shared / Resources` 拆分，新增 Composition Root、Feature 协议和 Unit Test target。
+- 后端已按 `bootstrap / modules / integrations / platform` 拆分，HTTP 进程和 Worker 分别装配。
+- 一期未使用的 AI 问答、Conversation、Citation 运行时代码已从主架构清理。
+- Tag、收藏与删除已通过远端 `SourceItem` 同步，完成态保留远端 ID；旧设备本地存量的服务端权威切换仍遵循数据迁移前置条件，不做破坏性覆盖。
+- 验证结果：后端 Vitest 81 项与 Python 4 项通过、1 项真实本地视频测试按设计跳过；iOS 15 项测试全部通过。
 
 ## 1. 审批结论先行
 
@@ -772,11 +781,11 @@ queued
 - 不把所有小 View 都提成 Shared 组件；
 - 不在一期恢复 AI 问答、Citation、会话历史；
 - 不在结构迁移提交中顺手改变接口字段、状态文案或产品交互；
-- 不在审批前修改任何运行时代码。
+- 不把未经迁移策略确认的旧设备本地存量强制覆盖到服务端。
 
-## 12. 需要审批的决定
+## 12. 已执行的审批决定
 
-请审批以下 6 项。若没有特别调整，建议全部按“推荐”执行。
+以下 6 项已按推荐方案执行：
 
 | # | 决定 | 推荐方案 |
 |---:|---|---|
@@ -787,14 +796,15 @@ queued
 | 5 | API 契约方式 | 根级 OpenAPI + Fixture + Contract Test；暂不强制代码生成 |
 | 6 | 分支执行方式 | 在当前架构分支按阶段形成可验证小提交，全部通过后再合入 main |
 
-## 13. 审批通过后的第一批执行内容
+## 13. 实际执行顺序
 
-审批通过后，第一批只做“阶段 1：契约与测试护栏”，不会立即搬完整仓库：
+实施时先完成“阶段 1：契约与测试护栏”，再逐层迁移：
 
 1. 建立 `contracts/` 和 v1 Fixture；
 2. 增加 iOS Unit Test target；
 3. 为 Auth、Library、Capture 建立协议和 Characterization Test；
 4. 在不改变现有 UI/API 行为的前提下抽出第一个接缝；
-5. 提交第一批 diff 和测试结果，再继续 Auth 组件化。
+5. 完成 Auth、Library、Capture、Processing、Integrations 与 Platform 重组；
+6. 全量运行后端与 iOS 自动化测试，再提交当前架构分支。
 
-这样可以先证明新边界能够承接现有行为，再开始大文件拆分。
+详细现状、目录和依赖规则以 [`docs/architecture/`](architecture/) 下的实施文档为准。
