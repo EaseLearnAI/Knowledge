@@ -1,6 +1,6 @@
 import UIKit
 
-final class AddContentViewController: UIViewController {
+final class AddContentViewController: UIViewController, UIGestureRecognizerDelegate {
     var onSubmit: ((String) async throws -> Void)?
 
     private let input = UITextView()
@@ -46,24 +46,13 @@ final class AddContentViewController: UIViewController {
         input.autocorrectionType = .no
         input.autocapitalizationType = .none
         input.keyboardType = .default
+        input.keyboardDismissMode = .interactive
         input.accessibilityLabel = "内容链接"
         input.accessibilityIdentifier = "内容链接"
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        toolbar.items = [
-            UIBarButtonItem(systemItem: .flexibleSpace),
-            UIBarButtonItem(
-                title: "完成",
-                primaryAction: UIAction { [weak self] _ in
-                    self?.view.endEditing(true)
-                }
-            ),
-        ]
-        input.inputAccessoryView = toolbar
-        input.heightAnchor.constraint(greaterThanOrEqualToConstant: 136).isActive = true
+        input.heightAnchor.constraint(equalToConstant: 136).isActive = true
 
         var configuration = UIButton.Configuration.filled()
-        configuration.title = "收藏到 Memo"
+        configuration.title = "收藏"
         configuration.baseBackgroundColor = .label
         configuration.baseForegroundColor = .systemBackground
         configuration.cornerStyle = .capsule
@@ -74,7 +63,7 @@ final class AddContentViewController: UIViewController {
             trailing: 24
         )
         submitButton.configuration = configuration
-        submitButton.accessibilityIdentifier = "收藏到 Memo"
+        submitButton.accessibilityIdentifier = "收藏"
         submitButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 52).isActive = true
         submitButton.addTarget(
             self,
@@ -98,7 +87,13 @@ final class AddContentViewController: UIViewController {
         stack.setCustomSpacing(24, after: input)
         stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
-
+        let dismissKeyboard = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        dismissKeyboard.cancelsTouchesInView = false
+        dismissKeyboard.delegate = self
+        view.addGestureRecognizer(dismissKeyboard)
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.topAnchor,
@@ -107,6 +102,24 @@ final class AddContentViewController: UIViewController {
             stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 22),
             stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -22),
         ])
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldReceive touch: UITouch
+    ) -> Bool {
+        var touchedView = touch.view
+        while let current = touchedView {
+            if current is UIControl || current === input {
+                return false
+            }
+            touchedView = current.superview
+        }
+        return true
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     @objc private func submitTapped() {
