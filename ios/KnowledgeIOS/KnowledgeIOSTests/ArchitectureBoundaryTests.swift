@@ -10,6 +10,14 @@ final class ArchitectureBoundaryTests: XCTestCase {
         )
     }
 
+    func testSharedVideoURLParserAcceptsFullBilibiliShareText() {
+        let value = "【对话叶奇意：“寻找”月之暗面杨植麟、中国两代AI、十年人才迁徙，与AGI信仰【101视频播客】】 https://www.bilibili.com/video/BV1wK3i6NEdQ/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58"
+        XCTAssertEqual(
+            SharedVideoURLParser.extract(from: value)?.absoluteString,
+            "https://www.bilibili.com/video/BV1wK3i6NEdQ/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58"
+        )
+    }
+
     func testSharedVideoURLParserRejectsUnsupportedHosts() {
         XCTAssertNil(
             SharedVideoURLParser.extract(from: "https://example.com/video")

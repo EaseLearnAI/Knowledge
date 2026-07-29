@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { loadConfig, type AppConfig } from "../src/platform/config/app-config.js";
-import { VideoSummarizeProcessor } from "../src/integrations/transcription/local/videosummarize.processor.js";
+import {
+  browserCookiesFor,
+  VideoSummarizeProcessor,
+  videoSummarizeFailure,
+} from "../src/integrations/transcription/local/videosummarize.processor.js";
 
 const config: AppConfig = {
   ...loadConfig({ NODE_ENV: "test" }),
@@ -45,5 +49,39 @@ describe("真实 videosummarize 内核", () => {
     expect(output).toContain("Status: Ready to use!");
     expect(output).toContain("ffmpeg:");
     expect(output).toContain("mlx-whisper:");
+  });
+});
+
+describe("videosummarize B站下载适配", () => {
+  it("B站与小红书使用配置的浏览器登录态", () => {
+    expect(
+      browserCookiesFor("https://www.bilibili.com/video/BV1test", "safari"),
+    ).toBe("safari");
+    expect(browserCookiesFor("https://b23.tv/example")).toBe("chrome");
+    expect(browserCookiesFor("https://www.xiaohongshu.com/explore/example")).toBe(
+      "chrome",
+    );
+    expect(browserCookiesFor("https://www.douyin.com/video/example")).toBeUndefined();
+  });
+
+  it("把 CLI 退出码为 0 的 B站 412 识别成真实下载失败", () => {
+    expect(
+      videoSummarizeFailure({
+        stdout: "Failed: 1 video(s):",
+        stderr:
+          "ERROR: [BiliBili] Unable to download JSON metadata: HTTP Error 412: Precondition Failed",
+      }),
+    ).toBe(
+      "B站拒绝了媒体请求（HTTP 412），请检查已配置的浏览器登录态后重试",
+    );
+  });
+
+  it("成功输出不会被误判为失败", () => {
+    expect(
+      videoSummarizeFailure({
+        stdout: "transcript: /tmp/output/transcript.json",
+        stderr: "",
+      }),
+    ).toBeUndefined();
   });
 });

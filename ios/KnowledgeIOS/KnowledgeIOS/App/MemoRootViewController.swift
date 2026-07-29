@@ -185,7 +185,14 @@ final class MemoRootViewController: UIViewController {
         }
         let navigation = UINavigationController(rootViewController: controller)
         MemoStyle.configureNavigationBar(navigation.navigationBar)
-        navigation.modalPresentationStyle = .fullScreen
+        navigation.modalPresentationStyle = .pageSheet
+        if let sheet = navigation.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.selectedDetentIdentifier = .medium
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+            sheet.preferredCornerRadius = 28
+        }
         present(navigation, animated: true)
     }
 

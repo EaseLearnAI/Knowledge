@@ -18,16 +18,42 @@ type RawTranscript = {
   segments?: Array<{ start: number; end: number; text: string }>;
 };
 
+type CommandResult = {
+  stdout: string;
+  stderr: string;
+};
+
 function modelFor(quality: VideoProcessInput["quality"]): string {
   if (quality === "fast") return "base";
   if (quality === "accurate") return "large-v3";
   return "small";
 }
 
-function cookiesFor(source: string): string | undefined {
-  return /(xiaohongshu\.com|xhslink\.com)/i.test(source)
-    ? "chrome"
+export function browserCookiesFor(
+  source: string,
+  configuredBrowser?: string,
+): string | undefined {
+  return /(bilibili\.com|b23\.tv|xiaohongshu\.com|xhslink\.com)/i.test(source)
+    ? configuredBrowser ?? "chrome"
     : undefined;
+}
+
+export function videoSummarizeFailure(
+  result: CommandResult,
+): string | undefined {
+  const output = `${result.stderr}\n${result.stdout}`;
+  if (!/(?:^|\n)(?:ERROR:|Failed:\s*\d+\s+video)/im.test(output)) {
+    return undefined;
+  }
+  if (/HTTP Error 412|Precondition Failed/i.test(output)) {
+    return "B站拒绝了媒体请求（HTTP 412），请检查已配置的浏览器登录态后重试";
+  }
+  return output
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => /^ERROR:/i.test(line))
+    ?.replace(/^ERROR:\s*/i, "")
+    ?? "videosummarize 未能下载或处理该视频";
 }
 
 function mapTranscript(raw: RawTranscript, path: string): TranscriptResult {
@@ -84,7 +110,10 @@ export class VideoSummarizeProcessor implements VideoProcessor {
       "--chunk-size",
       "0",
     ];
-    const cookies = cookiesFor(input.source);
+    const cookies = browserCookiesFor(
+      input.source,
+      this.config.videoCookieBrowser,
+    );
     if (cookies) args.push("--cookies", cookies);
 
     await report("video.cli.started", "已发起 videosummarize 请求", {
@@ -94,9 +123,13 @@ export class VideoSummarizeProcessor implements VideoProcessor {
       cookies: cookies ? `${cookies} 浏览器登录态` : "不需要",
       transcriptionMode: "single-worker",
     });
-    const output = await this.run(this.config.videoSummarizeBin, args, report);
-    const match = output.match(/transcript:\s+(.+\.json)\s*$/m);
+    const result = await this.run(this.config.videoSummarizeBin, args, report);
+    const match = result.stdout.match(/transcript:\s+(.+\.json)\s*$/m);
     if (!match?.[1]) {
+      const failure = videoSummarizeFailure(result);
+      if (failure) {
+        throw new AppError(502, "VIDEO_DOWNLOAD_FAILED", failure);
+      }
       throw new AppError(
         502,
         "TRANSCRIPT_PATH_MISSING",
@@ -160,7 +193,7 @@ export class VideoSummarizeProcessor implements VideoProcessor {
     command: string,
     args: string[],
     report: ProgressReporter,
-  ): Promise<string> {
+  ): Promise<CommandResult> {
     return new Promise((resolvePromise, reject) => {
       const child = spawn(command, args, {
         cwd: process.cwd(),
@@ -206,7 +239,7 @@ export class VideoSummarizeProcessor implements VideoProcessor {
         if (stdoutBuffer.trim()) void report("video.cli.stdout", stdoutBuffer.trim());
         if (stderrBuffer.trim()) void report("video.cli.stderr", stderrBuffer.trim());
         if (code === 0) {
-          resolvePromise(stdout);
+          resolvePromise({ stdout, stderr });
           return;
         }
         reject(

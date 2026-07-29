@@ -18,6 +18,14 @@ describe("分享文本链接提取", () => {
     expect(extractSupportedVideoUrl(sharedText)).toBe(bilibiliUrl);
   });
 
+  it("支持用户本次粘贴的完整 B站分享文案", () => {
+    const sharedText =
+      "【对话叶奇意：“寻找”月之暗面杨植麟、中国两代AI、十年人才迁徙，与AGI信仰【101视频播客】】 https://www.bilibili.com/video/BV1wK3i6NEdQ/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58";
+    expect(extractSupportedVideoUrl(sharedText)).toBe(
+      "https://www.bilibili.com/video/BV1wK3i6NEdQ/?share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58",
+    );
+  });
+
   it("移除分享链接末尾的中英文标点", () => {
     expect(
       extractSupportedVideoUrl(`推荐这个视频：${bilibiliUrl}。`),
