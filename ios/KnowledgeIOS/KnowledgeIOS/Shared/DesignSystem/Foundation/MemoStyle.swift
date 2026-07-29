@@ -108,7 +108,7 @@ enum MemoStyle {
         container.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
         let button = UIButton(type: .system)
-        var configuration = UIButton.Configuration.gray()
+        var configuration = UIButton.Configuration.filled()
         configuration.image = UIImage(
             systemName: symbol,
             withConfiguration: UIImage.SymbolConfiguration(
@@ -116,6 +116,7 @@ enum MemoStyle {
                 weight: .semibold
             )
         )
+        configuration.baseBackgroundColor = .systemBackground
         configuration.baseForegroundColor = .label
         configuration.cornerStyle = .capsule
         button.configuration = configuration
@@ -145,7 +146,7 @@ enum MemoStyle {
         container.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
         let button = UIButton(type: .system)
-        var configuration = UIButton.Configuration.gray()
+        var configuration = UIButton.Configuration.filled()
         configuration.image = UIImage(
             systemName: symbol,
             withConfiguration: UIImage.SymbolConfiguration(
@@ -153,6 +154,7 @@ enum MemoStyle {
                 weight: .semibold
             )
         )
+        configuration.baseBackgroundColor = .systemBackground
         configuration.baseForegroundColor = .label
         configuration.cornerStyle = .capsule
         button.configuration = configuration

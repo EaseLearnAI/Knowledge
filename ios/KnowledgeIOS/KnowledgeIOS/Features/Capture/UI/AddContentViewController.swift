@@ -19,11 +19,6 @@ final class AddContentViewController: UIViewController {
         configureContent()
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        input.becomeFirstResponder()
-    }
-
     private func configureContent() {
         let title = MemoStyle.label(
             text: "粘贴分享文案或链接",
