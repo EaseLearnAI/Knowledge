@@ -27,7 +27,9 @@ MOBILE_USER_AGENT = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
     "AppleWebKit/605.1.15 Mobile/15E148"
 )
-DOUYIN_ID_PATTERN = re.compile(r"(?:modal_id=|/video/|/share/video/)(\d{10,24})")
+DOUYIN_ID_PATTERN = re.compile(
+    r"(?:modal_id=|/(?:video|note)/|/share/(?:video|note)/)(\d{10,24})"
+)
 
 
 class MetaParser(HTMLParser):
@@ -195,7 +197,9 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
     if not match_id:
         return None
 
-    public_page = f"https://www.iesdouyin.com/share/video/{match_id}/"
+    is_note_url = bool(re.search(r"/(?:share/)?note/", source))
+    public_kind = "note" if is_note_url else "video"
+    public_page = f"https://www.iesdouyin.com/share/{public_kind}/{match_id}/"
     page = fetch_html(public_page, MOBILE_USER_AGENT)
     state_match = re.search(
         r"<script>window\._ROUTER_DATA\s*=\s*(\{.*?\})</script>",
@@ -213,7 +217,52 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
         "Referer": public_page,
         "User-Agent": MOBILE_USER_AGENT,
     }
+    image_assets = []
+    for image in item.get("images") or []:
+        if not isinstance(image, dict):
+            continue
+        urls = image.get("url_list") or image.get("download_url_list") or []
+        image_url = next(
+            (
+                value
+                for value in urls
+                if isinstance(value, str)
+                and value.startswith(("http://", "https://"))
+            ),
+            None,
+        )
+        if image_url:
+            image_assets.append(
+                {
+                    "kind": "image",
+                    "url": image_url,
+                    "format": "jpg",
+                    "headers": headers,
+                }
+            )
+    # 抖音图文也会携带一个 duration=0 的 video 占位结构。显式 note
+    # 链接、aweme_type=2 或存在图片且没有视频时长时，都应优先按图文处理。
     video = item.get("video")
+    raw_video_duration = (
+        float(video.get("duration") or 0) if isinstance(video, dict) else 0
+    )
+    is_image_post = bool(
+        image_assets
+        and (
+            is_note_url
+            or item.get("aweme_type") == 2
+            or raw_video_duration <= 0
+        )
+    )
+    if is_image_post:
+        return {
+            "title": title,
+            "durationSeconds": 0,
+            "kind": "image_post",
+            "platform": "douyin",
+            "text": title,
+            "assets": image_assets,
+        }
     if isinstance(video, dict):
         urls = video.get("play_addr", {}).get("url_list", [])
         media_url = next(
@@ -250,29 +299,6 @@ def resolve_douyin(source: str) -> dict[str, Any] | None:
                     }
                 ],
             }
-    image_assets = []
-    for image in item.get("images") or []:
-        if not isinstance(image, dict):
-            continue
-        urls = image.get("url_list") or image.get("download_url_list") or []
-        image_url = next(
-            (
-                value
-                for value in urls
-                if isinstance(value, str)
-                and value.startswith(("http://", "https://"))
-            ),
-            None,
-        )
-        if image_url:
-            image_assets.append(
-                {
-                    "kind": "image",
-                    "url": image_url,
-                    "format": "jpg",
-                    "headers": headers,
-                }
-            )
     if not image_assets:
         raise RuntimeError("抖音公开页面没有可处理的图片或视频地址")
     return {

@@ -111,10 +111,10 @@ final class KnowledgeItemCell: UITableViewCell {
         }
         tagsStack.isHidden = !isReady || item.tags.isEmpty
         progressView.isHidden = isReady || isFailed
-        progressView.progress = Float(item.progress)
+        progressView.progress = stageProgress(for: item.status)
         progressMeta.isHidden = isReady || isFailed
-        etaLabel.text = estimatedTime(for: item.status)
-        percentLabel.text = "\(Int((item.progress * 100).rounded()))%"
+        etaLabel.text = processingTimeHint(for: item.status)
+        percentLabel.text = stageLabel(for: item.status)
         cardView.backgroundColor = isFailed
             ? UIColor.systemRed.withAlphaComponent(0.07)
             : .secondarySystemBackground
@@ -164,18 +164,48 @@ final class KnowledgeItemCell: UITableViewCell {
         }
     }
 
-    private func estimatedTime(for status: KnowledgeItemStatus) -> String {
+    private func processingTimeHint(for status: KnowledgeItemStatus) -> String {
         switch status {
-        case .queued, .fetching:
-            "预计还需 2–4 分钟"
-        case .extracting:
-            "预计还需 1–3 分钟"
-        case .enriching:
-            "预计不到 1 分钟"
+        case .queued, .fetching, .extracting, .enriching:
+            "耗时取决于原内容长度"
         case .ready:
             "已完成"
         case .failed:
             ""
+        }
+    }
+
+    private func stageLabel(for status: KnowledgeItemStatus) -> String {
+        switch status {
+        case .queued:
+            "等待开始"
+        case .fetching:
+            "第 1/3 步"
+        case .extracting:
+            "第 2/3 步"
+        case .enriching:
+            "第 3/3 步"
+        case .ready:
+            "已完成"
+        case .failed:
+            ""
+        }
+    }
+
+    private func stageProgress(for status: KnowledgeItemStatus) -> Float {
+        switch status {
+        case .queued:
+            0.05
+        case .fetching:
+            0.25
+        case .extracting:
+            0.55
+        case .enriching:
+            0.85
+        case .ready:
+            1
+        case .failed:
+            0
         }
     }
 }

@@ -82,22 +82,28 @@ final class KnowledgeIOSUITests: XCTestCase {
         )
         let field = app.textViews["内容链接"]
         XCTAssertTrue(field.waitForExistence(timeout: 8))
+        let initialSheetTop = app.navigationBars["添加收藏"].frame.minY
         field.tap()
         field.typeText(
             "【地狱梗刷屏、学术打假、CEO发疯——2026上半年，社会在反抗什么？】 " +
                 "https://www.bilibili.com/video/BV1GWNQ6jE2x/?" +
                 "share_source=copy_web&vd_source=f6059df809e9959aa18ac40468f06d58"
         )
-        if app.toolbars.buttons["完成"].waitForExistence(timeout: 2) {
-            app.toolbars.buttons["完成"].tap()
-        }
-        app.buttons["收藏到 Memo"].tap()
+        app.staticTexts["粘贴分享文案或链接"].tap()
+        XCTAssertEqual(
+            app.navigationBars["添加收藏"].frame.minY,
+            initialSheetTop,
+            accuracy: 1
+        )
+        XCTAssertFalse(app.toolbars.buttons["完成"].exists)
+        XCTAssertEqual(app.buttons.matching(identifier: "收藏").count, 1)
+        app.buttons["收藏"].tap()
 
         XCTAssertTrue(app.navigationBars["Memo"].waitForExistence(timeout: 5))
         let analyzing = app.cells["分析中卡片"]
         XCTAssertTrue(analyzing.waitForExistence(timeout: 3))
-        XCTAssertTrue(analyzing.label.contains("预计"))
-        XCTAssertTrue(analyzing.label.contains("%"))
+        XCTAssertTrue(analyzing.label.contains("耗时取决于原内容长度"))
+        XCTAssertTrue(analyzing.label.contains("第 2/3 步"))
         XCTAssertFalse(app.navigationBars["处理中"].exists)
         XCTAssertFalse(app.alerts["无法收藏"].exists)
     }
@@ -295,10 +301,7 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 8))
         field.tap()
         field.typeText(exampleURL)
-        if app.toolbars.buttons["完成"].waitForExistence(timeout: 2) {
-            app.toolbars.buttons["完成"].tap()
-        }
-        let collect = app.buttons["收藏到 Memo"]
+        let collect = app.buttons["收藏"]
         XCTAssertTrue(collect.waitForExistence(timeout: 3))
         collect.tap()
     }
