@@ -64,6 +64,7 @@ export async function createCaptureTask(
       status: "queued",
       stage: "queued",
       progress: 0,
+      statusMessage: "任务已加入队列",
       logs: [],
     });
     item.taskId = task._id;

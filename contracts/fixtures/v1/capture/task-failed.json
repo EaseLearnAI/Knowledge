@@ -5,6 +5,10 @@
     "status": "failed",
     "stage": "failed",
     "progress": 48,
+    "statusMessage": "暂时无法读取原始内容，请稍后重试",
+    "startedAt": "2026-07-29T06:00:00.000Z",
+    "updatedAt": "2026-07-29T06:02:15.000Z",
+    "completedAt": "2026-07-29T06:02:15.000Z",
     "attempts": 3,
     "error": {
       "code": "VIDEO_TASK_FAILED",

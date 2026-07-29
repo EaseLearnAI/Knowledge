@@ -21,7 +21,7 @@ actor ContentProcessor {
         idempotencyKey: String,
         remoteTaskID: String?,
         onRemoteTaskCreated: @Sendable (String, String) async -> Void,
-        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
+        onProgress: @Sendable (ProcessingUpdate) async -> Void
     ) async throws -> ProcessedContent {
         guard let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme) else {
@@ -44,13 +44,35 @@ actor ContentProcessor {
     }
 
     private func processUITestFixture(
-        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
+        onProgress: @Sendable (ProcessingUpdate) async -> Void
     ) async -> ProcessedContent {
-        await onProgress(.fetching, 18)
+        let startedAt = Date()
+        await onProgress(
+            ProcessingUpdate(
+                stage: .fetching,
+                progress: 18,
+                statusMessage: "测试内容已读取",
+                startedAt: startedAt
+            )
+        )
         try? await Task.sleep(for: .seconds(2))
-        await onProgress(.extracting, 48)
+        await onProgress(
+            ProcessingUpdate(
+                stage: .extracting,
+                progress: 48,
+                statusMessage: "测试正文已提取",
+                startedAt: startedAt
+            )
+        )
         try? await Task.sleep(for: .seconds(2))
-        await onProgress(.enriching, 76)
+        await onProgress(
+            ProcessingUpdate(
+                stage: .enriching,
+                progress: 76,
+                statusMessage: "正在生成测试摘要",
+                startedAt: startedAt
+            )
+        )
         return ProcessedContent(
             kind: .video,
             sourceName: "B 站",
@@ -74,10 +96,17 @@ actor ContentProcessor {
         idempotencyKey: String,
         remoteTaskID: String?,
         onRemoteTaskCreated: @Sendable (String, String) async -> Void,
-        onProgress: @Sendable (ProcessingStage, Double?) async -> Void
+        onProgress: @Sendable (ProcessingUpdate) async -> Void
     ) async throws -> ProcessedContent {
         let accessToken = try await authTokenProvider.accessToken()
-        await onProgress(.fetching, nil)
+        await onProgress(
+            ProcessingUpdate(
+                stage: .fetching,
+                progress: nil,
+                statusMessage: "正在连接内容分析服务",
+                startedAt: nil
+            )
+        )
         let task: RemoteVideoTask
         if let remoteTaskID {
             task = try await videoClient.task(
@@ -98,11 +127,14 @@ actor ContentProcessor {
                 try await authTokenProvider.accessToken()
             },
             onTask: { task in
-                if task.stage == "copywriting" {
-                    await onProgress(.enriching, task.progress)
-                } else {
-                    await onProgress(.extracting, task.progress)
-                }
+                await onProgress(
+                    ProcessingUpdate(
+                        stage: task.processingStage,
+                        progress: task.progress,
+                        statusMessage: task.statusMessage,
+                        startedAt: task.startedAtDate
+                    )
+                )
             }
         )
         let completedAccessToken = try await authTokenProvider.accessToken()
@@ -365,6 +397,8 @@ private struct RemoteVideoTask: Decodable {
     let status: String
     let stage: String
     let progress: Double?
+    let statusMessage: String?
+    let startedAt: String?
     let contentKind: String?
     let analysisMode: String?
     let error: VideoTaskProblem?
@@ -375,9 +409,31 @@ private struct RemoteVideoTask: Decodable {
         case status
         case stage
         case progress
+        case statusMessage
+        case startedAt
         case contentKind
         case analysisMode
         case error
+    }
+
+    var processingStage: ProcessingStage {
+        switch stage {
+        case "queued", "starting", "resolving", "resolved", "downloading",
+             "preparing", "prepared", "retrying":
+            .fetching
+        case "copywriting", "summarizing", "summarized":
+            .enriching
+        default:
+            .extracting
+        }
+    }
+
+    var startedAtDate: Date? {
+        guard let startedAt else { return nil }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: startedAt)
+            ?? ISO8601DateFormatter().date(from: startedAt)
     }
 }
 

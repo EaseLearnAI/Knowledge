@@ -20,3 +20,10 @@ enum ProcessingStage: Sendable {
     case extracting
     case enriching
 }
+
+struct ProcessingUpdate: Sendable {
+    let stage: ProcessingStage
+    let progress: Double?
+    let statusMessage: String?
+    let startedAt: Date?
+}

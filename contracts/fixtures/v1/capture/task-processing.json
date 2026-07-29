@@ -5,6 +5,9 @@
     "status": "processing",
     "stage": "transcribing",
     "progress": 48,
+    "statusMessage": "正在等待云端转写完成",
+    "startedAt": "2026-07-29T06:00:00.000Z",
+    "updatedAt": "2026-07-29T06:02:15.000Z",
     "attempts": 1
   }
 }

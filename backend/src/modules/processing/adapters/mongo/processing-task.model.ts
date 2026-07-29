@@ -28,6 +28,7 @@ export type ProcessingTaskRecord = {
   status: TaskStatus;
   stage: string;
   progress: number;
+  statusMessage?: string;
   contentKind?: ContentKind;
   analysisMode?: AnalysisMode;
   attempts: number;
@@ -82,6 +83,7 @@ const processingTaskSchema = new Schema<ProcessingTaskRecord>(
     },
     stage: { type: String, default: "queued" },
     progress: { type: Number, min: 0, max: 100, default: 0 },
+    statusMessage: String,
     contentKind: {
       type: String,
       enum: ["image_post", "short_video", "long_video"],
