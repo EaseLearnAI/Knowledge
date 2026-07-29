@@ -73,7 +73,7 @@ describe("MiniMaxCopywriter", () => {
                     },
                   ],
                   actionItems: ["修改 MINIMAX_MODEL 后重启服务。"],
-                  tags: ["技术"],
+                  tags: ["技术", "模型配置", "开发环境"],
                   markdown: "# 模型切换测试",
                 }),
               },
@@ -121,7 +121,7 @@ describe("MiniMaxCopywriter", () => {
       keyPoints: ["忽略思考文本。"],
       chapters: [],
       actionItems: [],
-      tags: ["测试"],
+      tags: ["技术", "格式兼容", "模型输出"],
       markdown: "# 结果",
     })}\n\`\`\``;
     vi.stubGlobal(
@@ -140,5 +140,56 @@ describe("MiniMaxCopywriter", () => {
     );
     expect(result.oneSentenceSummary).toBe("已提取 JSON。");
     expect(result.displayTitle).toBe("已提取 JSON");
+  });
+
+  it("首次返回无效 JSON 时自动修复后继续完成", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ finish_reason: "stop", message: { content: "不是 JSON" } }],
+            usage: { total_tokens: 10 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    displayTitle: "修复异常模型输出",
+                    oneSentenceSummary: "模型首次输出异常，修复请求将其恢复为合法 JSON。",
+                    whyWorthWatching: "验证偶发格式异常不会让整条内容失败。",
+                    keyPoints: ["首次响应不是 JSON。", "第二次请求只负责修复结构。"],
+                    chapters: [],
+                    actionItems: [],
+                    tags: ["技术", "结构修复", "模型输出"],
+                    markdown: "# 修复异常模型输出",
+                  }),
+                },
+              },
+            ],
+            usage: { total_tokens: 20 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const events: string[] = [];
+
+    const result = await new MiniMaxCopywriter(config).generate(
+      transcript,
+      (event) => {
+        events.push(event);
+      },
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(events).toContain("copywriting.response.repairing");
+    expect(result.tags).toEqual(["技术", "结构修复", "模型输出"]);
   });
 });

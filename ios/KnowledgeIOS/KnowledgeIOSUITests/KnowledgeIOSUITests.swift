@@ -96,8 +96,8 @@ final class KnowledgeIOSUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Memo"].waitForExistence(timeout: 5))
         let analyzing = app.cells["分析中卡片"]
         XCTAssertTrue(analyzing.waitForExistence(timeout: 3))
-        XCTAssertTrue(analyzing.label.contains("预计"))
-        XCTAssertTrue(analyzing.label.contains("%"))
+        XCTAssertTrue(analyzing.label.contains("耗时取决于原内容长度"))
+        XCTAssertTrue(analyzing.label.contains("第 2/3 步"))
         XCTAssertFalse(app.navigationBars["处理中"].exists)
         XCTAssertFalse(app.alerts["无法收藏"].exists)
     }

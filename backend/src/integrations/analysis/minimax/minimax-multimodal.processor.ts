@@ -54,8 +54,8 @@ const analysisSchema = z.object({
     .array(z.string())
     .transform((items) => items.slice(0, 5)),
   tags: z
-    .array(z.string().min(1))
-    .min(1)
+    .array(z.string().trim().min(2).max(8))
+    .min(3)
     .transform((items) => items.slice(0, 3)),
   markdown: z.string().min(1),
 });
@@ -115,7 +115,8 @@ export class MiniMaxMultimodalAnalyzer {
           "只输出字段：contentText、displayTitle、oneSentenceSummary、whyWorthWatching、keyPoints、chapters、actionItems、tags、markdown。",
           "displayTitle 用 12-24 个中文字符直接写核心主题或关键结论；不要保留作者自述、平台话术、Emoji、#话题、问候语或整段原标题，不要使用“该视频/本期内容”。",
           "oneSentenceSummary 用 45-90 字讲清对象、方法和结论；whyWorthWatching 用 20-50 字说明用户能获得什么。",
-          "keyPoints 输出 3-5 条互不重复的具体事实或方法；actionItems 最多 5 条；tags 输出 2-3 个 2-8 字的具体主题词，禁止使用“视频、内容、分享、干货、知识”等泛词。",
+          "keyPoints 输出 3-5 条互不重复的具体事实或方法；actionItems 最多 5 条。",
+          "tags 必须恰好 3 个且按顺序分别是：领域标签（如 AI、商业、创作）、主题标签（具体方法或议题）、对象或场景标签（产品、公司、平台或应用场景）；每个 2-8 字，禁止使用“视频、内容、分享、干货、知识”等泛词。",
           "markdown 不超过 2000 个中文字，结构清楚且不要复述标签。",
           "图文的 chapters 必须为空；视频章节时间使用整数毫秒，无法确认时间时也返回空数组，禁止编造。",
         ]

@@ -99,6 +99,11 @@ class PublicPlatformResolverTests(unittest.TestCase):
         item = {
             "aweme_id": "7658152723547753772",
             "desc": "公开抖音图文",
+            "aweme_type": 2,
+            "video": {
+                "duration": 0,
+                "play_addr": {"url_list": ["https://aweme.example/placeholder"]},
+            },
             "images": [
                 {"url_list": ["https://p3.example/one.jpeg"]},
                 {"url_list": ["https://p3.example/two.jpeg"]},
@@ -114,15 +119,19 @@ class PublicPlatformResolverTests(unittest.TestCase):
             + json.dumps(state, ensure_ascii=False)
             + "</script>"
         )
-        with patch.object(resolver, "fetch_html", return_value=page):
+        with patch.object(resolver, "fetch_html", return_value=page) as fetch:
             result = resolver.resolve_douyin(
-                "https://www.douyin.com/jingxuan?modal_id=7658152723547753772"
+                "https://www.douyin.com/note/7658152723547753772"
             )
         self.assertIsNotNone(result)
         assert result
         self.assertEqual(result["kind"], "image_post")
         self.assertEqual(result["title"], "公开抖音图文")
         self.assertEqual(len(result["assets"]), 2)
+        self.assertEqual(
+            fetch.call_args.args[0],
+            "https://www.iesdouyin.com/share/note/7658152723547753772/",
+        )
 
 
 if __name__ == "__main__":
