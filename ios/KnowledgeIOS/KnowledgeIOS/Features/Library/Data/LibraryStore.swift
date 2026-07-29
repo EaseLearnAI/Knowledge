@@ -116,7 +116,8 @@ actor LibraryStore {
         itemID: UUID,
         status: KnowledgeItemStatus,
         progress: Double,
-        statusText: String
+        statusText: String,
+        processingStartedAt: Date?
     ) throws -> KnowledgeItem {
         guard let index = state.items.firstIndex(where: { $0.id == itemID }) else {
             throw StoreError.itemNotFound
@@ -124,6 +125,9 @@ actor LibraryStore {
         state.items[index].status = status
         state.items[index].progress = progress
         state.items[index].statusText = statusText
+        if let processingStartedAt {
+            state.items[index].processingStartedAt = processingStartedAt
+        }
         state.items[index].updatedAt = Date()
         try persist()
         return state.items[index]
@@ -160,6 +164,7 @@ actor LibraryStore {
         state.items[index].progress = 1
         state.items[index].statusText = "处理完成"
         state.items[index].errorMessage = nil
+        state.items[index].processingStartedAt = nil
         state.items[index].remoteTaskID = nil
         state.items[index].remoteIdempotencyKey = UUID().uuidString
         state.items[index].updatedAt = Date()
@@ -238,6 +243,7 @@ actor LibraryStore {
         state.items[index].progress = 0
         state.items[index].statusText = "等待重试"
         state.items[index].errorMessage = nil
+        state.items[index].processingStartedAt = nil
         state.items[index].remoteTaskID = nil
         state.items[index].remoteSourceItemID = nil
         state.items[index].remoteIdempotencyKey = UUID().uuidString

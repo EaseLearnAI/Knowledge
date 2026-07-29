@@ -389,6 +389,10 @@ describe("视频解析和承接文案", () => {
     expect(task.status).toBe(200);
     expect(task.body.data.status).toBe("completed");
     expect(task.body.data.progress).toBe(100);
+    expect(task.body.data.stage).toBe("completed");
+    expect(task.body.data.statusMessage).toBe("视频解析与承接文案已全部完成");
+    expect(task.body.data.startedAt).toBeTruthy();
+    expect(task.body.data.completedAt).toBeTruthy();
     expect(task.body.data.logs.length).toBeGreaterThan(3);
 
     const itemId = String(task.body.data.sourceItemId);

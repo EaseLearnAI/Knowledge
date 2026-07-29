@@ -252,28 +252,28 @@ final class MemoApplication {
                             await self.receiveProcessingUpdate(item)
                         }
                     },
-                    onProgress: { stage, backendProgress in
+                    onProgress: { processingUpdate in
                         let update: (
                             KnowledgeItemStatus,
-                            Double,
                             String
                         )
-                        switch stage {
+                        switch processingUpdate.stage {
                         case .fetching:
-                            update = (.fetching, 0.18, "下载原始内容")
+                            update = (.fetching, "正在读取原始内容")
                         case .extracting:
-                            update = (.extracting, 0.48, "提取正文内容")
+                            update = (.extracting, "正在提取正文内容")
                         case .enriching:
-                            update = (.enriching, 0.76, "生成摘要和 Tag")
+                            update = (.enriching, "正在生成摘要和标签")
                         }
-                        let progress = backendProgress.map {
+                        let progress = processingUpdate.progress.map {
                             min(max($0 / 100, 0), 0.99)
-                        } ?? update.1
+                        } ?? item.progress
                         if let item = try? await store.updateProgress(
                             itemID: itemID,
                             status: update.0,
                             progress: progress,
-                            statusText: update.2
+                            statusText: processingUpdate.statusMessage ?? update.1,
+                            processingStartedAt: processingUpdate.startedAt
                         ) {
                             await self.receiveProcessingUpdate(item)
                         }

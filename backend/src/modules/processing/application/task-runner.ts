@@ -8,6 +8,10 @@ import type {
   ProgressReporter,
   VideoProcessor,
 } from "../domain/video.types.js";
+import {
+  progressForTaskEvent,
+  publicTaskError,
+} from "./task-progress.js";
 
 export class VideoTaskRunner {
   private tail: Promise<void> = Promise.resolve();
@@ -106,16 +110,31 @@ export class VideoTaskRunner {
         taskId,
         ...(data ? { data } : {}),
       });
+      const progressUpdate = progressForTaskEvent(event, message, data);
       await ProcessingTaskModel.updateOne(
         { _id: taskId },
-        {
-          $push: {
-            logs: {
-              $each: [{ timestamp: new Date(), level, event, message, data }],
-              $slice: -500,
+        progressUpdate
+          ? {
+              $set: {
+                stage: progressUpdate.stage,
+                statusMessage: progressUpdate.statusMessage,
+              },
+              $max: { progress: progressUpdate.progress },
+              $push: {
+                logs: {
+                  $each: [{ timestamp: new Date(), level, event, message, data }],
+                  $slice: -500,
+                },
+              },
+            }
+          : {
+              $push: {
+                logs: {
+                  $each: [{ timestamp: new Date(), level, event, message, data }],
+                  $slice: -500,
+                },
+              },
             },
-          },
-        },
       );
     };
   }
@@ -139,7 +158,8 @@ export class VideoTaskRunner {
         $set: {
           status: "processing",
           stage: "transcribing",
-          progress: 10,
+          progress: 5,
+          statusMessage: "正在启动分析任务",
           startedAt: now,
           leaseOwner: this.workerId,
           leaseUntil,
@@ -215,8 +235,12 @@ export class VideoTaskRunner {
       );
       if (transcript.contentKind) task.contentKind = transcript.contentKind;
       if (transcript.analysisMode) task.analysisMode = transcript.analysisMode;
+      const latestTaskProgress = await ProcessingTaskModel.findById(taskId)
+        .select("progress")
+        .lean();
       task.stage = "copywriting";
-      task.progress = 75;
+      task.progress = Math.max(75, latestTaskProgress?.progress ?? 0);
+      task.statusMessage = "正在生成摘要和标签";
       await task.save();
 
       const copywriting =
@@ -262,6 +286,8 @@ export class VideoTaskRunner {
       task.status = "completed";
       task.stage = "completed";
       task.progress = 100;
+      task.statusMessage = "内容分析完成";
+      task.set("error", undefined);
       task.completedAt = new Date();
       task.set("leaseOwner", undefined);
       task.set("leaseUntil", undefined);
@@ -273,6 +299,7 @@ export class VideoTaskRunner {
         typeof error === "object" && error !== null && "code" in error
           ? String(error.code)
           : "VIDEO_TASK_FAILED";
+      const userMessage = publicTaskError(code, message, task.source);
       const retryable =
         task.attempts < this.options.maxAttempts &&
         /NETWORK|TIMEOUT|REQUEST_FAILED|QUERY_FAILED|DOWNLOAD_FAILED|RESOLVE_FAILED|TOS_OPERATION_FAILED/.test(
@@ -286,15 +313,16 @@ export class VideoTaskRunner {
       }
       task.status = retryable ? "queued" : "failed";
       task.stage = retryable ? "queued" : "failed";
-      task.error = { code, message };
+      task.statusMessage = retryable ? "分析失败，正在自动重试" : userMessage;
+      task.error = { code, message: userMessage };
       if (!retryable) task.completedAt = new Date();
       task.set("leaseOwner", undefined);
       task.set("leaseUntil", undefined);
       await task.save();
       await report(
         retryable ? "task.retry_scheduled" : "task.failed",
-        retryable ? `任务将在稍后重试：${message}` : message,
-        { code, attempts: task.attempts },
+        retryable ? "分析失败，正在自动重试" : userMessage,
+        { code, attempts: task.attempts, technicalMessage: message },
       );
       if (retryable) {
         const retryTimer = setTimeout(() => this.enqueue(taskId), 1_000);

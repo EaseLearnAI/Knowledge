@@ -33,6 +33,7 @@ struct KnowledgeItem: Codable, Identifiable, Sendable {
     var progress: Double
     var statusText: String
     var errorMessage: String?
+    var processingStartedAt: Date? = nil
     var remoteTaskID: String?
     var remoteSourceItemID: String?
     var remoteIdempotencyKey: String?

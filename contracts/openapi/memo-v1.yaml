@@ -499,6 +499,19 @@ components:
           type: number
           minimum: 0
           maximum: 100
+          description: 根据后端已完成处理里程碑计算；没有提供方精确百分比时不会按时间虚拟增长。
+        statusMessage:
+          type: string
+          description: 后端当前真实处理事件对应的用户可读状态。
+        startedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
         contentKind:
           type: string
           enum: [image_post, short_video, long_video]

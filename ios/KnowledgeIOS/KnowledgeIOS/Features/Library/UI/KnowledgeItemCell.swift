@@ -96,12 +96,12 @@ final class KnowledgeItemCell: UITableViewCell {
             : "\(platformName(for: item)) · \(isFailed ? "分析失败" : "分析中")"
         titleLabel.text = isReady
             ? item.title
-            : (isFailed ? "这条内容没有分析完成" : item.statusText)
+            : (isFailed ? "分析未完成，可点击重试" : item.statusText)
         summaryLabel.text = isReady
             ? item.summary
             : (isFailed
-                ? item.errorMessage ?? "点击卡片重试"
-                : processingDetail(for: item.status))
+                ? failureMessage(for: item)
+                : processingDetail(for: item))
         tagsStack.arrangedSubviews.forEach {
             tagsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -111,10 +111,11 @@ final class KnowledgeItemCell: UITableViewCell {
         }
         tagsStack.isHidden = !isReady || item.tags.isEmpty
         progressView.isHidden = isReady || isFailed
-        progressView.progress = stageProgress(for: item.status)
+        progressView.progress = Float(item.progress)
+        progressView.accessibilityValue = "\(Int((item.progress * 100).rounded()))%"
         progressMeta.isHidden = isReady || isFailed
-        etaLabel.text = processingTimeHint(for: item.status)
-        percentLabel.text = stageLabel(for: item.status)
+        etaLabel.text = elapsedTime(for: item)
+        percentLabel.text = "流程 \(Int((item.progress * 100).rounded()))%"
         cardView.backgroundColor = isFailed
             ? UIColor.systemRed.withAlphaComponent(0.07)
             : .secondarySystemBackground
@@ -147,16 +148,16 @@ final class KnowledgeItemCell: UITableViewCell {
         return item.sourceName
     }
 
-    private func processingDetail(for status: KnowledgeItemStatus) -> String {
-        switch status {
+    private func processingDetail(for item: KnowledgeItem) -> String {
+        switch item.status {
         case .queued:
-            "任务已加入队列，马上开始解析。"
+            "等待后台开始处理。"
         case .fetching:
-            "正在识别分享链接并读取原始视频。"
+            "正在识别内容类型并读取原始素材。"
         case .extracting:
-            "正在转写音频并提取可回看的正文。"
+            "正在根据后台已完成步骤更新进度。"
         case .enriching:
-            "正在整理标题、摘要、核心要点和标签。"
+            "正在整理摘要、核心要点和标签。"
         case .ready:
             "内容已经整理完成。"
         case .failed:
@@ -164,48 +165,27 @@ final class KnowledgeItemCell: UITableViewCell {
         }
     }
 
-    private func processingTimeHint(for status: KnowledgeItemStatus) -> String {
-        switch status {
-        case .queued, .fetching, .extracting, .enriching:
-            "耗时取决于原内容长度"
-        case .ready:
-            "已完成"
-        case .failed:
-            ""
+    private func failureMessage(for item: KnowledgeItem) -> String {
+        let message = item.errorMessage ?? ""
+        if message.localizedCaseInsensitiveContains("No video formats found")
+            || message.localizedCaseInsensitiveContains("[XiaoHongShu]") {
+            return "暂时无法读取这条小红书内容。刷新分享链接后点击卡片重试。"
         }
+        if message.isEmpty {
+            return "内容分析没有完成，点击卡片重试。"
+        }
+        return message
     }
 
-    private func stageLabel(for status: KnowledgeItemStatus) -> String {
-        switch status {
-        case .queued:
-            "等待开始"
-        case .fetching:
-            "第 1/3 步"
-        case .extracting:
-            "第 2/3 步"
-        case .enriching:
-            "第 3/3 步"
-        case .ready:
-            "已完成"
-        case .failed:
-            ""
+    private func elapsedTime(for item: KnowledgeItem) -> String {
+        guard let startedAt = item.processingStartedAt else {
+            return item.status == .queued ? "等待后台开始" : "后台处理中"
         }
-    }
-
-    private func stageProgress(for status: KnowledgeItemStatus) -> Float {
-        switch status {
-        case .queued:
-            0.05
-        case .fetching:
-            0.25
-        case .extracting:
-            0.55
-        case .enriching:
-            0.85
-        case .ready:
-            1
-        case .failed:
-            0
-        }
+        let elapsed = max(0, Int(Date().timeIntervalSince(startedAt)))
+        let minutes = elapsed / 60
+        let seconds = elapsed % 60
+        return minutes > 0
+            ? "已用时 \(minutes)分\(seconds)秒"
+            : "已用时 \(seconds)秒"
     }
 }
